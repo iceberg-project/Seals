@@ -23,7 +23,7 @@ warnings.filterwarnings('ignore', module='PIL')
 # Data augmentation and normalization for training
 # Just normalization for validation
 # IMPORTANT: set the correct dimension for your architecture using arch_input_size global variable
-arch_input_size = 224
+arch_input_size = 299
 data_transforms = {
     'training': transforms.Compose([
         transforms.Grayscale(),
@@ -121,33 +121,33 @@ class Net(nn.Module):
     def __init__(self):
         super(Net, self).__init__()
         self.conv1 = nn.Conv2d(1, 10, kernel_size=3)
-        self.conv2 = nn.Conv2d(88, 80, kernel_size=3)
+        self.conv2 = nn.Conv2d(88, 20, kernel_size=3)
+        self.conv3 = nn.Conv2d(88, 40, kernel_size=3)
 
         self.incept1 = InceptionA(in_channels=10)
-        self.incept2 = InceptionA(in_channels=80)
+        self.incept2 = InceptionA(in_channels=20)
+        self.incept3 = InceptionA(in_channels=40)
 
-        self.dropout = nn.Dropout2d(p=0.5)
+        self.dropout = nn.Dropout2d(p=0.2)
 
         self.mp = nn.MaxPool2d(2)
-        self.fc = nn.Linear(2200, 5)
+        self.fc = nn.Linear(10240, 5)
 
     def forward(self, x):
         in_size = x.size(0)
         x = F.relu(self.mp(self.conv1(x)))
         x = self.incept1(x)
-        x = self.dropout(x)
         x = F.relu(self.mp(self.conv2(x)))
         x = self.incept2(x)
-        x = F.relu(self.mp(self.conv2(x)))
-        x = self.incept2(x)
-        x = self.dropout(x)
-        x = F.relu(self.mp(self.conv2(x)))
-        x = self.incept2(x)
-        x = F.relu(self.mp(self.conv2(x)))
-        x = self.incept2(x)
-        x = self.dropout(x)
+        x = F.relu(self.mp(self.conv3(x)))
+        x = self.incept3(x)
+        x = F.relu(self.mp(self.conv3(x)))
+        x = self.incept3(x)
+        x = F.relu(self.mp(self.conv3(x)))
+        x = self.incept3(x)
+        x = F.relu(self.mp(self.conv3(x)))
         x = x.view(in_size, -1)  # flatten the tensor
-        x = self.fc(x)
+        x = self.dropout(x)
         return F.log_softmax(x)
 
 
