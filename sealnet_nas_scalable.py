@@ -31,8 +31,8 @@ data_transforms = {
         transforms.RandomRotation(180, expand=True),
         transforms.CenterCrop(arch_input_size * 1.5),
         transforms.RandomResizedCrop(arch_input_size),
-        transforms.ColorJitter(brightness = np.random.choice([0, 1]) * 0.05,
-                               contrast = np.random.choice([0, 1]) * 0.05),
+        transforms.ColorJitter(brightness=np.random.choice([0, 1]) * 0.05,
+                               contrast=np.random.choice([0, 1]) * 0.05),
         transforms.ToTensor(),
         transforms.Normalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225])
     ]),
@@ -71,9 +71,9 @@ weights = torch.DoubleTensor(weights)
 sampler = torch.utils.data.sampler.WeightedRandomSampler(weights, len(weights))
 
 # change batch size ot match number of GPU's being used?
-dataloaders = {"training": torch.utils.data.DataLoader(image_datasets["training"], batch_size=8,
+dataloaders = {"training": torch.utils.data.DataLoader(image_datasets["training"], batch_size=16,
                                                        sampler=sampler, num_workers=1),
-               "validation": torch.utils.data.DataLoader(image_datasets["validation"], batch_size=4,
+               "validation": torch.utils.data.DataLoader(image_datasets["validation"], batch_size=2,
                                                          num_workers=1)
                }
 dataset_sizes = {x: len(image_datasets[x]) for x in ['training', 'validation']}
@@ -189,25 +189,25 @@ class BranchSeparablesReduction(BranchSeparables):
 
 class CellStem0(nn.Module):
 
-    def __init__(self):
+    def __init__(self, in_channels, out_channels):
         super(CellStem0, self).__init__()
         self.conv_1x1 = nn.Sequential()
         self.conv_1x1.add_module('relu', nn.ReLU())
-        self.conv_1x1.add_module('conv', nn.Conv2d(96, 42, 1, stride=1, bias=False))
-        self.conv_1x1.add_module('bn', nn.BatchNorm2d(42, eps=0.001, momentum=0.1, affine=True))
+        self.conv_1x1.add_module('conv', nn.Conv2d(in_channels, out_channels, 1, stride=1, bias=False))
+        self.conv_1x1.add_module('bn', nn.BatchNorm2d(out_channels, eps=0.001, momentum=0.1, affine=True))
 
-        self.comb_iter_0_left = BranchSeparables(42, 42, 5, 2, 2)
-        self.comb_iter_0_right = BranchSeparablesStem(96, 42, 7, 2, 3, bias=False)
+        self.comb_iter_0_left = BranchSeparables(out_channels, out_channels, 5, 2, 2)
+        self.comb_iter_0_right = BranchSeparablesStem(in_channels, out_channels, 7, 2, 3, bias=False)
 
         self.comb_iter_1_left = nn.MaxPool2d(3, stride=2, padding=1)
-        self.comb_iter_1_right = BranchSeparablesStem(96, 42, 7, 2, 3, bias=False)
+        self.comb_iter_1_right = BranchSeparablesStem(in_channels, out_channels, 7, 2, 3, bias=False)
 
         self.comb_iter_2_left = nn.AvgPool2d(3, stride=2, padding=1, count_include_pad=False)
-        self.comb_iter_2_right = BranchSeparablesStem(96, 42, 5, 2, 2, bias=False)
+        self.comb_iter_2_right = BranchSeparablesStem(in_channels, out_channels, 5, 2, 2, bias=False)
 
         self.comb_iter_3_right = nn.AvgPool2d(3, stride=1, padding=1, count_include_pad=False)
 
-        self.comb_iter_4_left = BranchSeparables(42, 42, 3, 1, 1, bias=False)
+        self.comb_iter_4_left = BranchSeparables(out_channels, out_channels, 3, 1, 1, bias=False)
         self.comb_iter_4_right = nn.MaxPool2d(3, stride=2, padding=1)
 
     def forward(self, x):
@@ -238,36 +238,36 @@ class CellStem0(nn.Module):
 
 class CellStem1(nn.Module):
 
-    def __init__(self):
+    def __init__(self, in_channels, out_channels):
         super(CellStem1, self).__init__()
         self.conv_1x1 = nn.Sequential()
         self.conv_1x1.add_module('relu', nn.ReLU())
-        self.conv_1x1.add_module('conv', nn.Conv2d(168, 84, 1, stride=1, bias=False))
-        self.conv_1x1.add_module('bn', nn.BatchNorm2d(84, eps=0.001, momentum=0.1, affine=True))
+        self.conv_1x1.add_module('conv', nn.Conv2d(out_channels*4, out_channels*2, 1, stride=1, bias=False))
+        self.conv_1x1.add_module('bn', nn.BatchNorm2d(out_channels*2, eps=0.001, momentum=0.1, affine=True))
 
         self.relu = nn.ReLU()
         self.path_1 = nn.Sequential()
         self.path_1.add_module('avgpool', nn.AvgPool2d(1, stride=2, count_include_pad=False))
-        self.path_1.add_module('conv', nn.Conv2d(96, 42, 1, stride=1, bias=False))
+        self.path_1.add_module('conv', nn.Conv2d(in_channels, out_channels, 1, stride=1, bias=False))
         self.path_2 = nn.ModuleList()
         self.path_2.add_module('pad', nn.ZeroPad2d((0, 1, 0, 1)))
         self.path_2.add_module('avgpool', nn.AvgPool2d(1, stride=2, count_include_pad=False))
-        self.path_2.add_module('conv', nn.Conv2d(96, 42, 1, stride=1, bias=False))
+        self.path_2.add_module('conv', nn.Conv2d(in_channels, out_channels, 1, stride=1, bias=False))
 
-        self.final_path_bn = nn.BatchNorm2d(84, eps=0.001, momentum=0.1, affine=True)
+        self.final_path_bn = nn.BatchNorm2d(out_channels*2, eps=0.001, momentum=0.1, affine=True)
 
-        self.comb_iter_0_left = BranchSeparables(84, 84, 5, 2, 2, bias=False)
-        self.comb_iter_0_right = BranchSeparables(84, 84, 7, 2, 3, bias=False)
+        self.comb_iter_0_left = BranchSeparables(out_channels*2, out_channels*2, 5, 2, 2, bias=False)
+        self.comb_iter_0_right = BranchSeparables(out_channels*2, out_channels*2, 7, 2, 3, bias=False)
 
         self.comb_iter_1_left = nn.MaxPool2d(3, stride=2, padding=1)
-        self.comb_iter_1_right = BranchSeparables(84, 84, 7, 2, 3, bias=False)
+        self.comb_iter_1_right = BranchSeparables(out_channels*2, out_channels*2, 7, 2, 3, bias=False)
 
         self.comb_iter_2_left = nn.AvgPool2d(3, stride=2, padding=1, count_include_pad=False)
-        self.comb_iter_2_right = BranchSeparables(84, 84, 5, 2, 2, bias=False)
+        self.comb_iter_2_right = BranchSeparables(out_channels*2, out_channels*2, 5, 2, 2, bias=False)
 
         self.comb_iter_3_right = nn.AvgPool2d(3, stride=1, padding=1, count_include_pad=False)
 
-        self.comb_iter_4_left = BranchSeparables(84, 84, 3, 1, 1, bias=False)
+        self.comb_iter_4_left = BranchSeparables(out_channels*2, out_channels*2, 3, 1, 1, bias=False)
         self.comb_iter_4_right = nn.MaxPool2d(3, stride=2, padding=1)
 
     def forward(self, x_conv0, x_stem_0):
@@ -541,67 +541,67 @@ class ReductionCell1(nn.Module):
 
 class NASNetALarge(nn.Module):
 
-    def __init__(self, num_classes=5):
+    def __init__(self, in_channels_0, out_channels_0, out_channels_1, out_channels_2, out_channels_3, num_classes=5):
         super(NASNetALarge, self).__init__()
         self.num_classes = num_classes
 
         self.conv0 = nn.Sequential()
-        self.conv0.add_module('conv', nn.Conv2d(in_channels=3, out_channels=96, kernel_size=3, padding=0, stride=2,
-                                                bias=False))
-        self.conv0.add_module('bn', nn.BatchNorm2d(96, eps=0.001, momentum=0.1, affine=True))
+        self.conv0.add_module('conv', nn.Conv2d(in_channels=3, out_channels=in_channels_0, kernel_size=3, padding=0, 
+                                                stride=2, bias=False))
+        self.conv0.add_module('bn', nn.BatchNorm2d(in_channels_0, eps=0.001, momentum=0.1, affine=True))
 
-        self.cell_stem_0 = CellStem0()
-        self.cell_stem_1 = CellStem1()
+        self.cell_stem_0 = CellStem0(in_channels=in_channels_0, out_channels=out_channels_0)
+        self.cell_stem_1 = CellStem1(in_channels=in_channels_0, out_channels=out_channels_0)
 
-        self.cell_0 = FirstCell(in_channels_left=168, out_channels_left=48,
-                                in_channels_right=336, out_channels_right=96)
-        self.cell_1 = NormalCell(in_channels_left=336, out_channels_left=96,
-                                 in_channels_right=576, out_channels_right=96)
-        self.cell_2 = NormalCell(in_channels_left=576, out_channels_left=96,
-                                 in_channels_right=576, out_channels_right=96)
-        self.cell_3 = NormalCell(in_channels_left=576, out_channels_left=96,
-                                 in_channels_right=576, out_channels_right=96)
-        self.cell_4 = NormalCell(in_channels_left=576, out_channels_left=96,
-                                 in_channels_right=576, out_channels_right=96)
-        self.cell_5 = NormalCell(in_channels_left=576, out_channels_left=96,
-                                 in_channels_right=576, out_channels_right=96)
+        self.cell_0 = FirstCell(in_channels_left=out_channels_0*4, out_channels_left=out_channels_1,
+                                in_channels_right=out_channels_0*8, out_channels_right=out_channels_1*2)
+        self.cell_1 = NormalCell(in_channels_left=out_channels_0*8, out_channels_left=out_channels_1*2,
+                                 in_channels_right=out_channels_1*12, out_channels_right=out_channels_1*2)
+        self.cell_2 = NormalCell(in_channels_left=out_channels_1*12, out_channels_left=out_channels_1*2,
+                                 in_channels_right=out_channels_1*12, out_channels_right=out_channels_1*2)
+        self.cell_3 = NormalCell(in_channels_left=out_channels_1*12, out_channels_left=out_channels_1*2,
+                                 in_channels_right=out_channels_1*12, out_channels_right=out_channels_1*2)
+        self.cell_4 = NormalCell(in_channels_left=out_channels_1*12, out_channels_left=out_channels_1*2,
+                                 in_channels_right=out_channels_1*12, out_channels_right=out_channels_1*2)
+        self.cell_5 = NormalCell(in_channels_left=out_channels_1*12, out_channels_left=out_channels_1*2,
+                                 in_channels_right=out_channels_1*12, out_channels_right=out_channels_1*2)
 
-        self.reduction_cell_0 = ReductionCell0(in_channels_left=576, out_channels_left=168,
-                                               in_channels_right=576, out_channels_right=168)
+        self.reduction_cell_0 = ReductionCell0(in_channels_left=out_channels_1*12, out_channels_left=out_channels_1*4,
+                                               in_channels_right=out_channels_1*12, out_channels_right=out_channels_1*4)
 
-        self.cell_6 = FirstCell(in_channels_left=576, out_channels_left=96,
-                                in_channels_right=672, out_channels_right=192)
-        self.cell_7 = NormalCell(in_channels_left=672, out_channels_left=192,
-                                 in_channels_right=1152, out_channels_right=192)
-        self.cell_8 = NormalCell(in_channels_left=1152, out_channels_left=192,
-                                 in_channels_right=1152, out_channels_right=192)
-        self.cell_9 = NormalCell(in_channels_left=1152, out_channels_left=192,
-                                 in_channels_right=1152, out_channels_right=192)
-        self.cell_10 = NormalCell(in_channels_left=1152, out_channels_left=192,
-                                  in_channels_right=1152, out_channels_right=192)
-        self.cell_11 = NormalCell(in_channels_left=1152, out_channels_left=192,
-                                  in_channels_right=1152, out_channels_right=192)
+        self.cell_6 = FirstCell(in_channels_left=out_channels_1*12, out_channels_left=out_channels_2,
+                                in_channels_right=out_channels_1*16, out_channels_right=out_channels_2*2)
+        self.cell_7 = NormalCell(in_channels_left=out_channels_1*16, out_channels_left=out_channels_2*2,
+                                 in_channels_right=out_channels_2*12, out_channels_right=out_channels_2*2)
+        self.cell_8 = NormalCell(in_channels_left=out_channels_2*12, out_channels_left=out_channels_2*2,
+                                 in_channels_right=out_channels_2*12, out_channels_right=out_channels_2*2)
+        self.cell_9 = NormalCell(in_channels_left=out_channels_2*12, out_channels_left=out_channels_2*2,
+                                 in_channels_right=out_channels_2*12, out_channels_right=out_channels_2*2)
+        self.cell_10 = NormalCell(in_channels_left=out_channels_2*12, out_channels_left=out_channels_2*2,
+                                  in_channels_right=out_channels_2*12, out_channels_right=out_channels_2*2)
+        self.cell_11 = NormalCell(in_channels_left=out_channels_2*12, out_channels_left=out_channels_2*2,
+                                  in_channels_right=out_channels_2*12, out_channels_right=out_channels_2*2)
 
-        self.reduction_cell_1 = ReductionCell1(in_channels_left=1152, out_channels_left=336,
-                                               in_channels_right=1152, out_channels_right=336)
+        self.reduction_cell_1 = ReductionCell1(in_channels_left=out_channels_2*12, out_channels_left=out_channels_2*4,
+                                               in_channels_right=out_channels_2*12, out_channels_right=out_channels_2*4)
 
-        self.cell_12 = FirstCell(in_channels_left=1152, out_channels_left=192,
-                                 in_channels_right=1344, out_channels_right=384)
-        self.cell_13 = NormalCell(in_channels_left=1344, out_channels_left=384,
-                                  in_channels_right=2304, out_channels_right=384)
-        self.cell_14 = NormalCell(in_channels_left=2304, out_channels_left=384,
-                                  in_channels_right=2304, out_channels_right=384)
-        self.cell_15 = NormalCell(in_channels_left=2304, out_channels_left=384,
-                                  in_channels_right=2304, out_channels_right=384)
-        self.cell_16 = NormalCell(in_channels_left=2304, out_channels_left=384,
-                                  in_channels_right=2304, out_channels_right=384)
-        self.cell_17 = NormalCell(in_channels_left=2304, out_channels_left=384,
-                                  in_channels_right=2304, out_channels_right=384)
+        self.cell_12 = FirstCell(in_channels_left=out_channels_2*12, out_channels_left=out_channels_3,
+                                 in_channels_right=out_channels_2*16, out_channels_right=out_channels_3*2)
+        self.cell_13 = NormalCell(in_channels_left=out_channels_2*16, out_channels_left=out_channels_3*2,
+                                  in_channels_right=out_channels_3*12, out_channels_right=out_channels_3*2)
+        self.cell_14 = NormalCell(in_channels_left=out_channels_3*12, out_channels_left=out_channels_3*2,
+                                  in_channels_right=out_channels_3*12, out_channels_right=out_channels_3*2)
+        self.cell_15 = NormalCell(in_channels_left=out_channels_3*12, out_channels_left=out_channels_3*2,
+                                  in_channels_right=out_channels_3*12, out_channels_right=out_channels_3*2)
+        self.cell_16 = NormalCell(in_channels_left=out_channels_3*12, out_channels_left=out_channels_3*2,
+                                  in_channels_right=out_channels_3*12, out_channels_right=out_channels_3*2)
+        self.cell_17 = NormalCell(in_channels_left=out_channels_3*12, out_channels_left=out_channels_3*2,
+                                  in_channels_right=out_channels_3*12, out_channels_right=out_channels_3*2)
 
         self.relu = nn.ReLU()
         self.avg_pool = nn.AvgPool2d(10, stride=1, padding=0)
         self.dropout = nn.Dropout()
-        self.last_linear = nn.Linear(2304, self.num_classes)
+        self.last_linear = nn.Linear(out_channels_3*12, self.num_classes)
 
     def features(self, input):
         x_conv0 = self.conv0(input)
@@ -731,7 +731,7 @@ def train_model(model, criterion, optimizer, num_epochs=25):
 
 def main():
     # loading the pretrained model and adding new classes to it
-    model = NASNetALarge()
+    model = NASNetALarge(in_channels_0=48, out_channels_0=24, out_channels_1=32, out_channels_2=64, out_channels_3=128)
     if use_gpu:
         # i think we can set parallel GPU usage here. will test
         # http://pytorch.org/docs/master/nn.html
