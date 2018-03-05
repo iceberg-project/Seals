@@ -653,7 +653,8 @@ class_names = image_datasets['training'].classes
 
 use_gpu = torch.cuda.is_available()
 
-def train_model(model, criterion, optimizer, num_epochs=25):
+
+def train_model(model, criterion, optimizer, scheduler, num_epochs=25):
     since = time.time()
 
     best_model_wts = copy.deepcopy(model.state_dict())
@@ -666,6 +667,7 @@ def train_model(model, criterion, optimizer, num_epochs=25):
         # Each epoch has a training and validation phase
         for phase in ['training', 'validation']:
             if phase == 'training':
+                scheduler.step()
                 model.train(True)  # Set model to training mode
             else:
                 model.train(False)  # Set model to evaluate mode
