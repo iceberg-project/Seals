@@ -742,14 +742,16 @@ def main():
         # model_ft = nn.DataParallel(model_ft).cuda()
         model = model.cuda()
 
-    #criterion = nn.CrossEntropyLoss()
     criterion = nn.CrossEntropyLoss().cuda()
 
     # Observe that all parameters are being optimized
-    optimizer_ft = optim.Adam(model.parameters(), lr=0.001, weight_decay=0.95)
+    optimizer_ft = optim.Adam(model.parameters(), lr=0.001)
+
+    # Decay LR by a factor of 0.1 every 7 epochs
+    exp_lr_scheduler = lr_scheduler.StepLR(optimizer_ft, step_size=1, gamma=0.99)
 
     # start training
-    model = train_model(model, criterion, optimizer_ft, num_epochs=500)
+    model = train_model(model, criterion, optimizer_ft, exp_lr_scheduler, num_epochs=500)
 
 
 if __name__ == '__main__':
