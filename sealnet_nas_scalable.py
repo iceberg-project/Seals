@@ -3,9 +3,9 @@ import torch.nn as nn
 import torch.optim as optim
 from torch.optim import lr_scheduler
 import numpy as np
-from torchvision import datasets, models, transforms
+from torchvision import datasets, transforms
 from torch.autograd import Variable
-import torch.nn.functional as F
+from tensorboardX import SummaryWriter
 import time
 import os
 import copy
@@ -660,6 +660,11 @@ def train_model(model, criterion, optimizer, scheduler, num_epochs=25):
     best_model_wts = copy.deepcopy(model.state_dict())
     best_acc = 0.0
 
+    # create summary writer for tensorboardX
+    writer = SummaryWriter()
+    # keep track of training iterations
+    global_step = 0
+
     for epoch in range(num_epochs):
         print('Epoch {}/{}'.format(epoch, num_epochs - 1))
         print('-' * 10)
@@ -680,6 +685,9 @@ def train_model(model, criterion, optimizer, scheduler, num_epochs=25):
                 # get the inputs
                 inputs, labels = data
 
+                # create tensorboard variables
+
+
                 # wrap them in Variable
                 if use_gpu:
                     inputs = Variable(inputs.cuda())
@@ -699,6 +707,7 @@ def train_model(model, criterion, optimizer, scheduler, num_epochs=25):
                 if phase == 'training':
                     loss.backward()
                     optimizer.step()
+                    global_step += 1
 
                 # statistics
                 running_loss += loss.data[0] * inputs.size(0)
@@ -706,6 +715,14 @@ def train_model(model, criterion, optimizer, scheduler, num_epochs=25):
 
             epoch_loss = running_loss / dataset_sizes[phase]
             epoch_acc = running_corrects / dataset_sizes[phase]
+            if phase == 'validation':
+                writer.add_scalar('validation_loss', epoch_loss, global_step=global_step)
+                writer.add_scalar('validation_accuracy', epoch_acc, global_step=global_step)
+
+            else:
+                writer.add_scalar('training_loss', epoch_loss, global_step=global_step)
+                writer.add_scalar('training_accuracy', epoch_acc, global_step=global_step)
+                writer.add_scalar('learning_rate', optimizer.param_groups[-1]['lr'], global_step=global_step)
 
             print('{} Loss: {:.4f} Acc: {:.4f}'.format(
                 phase, epoch_loss, epoch_acc))
@@ -749,11 +766,11 @@ def main():
     # Observe that all parameters are being optimized
     optimizer_ft = optim.Adam(model.parameters(), lr=0.001)
 
-    # Decay LR by a factor of 0.1 every 7 epochs
+    # Decay LR by a factor of 0.99 every epoch
     exp_lr_scheduler = lr_scheduler.StepLR(optimizer_ft, step_size=1, gamma=0.99)
 
     # start training
-    model = train_model(model, criterion, optimizer_ft, exp_lr_scheduler, num_epochs=500)
+    model = train_model(model, criterion, optimizer_ft, exp_lr_scheduler, num_epochs=100)
 
 
 if __name__ == '__main__':
