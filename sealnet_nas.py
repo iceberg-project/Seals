@@ -641,6 +641,7 @@ class NASNetALarge(nn.Module):
         x = self.avg_pool(x)
         x = x.view(x.size(0), -1)
         x = self.dropout(x)
+        print(x)
         x = self.last_linear(x)
         return x
 
