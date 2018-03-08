@@ -759,7 +759,7 @@ def main():
         # It should also be an integer multiple of the number of GPUs so that
         # each chunk is the same size (so that each GPU processes the same number of samples).
         # model_ft = nn.DataParallel(model_ft).cuda()
-        model = model.cuda()
+        model = nn.DataParallel(model).cuda()
 
     criterion = nn.CrossEntropyLoss().cuda()
 
