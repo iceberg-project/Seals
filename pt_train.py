@@ -40,7 +40,6 @@ data_transforms = {
         transforms.Normalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225])
     ]),
     'validation': transforms.Compose([
-        #transforms.Resize(int(arch_input_size * np.random.uniform(1.05, 1.1))),
         transforms.CenterCrop(arch_input_size),
         transforms.ToTensor(),
         transforms.Normalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225])
