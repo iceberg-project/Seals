@@ -9,7 +9,15 @@ from collections import defaultdict
 params = cv2.SimpleBlobDetector_Params()
 params.filterByArea = True
 params.minArea = 8
-params.maxArea = 30
+params.maxArea = 35
+params.thresholdStep = 18
+params.filterByCircularity = True
+params.minCircularity = 0.3
+params.filterByConvexity = True
+params.minConvexity = 0.6
+params.filterByInertia = True
+params.maxInertiaRatio = 0.1
+params.maxInertiaRatio = 0.6
 detector = cv2.SimpleBlobDetector_create(params)
 
 # Classes with positive examples
@@ -19,15 +27,14 @@ pos_classes = ['crabeater', 'weddell']
 out = {}
 
 # Navigate to folders with seals
-for path, subdirs, files in os.walk('./classified_images'):
-        print(subdirs)
+for folder in pos_classes:
+    for path, _, files in os.walk('./classified_images/{}/'.format(folder)):
         for idx, filename in enumerate(files):
             f = os.path.join(path, filename)
             try:
                 image = cv2.imread(f, cv2.IMREAD_GRAYSCALE)
                 # Use detector to find keypoints in image
                 keypoints = detector.detect(image=image)
-                print(keypoints)
                 im_with_keypoints = cv2.drawKeypoints(image, keypoints, np.array([]), (0, 0, 255),
                                                       cv2.DRAW_MATCHES_FLAGS_DRAW_RICH_KEYPOINTS)
                 cv2.imshow("Keypoints", im_with_keypoints)
@@ -39,5 +46,3 @@ for path, subdirs, files in os.walk('./classified_images'):
                 #os.system("rm \"" + f + "\"")
                 continue
 
-# check output
-print(out)

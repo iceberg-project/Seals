@@ -73,7 +73,7 @@ sampler = torch.utils.data.sampler.WeightedRandomSampler(weights, len(weights))
 # change batch size ot match number of GPU's being used?
 dataloaders = {"training": torch.utils.data.DataLoader(image_datasets["training"], batch_size=16,
                                                        sampler=sampler, num_workers=1),
-               "validation": torch.utils.data.DataLoader(image_datasets["validation"], batch_size=2,
+               "validation": torch.utils.data.DataLoader(image_datasets["validation"], batch_size=1,
                                                          num_workers=1)
                }
 dataset_sizes = {x: len(image_datasets[x]) for x in ['training', 'validation']}
@@ -759,7 +759,7 @@ def main():
         # It should also be an integer multiple of the number of GPUs so that
         # each chunk is the same size (so that each GPU processes the same number of samples).
         # model_ft = nn.DataParallel(model_ft).cuda()
-        model = nn.DataParallel(model).cuda()
+        model = model.cuda()
 
     criterion = nn.CrossEntropyLoss().cuda()
 
