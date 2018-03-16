@@ -770,7 +770,7 @@ def main():
     exp_lr_scheduler = lr_scheduler.StepLR(optimizer_ft, step_size=1, gamma=0.99)
 
     # start training
-    model = train_model(model, criterion, optimizer_ft, exp_lr_scheduler, num_epochs=2)
+    model = train_model(model, criterion, optimizer_ft, exp_lr_scheduler, num_epochs=100)
 
 
 if __name__ == '__main__':
