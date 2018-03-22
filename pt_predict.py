@@ -45,7 +45,7 @@ def main():
     if use_gpu:
         nn_model.cuda()
     # recursively iterate over all files in the base folder and classify them
-    for path, subdirs, files in os.walk(data_dir):
+    for path, _, files in os.walk(data_dir):
         for filename in files:
             filename_lower = filename.lower()
             if not (any(filename_lower.endswith(ext) for ext in img_exts)):
