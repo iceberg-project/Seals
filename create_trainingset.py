@@ -52,12 +52,11 @@ def get_patches(raster_dir: str, vector_df: str, lon: str, lat: str, patch_sizes
     # keep track of how many points were processed
     num_imgs = 0
     for rs in rasters:
-        gdata = gdal.Open('{}'.format(rs))
+        gdata = gdal.Open(rs)
         ulx, xres, _, uly, _, yres = gdata.GetGeoTransform()
         lrx = ulx + (gdata.RasterXSize * xres)
         lry = uly + (gdata.RasterYSize * yres)
         band = gdata.GetRasterBand(1)
-        #del gdata
         no_data = band.GetNoDataValue()
 
         w, h = xres, yres
@@ -81,38 +80,57 @@ def get_patches(raster_dir: str, vector_df: str, lon: str, lat: str, patch_sizes
 
         x0, y0 = lat_lon_ul[0], lat_lon_ul[1]
         xc, yc = lat_lon_lr[0], lat_lon_lr[1]
-        data = band.ReadAsArray().astype(np.int8)
-        #del band
-        #data = np.pad(data, pad_width=patch_sizes[-1], mode='constant', constant_values=0)
-        #TODO: add padding to raster data based on the last element patch_sizes
+
+        x0 = -64.56732
+        y0 = -65.45726
+
+        xc = -64.21298
+        yc = -65.53877
+
+        print(x0, y0)
+
+        data = band.ReadAsArray().astype(np.uint8)
+
+        # free up memory
+        del gdata
+
+        # add padding to prevent out of range indices on borders
+        data = np.pad(data, pad_width=patch_sizes[-1], mode='constant', constant_values=0)
+
+        # filter points to include points inside current raster
+        df_rs = df.loc[df['scene'] == os.path.basename(rs)]
+
+
 
         # iterate through the points
-        for p in df.iterrows():
+        for p in df_rs.iterrows():
             x = int((p[1][lon] - x0) * data.shape[0] / (xc - x0))
             y = int((p[1][lat] - y0) * data.shape[1] / (yc - y0))
-            print(x)
-            print(y)
+            print(p[1][lon] - x0)
+            print(p[1][lat] - y0)
             bands = []
             for scale in patch_sizes:
                 try:
                     if data[y, x] != no_data:
-                        #TODO: save patch image to correct subfolder based on label
-                        patch = data[y - int(scale/2): y + int(scale/2), x - int(scale/2): x + int(scale/2)]
-                        patch = cv2.resize(patch, (scale[0], scale[0]))
+                        # extract patches at different scales
+                        patch = data[y - int(scale/2): y + int((scale+1)/2), x - int(scale/2): x + int((scale+1)/2)]
+                        patch = cv2.resize(patch, (patch_sizes[0], patch_sizes[0]))
                         bands.append(patch)
                 except:
                     pass
-            #TODO: merge bands into a numpy array and write to folder
-            bands = np.array(bands)
-            print(bands.shape)
-            file = "./{}/{}/{}.jpg".format(np.random.choice(['training', 'validation'], p=[train_prop, 1-train_prop]),
-                                           p[1]['label'], num_imgs)
-            cv2.imwrite(file, bands)
-            num_imgs += 1
+            if len(bands) == 3:
+                # combine bands into an image
+                bands = np.dstack(bands)
+                # save patch image to correct subfolder based on label
+                file = "./{}/{}/{}.jpg".format(np.random.choice(['training', 'validation'],
+                                                                p=[train_prop, 1-train_prop]),
+                                               p[1]['label'], num_imgs)
+                cv2.imwrite(file, bands)
+                num_imgs += 1
 
         del data, band
     return None
 
 
 get_patches(raster_dir="/home/bento/imagery", vector_df="temp-nodes.csv", lat='y', lon='x',
-            patch_sizes=[299, 600, 1200], labels=["crabeater", "weddell", "other", "pack-ice", "emperor"])
+            patch_sizes=[299, 1000, 3000], labels=["crabeater", "weddell", "other", "pack-ice", "emperor"])
