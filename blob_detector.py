@@ -24,7 +24,8 @@ detector = cv2.SimpleBlobDetector_create(params)
 pos_classes = ['crabeater', 'weddell']
 
 # Save output in a dictionary
-out = {}
+images = []
+keyp = []
 
 # Navigate to folders with seals
 for folder in pos_classes:
@@ -37,12 +38,52 @@ for folder in pos_classes:
                 keypoints = detector.detect(image=image)
                 im_with_keypoints = cv2.drawKeypoints(image, keypoints, np.array([]), (0, 0, 255),
                                                       cv2.DRAW_MATCHES_FLAGS_DRAW_RICH_KEYPOINTS)
+                images.append(f)
+                keyp.append(keypoints)
                 cv2.imshow("Keypoints", im_with_keypoints)
                 cv2.waitKey(0)
-                #cv2.imwrite("{}_with_keypoints.jpg".format(f[:-3]))
-                #out[filename] = keypoints
+
             except:
                 print('blob_detector: cv2.imread failed - Removed: ' + f)
-                #os.system("rm \"" + f + "\"")
+                os.system("rm \"" + f + "\"")
                 continue
+
+
+out_df = pd.DataFrame({'image': images,
+                       'key_points': keyp})
+
+# write detections to csv file
+
+
+
+
+
+
+
+
+
+
+
+out_df.to_csv('detections.csv')
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
