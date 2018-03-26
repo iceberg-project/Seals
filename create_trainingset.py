@@ -44,8 +44,12 @@ def get_patches(raster_dir: str, vector_df: str, lon: str, lat: str, patch_sizes
     for path, _, files in os.walk(raster_dir):
         for filename in files:
             filename_lower = filename.lower()
+            # only add raster files wth annotated points
             if not filename_lower.endswith('.tif'):
                 print('{} is not a valid scene.'.format(filename_lower))
+                continue
+            if filename not in pd.unique(vector_df['scene']):
+                print('{} is not an annotated scene.'.format(filename_lower))
                 continue
             rasters.append(os.path.join(path, filename))
 
@@ -65,15 +69,15 @@ def get_patches(raster_dir: str, vector_df: str, lon: str, lat: str, patch_sizes
         del gdata
 
         # add padding to prevent out of range indices close to borders
-        data = np.pad(data, pad_width=patch_sizes[-1], mode='constant', constant_values=0)
+        data = np.pad(data, pad_width=patch_sizes[-1] // 2, mode='constant', constant_values=0)
 
         # filter points to include points inside current raster
         df_rs = df.loc[df['scene'] == os.path.basename(rs)]
 
         # iterate through the points
         for p in df_rs.iterrows():
-            x = int((p[1][lon] - x0) / w) + patch_sizes[-1]
-            y = int((p[1][lat] - y0) / h) + patch_sizes[-1]
+            x = int((p[1][lon] - x0) / w) + patch_sizes[-1] // 2
+            y = int((p[1][lat] - y0) / h) + patch_sizes[-1] // 2
             bands = []
             # extract patches at different scales
             for scale in patch_sizes:
