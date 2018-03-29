@@ -43,7 +43,7 @@ data_transforms = {
     ]),
 }
 
-data_dir = './nn_images'
+data_dir = './training_set'
 image_datasets = {x: datasets.ImageFolder(os.path.join(data_dir, x),
                                           data_transforms[x])
                   for x in ['training', 'validation']}
@@ -666,7 +666,7 @@ def train_model(model, criterion, optimizer, scheduler, num_epochs=25):
     global_step = 0
 
     for epoch in range(num_epochs):
-        print('Epoch {}/{}'.format(epoch, num_epochs - 1))
+        print('Epoch {}/{}'.format(epoch + 1, num_epochs))
         print('-' * 10)
 
         # Each epoch has a training and validation phase
@@ -726,6 +726,9 @@ def train_model(model, criterion, optimizer, scheduler, num_epochs=25):
 
             print('{} Loss: {:.4f} Acc: {:.4f}'.format(
                 phase, epoch_loss, epoch_acc))
+            time_elapsed = time.time() - since
+            print('training time: {}h {:.0f}m {:.0f}s'.format(time_elapsed // 3600, time_elapsed // 60,
+                                                              time_elapsed % 60))
 
             # deep copy the model
             if phase == 'validation' and epoch_acc > best_acc:
@@ -735,8 +738,8 @@ def train_model(model, criterion, optimizer, scheduler, num_epochs=25):
         print()
 
     time_elapsed = time.time() - since
-    print('Training complete in {:.0f}m {:.0f}s'.format(
-        time_elapsed // 60, time_elapsed % 60))
+    print('Training complete in {}h {:.0f}m {:.0f}s'.format(
+        time_elapsed // 3600, time_elapsed // 60, time_elapsed % 60))
     print('Best val Acc: {:4f}'.format(best_acc))
 
     # load best model weights
@@ -770,7 +773,7 @@ def main():
     exp_lr_scheduler = lr_scheduler.StepLR(optimizer_ft, step_size=1, gamma=0.99)
 
     # start training
-    model = train_model(model, criterion, optimizer_ft, exp_lr_scheduler, num_epochs=100)
+    model = train_model(model, criterion, optimizer_ft, exp_lr_scheduler, num_epochs=30)
 
 
 if __name__ == '__main__':

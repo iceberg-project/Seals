@@ -1,12 +1,11 @@
 import pandas as pd
 import numpy as np
 import os
-from osgeo import gdal, ogr, osr
+from osgeo import gdal
 import cv2
 
 
-def get_patches(raster_dir: str, vector_df: str, lon: str, lat: str, patch_sizes: list, labels: list,
-                train_prop: float=0.9) -> object:
+def get_patches(raster_dir: str, vector_df: str, lon: str, lat: str, patch_sizes: list, labels: list) -> object:
     """
     Generates multi-band patches at different scales around vector points to use as a training set.
 
@@ -19,24 +18,27 @@ def get_patches(raster_dir: str, vector_df: str, lon: str, lat: str, patch_sizes
         patch_sizes : list with pyramid dimensions in multi-band output, first element is used as base dimension,
             subsequent elements must be larger than the previous element and will be re-sized to match patch_sizes[0]
         labels : list with training set labels
-        train_prop : proportion of images added to training set (float between 0 and 1)
 
     Output:
         folder with extracted multi-band training images separated in subfolders by intended label
     """
     # check for invalid inputs
-    assert 1 >= train_prop >= 0, "Proportion of images going to training set is not a valid probability"
-    assert sum([patch_sizes[idx] >= patch_sizes[idx+1] for idx in range(len(patch_sizes) - 1)]) == 0,\
+    assert sum([patch_sizes[idx] > patch_sizes[idx+1] for idx in range(len(patch_sizes) - 1)]) == 0,\
         "Patch sizes with non-increasing dimensions"
 
     # read pandas data.frame
     df = pd.read_csv(vector_df)
+    print(pd.unique(df['scene']))
+
+    # create training set directory
+    if not os.path.exists("./training_set"):
+        os.makedirs("./training_set")
 
     for folder in ['training', 'validation']:
-        if not os.path.exists("./{}".format(folder)):
-            os.makedirs("./{}".format(folder))
+        if not os.path.exists("./training_set/{}".format(folder)):
+            os.makedirs("./training_set/{}".format(folder))
         for lbl in labels:
-            subdir = "./{}/{}".format(folder, lbl)
+            subdir = "./training_set/{}/{}".format(folder, lbl)
             if not os.path.exists(subdir):
                 os.makedirs(subdir)
 
@@ -46,10 +48,10 @@ def get_patches(raster_dir: str, vector_df: str, lon: str, lat: str, patch_sizes
             filename_lower = filename.lower()
             # only add raster files wth annotated points
             if not filename_lower.endswith('.tif'):
-                print('{} is not a valid scene.'.format(filename_lower))
+                print('{} is not a valid scene.'.format(filename))
                 continue
-            if filename not in pd.unique(vector_df['scene']):
-                print('{} is not an annotated scene.'.format(filename_lower))
+            if filename not in pd.unique(df['scene']):
+                print('{} is not an annotated scene.'.format(filename))
                 continue
             rasters.append(os.path.join(path, filename))
 
@@ -81,18 +83,19 @@ def get_patches(raster_dir: str, vector_df: str, lon: str, lat: str, patch_sizes
             bands = []
             # extract patches at different scales
             for scale in patch_sizes:
-                patch = data[y - int(scale/2): y + int((scale+1)/2), x - int(scale/2): x + int((scale+1)/2)]
-                patch = cv2.resize(patch, (patch_sizes[0], patch_sizes[0]))
-                bands.append(patch)
+                try:
+                    patch = data[y - int(scale/2): y + int((scale+1)/2), x - int(scale/2): x + int((scale+1)/2)]
+                    patch = cv2.resize(patch, (patch_sizes[0], patch_sizes[0]))
+                    bands.append(patch)
+                except:
+                    continue
 
             # check if we have a valid image
             if len(bands) == len(patch_sizes):
                 # combine bands into an image
                 bands = np.dstack(bands)
                 # save patch image to correct subfolder based on label
-                file = "./{}/{}/{}.jpg".format(np.random.choice(['training', 'validation'],
-                                                                p=[train_prop, 1-train_prop]),
-                                               p[1]['label'], num_imgs)
+                file = "./training_set/{}/{}/{}.jpg".format(p[1]['dataset'], p[1]['label'], num_imgs)
                 cv2.imwrite(file, bands)
                 num_imgs += 1
 
@@ -101,4 +104,4 @@ def get_patches(raster_dir: str, vector_df: str, lon: str, lat: str, patch_sizes
 
 
 get_patches(raster_dir="/home/bento/imagery", vector_df="temp-nodes.csv", lat='y', lon='x',
-            patch_sizes=[450, 1350, 4000], labels=["crabeater", "weddell", "other", "pack-ice", "emperor"])
+            patch_sizes=[450, 450, 450], labels=["crabeater", "weddell", "other", "pack-ice", "emperor"])
