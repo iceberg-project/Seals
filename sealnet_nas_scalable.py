@@ -7,6 +7,7 @@ from torchvision import datasets, transforms
 from torch.autograd import Variable
 from tensorboardX import SummaryWriter
 import time
+import datetime
 import os
 import copy
 
@@ -726,27 +727,29 @@ def train_model(model, criterion, optimizer, scheduler, num_epochs=25):
 
             print('{} Loss: {:.4f} Acc: {:.4f}'.format(
                 phase, epoch_loss, epoch_acc))
-            time_elapsed = time.time() - since
-            print('training time: {}h {:.0f}m {:.0f}s'.format(time_elapsed // 3600, time_elapsed // 60,
-                                                              time_elapsed % 60))
 
             # deep copy the model
             if phase == 'validation' and epoch_acc > best_acc:
                 best_acc = epoch_acc
                 best_model_wts = copy.deepcopy(model.state_dict())
+                time_elapsed = time.time() - since
+                print('training time: {}h {:.0f}m {:.0f}s'.format(time_elapsed // 3600, (time_elapsed % 3600) // 60,
+                                                                  time_elapsed % 60))
 
         print()
 
     time_elapsed = time.time() - since
     print('Training complete in {}h {:.0f}m {:.0f}s'.format(
-        time_elapsed // 3600, time_elapsed // 60, time_elapsed % 60))
+        time_elapsed // 3600, (time_elapsed % 3600) // 60, time_elapsed % 60))
     print('Best val Acc: {:4f}'.format(best_acc))
 
     # load best model weights
     model.load_state_dict(best_model_wts)
 
     # save the model
-    torch.save(model.state_dict(), './nn_model.pth.tar')
+    now = datetime.datetime.now()
+    torch.save(model.state_dict(), './NASnet_{}_{}_{}_{}_{}.tar'.format(now.day, now.month, now.year, now.hour,
+                                                                        now.minute))
 
     return model
 
