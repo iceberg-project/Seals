@@ -19,7 +19,7 @@ get_confusion_matrix = function(csv_file, labels){
         scale_fill_gradient2(low = muted("darkred"), 
                              mid = "white", 
                              high = muted("midnightblue"), 
-                             midpoint = 0) + # determine the colour
+                             midpoint = mean(plot_df$value)) + # determine the colour
         theme(panel.grid.major.x=element_blank(), #no gridlines
               panel.grid.minor.x=element_blank(), 
               panel.grid.major.y=element_blank(), 
@@ -28,13 +28,12 @@ get_confusion_matrix = function(csv_file, labels){
               axis.text.x = element_text(angle=90, hjust = 1,vjust=1,size = 12,face = "bold"),
               plot.title = element_text(size=20,face="bold"),
               axis.text.y = element_text(size = 12,face = "bold")) + 
-        ggtitle("Correlation Plot") + 
+        ggtitle("Confusion Matrix") + 
         theme(legend.title=element_text(face="bold", size=14)) + 
         scale_x_discrete(name="") +
-        scale_y_discrete(name="") +
-        labs(fill="Corr. Coef.")
-
-    return(plot)
+        scale_y_discrete(name="") 
+    
+    print(plot)
     return(conf_matrix)
     
 }
