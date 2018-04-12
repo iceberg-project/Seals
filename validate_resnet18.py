@@ -1,8 +1,7 @@
-from train_sealnet_nas_scalable import *
 import torch
 import pandas as pd
 import datetime
-from torchvision import datasets, transforms
+from torchvision import datasets, transforms, models
 from torch.autograd import Variable
 import time
 import warnings
@@ -87,11 +86,11 @@ def get_conf_matrix(model, val_dir, batch_size=8, input_size=299, to_csv=True):
     print('Validation complete in {}h {:.0f}m {:.0f}s'.format(
         time_elapsed // 3600, time_elapsed // 60, time_elapsed % 60))
     print('Validation Acc: {:4f}'.format(running_corrects / len(dataset)))
-
+    
     if to_csv:
         months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
         now = datetime.datetime.now()
-        conf_matrix.to_csv('NASnet_{}_{}_{}_{}_{}_{}_conf_matrix.csv'.format(val_dir, now.day, months[now.month-1], now.year,
+        conf_matrix.to_csv('Resnet18_{}_{}_{}_{}_{}_{}_conf_matrix.csv'.format(val_dir, now.day, months[now.month-1], now.year,
                                                                       now.hour, now.minute))
 
     return conf_matrix
@@ -100,10 +99,9 @@ def get_conf_matrix(model, val_dir, batch_size=8, input_size=299, to_csv=True):
 def main():
     # loading the pretrained model and adding new classes to it
     # create model instance
-    model = NASNetALarge(in_channels_0=48, out_channels_0=24, out_channels_1=32,
-                         out_channels_2=64, out_channels_3=128)
+    model = models.resnet18(pretrained=False)
     # load saved model weights from pt_train.py
-    model.load_state_dict(torch.load("./NASnet_best_6_4_2018_15_8.tar"))
+    model.load_state_dict(torch.load("./resnet18_best_6_4_2018_16_59.tar"))
 
     # check for GPU support and set model to evaluation mode
     model.eval()

@@ -50,7 +50,6 @@ image_datasets = {x: datasets.ImageFolder(os.path.join(data_dir, x),
                   for x in ['training', 'validation']}
 
 
-
 # Force minibatches to have an equal representation amongst classes during training with a weighted sampler
 def make_weights_for_balanced_classes(images, nclasses):
     count = [0] * nclasses
@@ -654,6 +653,7 @@ class_names = image_datasets['training'].classes
 
 use_gpu = torch.cuda.is_available()
 
+months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
 
 def train_model(model, criterion, optimizer, scheduler, num_epochs=25):
     since = time.time()
@@ -739,9 +739,10 @@ def train_model(model, criterion, optimizer, scheduler, num_epochs=25):
                 if (epoch + 1) % 10 == 0:
                     print("saving model checkpoint\n")
                     now = datetime.datetime.now()
-                    torch.save(model.state_dict(),
-                               './NASnet_{}_{}_{}_{}_{}.tar'.format(now.day, now.month, now.year, now.hour,
-                                                                    now.minute))
+                    torch.save(model.state_dict(), './NASnet_{}_{}_{}_{}_{}_{}.tar'.format(data_dir[2:], now.day,
+                                                                                                months[now.month - 1],
+                                                                                                now.year,
+                                                                                                now.hour, now.minute))
 
     time_elapsed = time.time() - since
     print('Training complete in {}h {:.0f}m {:.0f}s'.format(
@@ -752,9 +753,11 @@ def train_model(model, criterion, optimizer, scheduler, num_epochs=25):
     model.load_state_dict(best_model_wts)
 
     # save the model
+
     now = datetime.datetime.now()
-    torch.save(model.state_dict(), './NASnet_best_{}_{}_{}_{}_{}.tar'.format(now.day, now.month, now.year, now.hour,
-                                                                        now.minute))
+    torch.save(model.state_dict(), './NASnet_best_{}_{}_{}_{}_{}_{}.tar'.format(data_dir[2:], now.day,
+                                                                                months[now.month - 1], now.year,
+                                                                                now.hour, now.minute))
 
     return model
 

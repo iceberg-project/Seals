@@ -81,6 +81,7 @@ class_names = image_datasets['training'].classes
 
 use_gpu = torch.cuda.is_available()
 
+months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
 
 def train_model(model, criterion, optimizer, scheduler, num_epochs=25):
     since = time.time()
@@ -168,10 +169,12 @@ def train_model(model, criterion, optimizer, scheduler, num_epochs=25):
                 # save a checkpoint every 10 epochs
                 if (epoch + 1) % 10 == 0:
                     print("saving model checkpoint\n")
+
                     now = datetime.datetime.now()
-                    torch.save(model.state_dict(),
-                               './resnet18_{}_{}_{}_{}_{}.tar'.format(now.day, now.month, now.year, now.hour,
-                                                                    now.minute))
+                    torch.save(model.state_dict(), './Resnet18_{}_{}_{}_{}_{}_{}.tar'.format(data_dir[2:], now.day,
+                                                                                             months[now.month - 1],
+                                                                                             now.year, now.hour,
+                                                                                             now.minute))
 
     time_elapsed = time.time() - since
     print('Training complete in {}h {:.0f}m {:.0f}s'.format(
@@ -183,8 +186,10 @@ def train_model(model, criterion, optimizer, scheduler, num_epochs=25):
 
     # save the model
     now = datetime.datetime.now()
-    torch.save(model.state_dict(), './resnet18_best_{}_{}_{}_{}_{}.tar'.format(now.day, now.month, now.year, now.hour,
-                                                                        now.minute))
+    torch.save(model.state_dict(), './Resnet18_best_{}_{}_{}_{}_{}_{}.tar'.format(data_dir[2:], now.day,
+                                                                                  months[now.month - 1],
+                                                                                  now.year, now.hour, now.minute))
+
 
     return model
 

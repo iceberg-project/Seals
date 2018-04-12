@@ -77,7 +77,7 @@ labels = c('crabeater', 'weddell', 'pack-ice', 'other', 'emperor', 'open-water',
 pos_classes = c('crabeater', 'weddell', 'emperor', 'marching-emperor')
 
 # run for validation data
-output = get_confusion_matrix(csv_file='12_4_2018_16_20_conf_matrix.csv', labels=labels,
+output = get_confusion_matrix(csv_file='training_set_12_Apr_2018_17_15_conf_matrix.csv', labels=labels,
                           pos_classes=pos_classes)
 
 
