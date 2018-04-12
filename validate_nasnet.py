@@ -1,4 +1,4 @@
-from sealnet_nas_scalable import *
+from train_sealnet_nas_scalable import *
 import torch
 import pandas as pd
 import datetime
@@ -101,7 +101,7 @@ def main():
     model = NASNetALarge(in_channels_0=48, out_channels_0=24, out_channels_1=32,
                          out_channels_2=64, out_channels_3=128)
     # load saved model weights from pt_train.py
-    model.load_state_dict(torch.load("./nn_model.pth.tar"))
+    model.load_state_dict(torch.load("./NASnet_best_6_4_2018_15_8.tar"))
 
     # check for GPU support and set model to evaluation mode
     model.eval()
