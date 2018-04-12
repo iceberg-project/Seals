@@ -542,7 +542,7 @@ class ReductionCell1(nn.Module):
 
 class NASNetALarge(nn.Module):
 
-    def __init__(self, in_channels_0, out_channels_0, out_channels_1, out_channels_2, out_channels_3, num_classes=5):
+    def __init__(self, in_channels_0, out_channels_0, out_channels_1, out_channels_2, out_channels_3, num_classes=11):
         super(NASNetALarge, self).__init__()
         self.num_classes = num_classes
 
@@ -686,9 +686,6 @@ def train_model(model, criterion, optimizer, scheduler, num_epochs=25):
                 # get the inputs
                 inputs, labels = data
 
-                # create tensorboard variables
-
-
                 # wrap them in Variable
                 if use_gpu:
                     inputs = Variable(inputs.cuda())
@@ -728,15 +725,23 @@ def train_model(model, criterion, optimizer, scheduler, num_epochs=25):
             print('{} Loss: {:.4f} Acc: {:.4f}'.format(
                 phase, epoch_loss, epoch_acc))
 
-            # deep copy the model
-            if phase == 'validation' and epoch_acc > best_acc:
-                best_acc = epoch_acc
-                best_model_wts = copy.deepcopy(model.state_dict())
+            if phase == 'validation':
                 time_elapsed = time.time() - since
-                print('training time: {}h {:.0f}m {:.0f}s'.format(time_elapsed // 3600, (time_elapsed % 3600) // 60,
-                                                                  time_elapsed % 60))
+                print('training time: {}h {:.0f}m {:.0f}s\n'.format(time_elapsed // 3600, (time_elapsed % 3600) // 60,
+                                                                    time_elapsed % 60))
 
-        print()
+                # deep copy model parameters if validation accuracy is higher
+                if epoch_acc > best_acc:
+                    best_acc = epoch_acc
+                    best_model_wts = copy.deepcopy(model.state_dict())
+
+                # save a checkpoint every 10 epochs
+                if (epoch + 1) % 10 == 0:
+                    print("saving model checkpoint\n")
+                    now = datetime.datetime.now()
+                    torch.save(model.state_dict(),
+                               './NASnet_{}_{}_{}_{}_{}.tar'.format(now.day, now.month, now.year, now.hour,
+                                                                    now.minute))
 
     time_elapsed = time.time() - since
     print('Training complete in {}h {:.0f}m {:.0f}s'.format(
@@ -748,7 +753,7 @@ def train_model(model, criterion, optimizer, scheduler, num_epochs=25):
 
     # save the model
     now = datetime.datetime.now()
-    torch.save(model.state_dict(), './NASnet_{}_{}_{}_{}_{}.tar'.format(now.day, now.month, now.year, now.hour,
+    torch.save(model.state_dict(), './NASnet_best_{}_{}_{}_{}_{}.tar'.format(now.day, now.month, now.year, now.hour,
                                                                         now.minute))
 
     return model
@@ -776,7 +781,7 @@ def main():
     exp_lr_scheduler = lr_scheduler.StepLR(optimizer_ft, step_size=1, gamma=0.99)
 
     # start training
-    model = train_model(model, criterion, optimizer_ft, exp_lr_scheduler, num_epochs=30)
+    model = train_model(model, criterion, optimizer_ft, exp_lr_scheduler, num_epochs=10)
 
 
 if __name__ == '__main__':

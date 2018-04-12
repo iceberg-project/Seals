@@ -5,9 +5,11 @@ from torch.optim import lr_scheduler
 import numpy as np
 from torchvision import datasets, models, transforms
 from torch.autograd import Variable
-import time
 import os
 import copy
+from tensorboardX import SummaryWriter
+import time
+import datetime
 
 # image transforms seem to cause truncated images, so we need this
 from PIL import ImageFile
@@ -25,17 +27,13 @@ warnings.filterwarnings('ignore', module='PIL')
 arch_input_size = 224
 data_transforms = {
     'training': transforms.Compose([
-        #transforms.Resize(int(arch_input_size * np.random.uniform(1.1, 1.3))),
-        #transforms.RandomResizedCrop(arch_input_size),
         transforms.RandomHorizontalFlip(),
         transforms.RandomVerticalFlip(),
         transforms.RandomRotation(180, expand=True),
         transforms.CenterCrop(arch_input_size * 1.5),
         transforms.RandomResizedCrop(arch_input_size),
-        transforms.ColorJitter(np.random.choice([0, 1]) * 0.05,
-                               np.random.choice([0, 1]) * 0.05,
-                               np.random.choice([0, 1]) * 0.05,
-                               np.random.choice([0, 1]) * 0.05),
+        transforms.ColorJitter(brightness=np.random.choice([0, 1]) * 0.05,
+                               contrast=np.random.choice([0, 1]) * 0.05),
         transforms.ToTensor(),
         transforms.Normalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225])
     ]),
@@ -46,11 +44,10 @@ data_transforms = {
     ]),
 }
 
-data_dir = './nn_images'
+data_dir = './training_set_multiscale'
 image_datasets = {x: datasets.ImageFolder(os.path.join(data_dir, x),
                                           data_transforms[x])
                   for x in ['training', 'validation']}
-
 
 
 # Force minibatches to have an equal representation amongst classes during training with a weighted sampler
@@ -74,7 +71,7 @@ weights = torch.DoubleTensor(weights)
 sampler = torch.utils.data.sampler.WeightedRandomSampler(weights, len(weights))
 
 # change batch size ot match number of GPU's being used?
-dataloaders = {"training": torch.utils.data.DataLoader(image_datasets["training"], batch_size=16,
+dataloaders = {"training": torch.utils.data.DataLoader(image_datasets["training"], batch_size=64,
                                                        sampler=sampler, num_workers=1),
                "validation": torch.utils.data.DataLoader(image_datasets["validation"], batch_size=8,
                                                          num_workers=1)
@@ -84,14 +81,20 @@ class_names = image_datasets['training'].classes
 
 use_gpu = torch.cuda.is_available()
 
+
 def train_model(model, criterion, optimizer, scheduler, num_epochs=25):
     since = time.time()
 
     best_model_wts = copy.deepcopy(model.state_dict())
     best_acc = 0.0
 
+    # create summary writer for tensorboardX
+    writer = SummaryWriter()
+    # keep track of training iterations
+    global_step = 0
+
     for epoch in range(num_epochs):
-        print('Epoch {}/{}'.format(epoch, num_epochs - 1))
+        print('Epoch {}/{}'.format(epoch + 1, num_epochs))
         print('-' * 10)
 
         # Each epoch has a training and validation phase
@@ -109,6 +112,8 @@ def train_model(model, criterion, optimizer, scheduler, num_epochs=25):
             for data in dataloaders[phase]:
                 # get the inputs
                 inputs, labels = data
+
+                # create tensorboard variables
 
                 # wrap them in Variable
                 if use_gpu:
@@ -129,6 +134,7 @@ def train_model(model, criterion, optimizer, scheduler, num_epochs=25):
                 if phase == 'training':
                     loss.backward()
                     optimizer.step()
+                    global_step += 1
 
                 # statistics
                 running_loss += loss.data[0] * inputs.size(0)
@@ -136,34 +142,56 @@ def train_model(model, criterion, optimizer, scheduler, num_epochs=25):
 
             epoch_loss = running_loss / dataset_sizes[phase]
             epoch_acc = running_corrects / dataset_sizes[phase]
+            if phase == 'validation':
+                writer.add_scalar('validation_loss', epoch_loss, global_step=global_step)
+                writer.add_scalar('validation_accuracy', epoch_acc, global_step=global_step)
+
+            else:
+                writer.add_scalar('training_loss', epoch_loss, global_step=global_step)
+                writer.add_scalar('training_accuracy', epoch_acc, global_step=global_step)
+                writer.add_scalar('learning_rate', optimizer.param_groups[-1]['lr'], global_step=global_step)
 
             print('{} Loss: {:.4f} Acc: {:.4f}'.format(
                 phase, epoch_loss, epoch_acc))
 
             # deep copy the model
-            if phase == 'validation' and epoch_acc > best_acc:
-                best_acc = epoch_acc
-                best_model_wts = copy.deepcopy(model.state_dict())
+            if phase == 'validation':
+                time_elapsed = time.time() - since
+                print('training time: {}h {:.0f}m {:.0f}s\n'.format(time_elapsed // 3600, (time_elapsed % 3600) // 60,
+                                                                    time_elapsed % 60))
 
-        print()
+                # deep copy model parameters if validation accuracy is higher
+                if epoch_acc > best_acc:
+                    best_acc = epoch_acc
+                    best_model_wts = copy.deepcopy(model.state_dict())
+
+                # save a checkpoint every 10 epochs
+                if (epoch + 1) % 10 == 0:
+                    print("saving model checkpoint\n")
+                    now = datetime.datetime.now()
+                    torch.save(model.state_dict(),
+                               './resnet18_{}_{}_{}_{}_{}.tar'.format(now.day, now.month, now.year, now.hour,
+                                                                    now.minute))
 
     time_elapsed = time.time() - since
-    print('Training complete in {:.0f}m {:.0f}s'.format(
-        time_elapsed // 60, time_elapsed % 60))
+    print('Training complete in {}h {:.0f}m {:.0f}s'.format(
+        time_elapsed // 3600, (time_elapsed % 3600) // 60, time_elapsed % 60))
     print('Best val Acc: {:4f}'.format(best_acc))
 
     # load best model weights
     model.load_state_dict(best_model_wts)
 
     # save the model
-    torch.save(model, './nn_model.pth.tar')
+    now = datetime.datetime.now()
+    torch.save(model.state_dict(), './resnet18_best_{}_{}_{}_{}_{}.tar'.format(now.day, now.month, now.year, now.hour,
+                                                                        now.minute))
 
     return model
 
 
 def main():
     # loading the pretrained model and adding new classes to it
-    model_ft = models.resnet152(pretrained=False, num_classes=5)
+    model_ft = models.resnet18(pretrained=False, num_classes=11)
     num_ftrs = model_ft.fc.in_features
     model_ft.fc = nn.Linear(num_ftrs, len(class_names))
     if use_gpu:
@@ -176,18 +204,18 @@ def main():
         # model_ft = nn.DataParallel(model_ft).cuda()
         model_ft = model_ft.cuda()
 
-    criterion = nn.CrossEntropyLoss()
+    criterion = nn.CrossEntropyLoss().cuda()
     # criterion = nn.CrossEntropyLoss().cuda()
 
     # Observe that all parameters are being optimized
     optimizer_ft = optim.Adam(model_ft.parameters(), lr=0.001)
 
     # Decay LR by a factor of 0.1 every 7 epochs
-    exp_lr_scheduler = lr_scheduler.StepLR(optimizer_ft, step_size=10, gamma=0.5)
+    exp_lr_scheduler = lr_scheduler.StepLR(optimizer_ft, step_size=1, gamma=0.95)
 
     # start training
     model_ft = train_model(model_ft, criterion, optimizer_ft, exp_lr_scheduler,
-                           num_epochs=100)
+                           num_epochs=10)
 
 
 if __name__ == '__main__':

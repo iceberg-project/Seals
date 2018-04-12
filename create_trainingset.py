@@ -1,15 +1,20 @@
 import pandas as pd
 import numpy as np
 import os
-from osgeo import gdal
 import cv2
+import time
+import random
+from osgeo import gdal
+from sklearn.utils import shuffle
 
 
-def get_patches(raster_dir: str, vector_df: str, lon: str, lat: str, patch_sizes: list, labels: list) -> object:
+def get_patches(out_folder: str, raster_dir: str, vector_df: str, lon: str, lat: str, patch_sizes: list,
+                labels: list) -> object:
     """
     Generates multi-band patches at different scales around vector points to use as a training set.
 
     Input:
+        out_folder: folder name for the created dataset
         raster_dir : directory with raster images (.tif) we wish to extract patches from.
         vector_df : path to pandas data.frame with training points with latitude, longitude, classification label and
             source raster layer.
@@ -28,36 +33,45 @@ def get_patches(raster_dir: str, vector_df: str, lon: str, lat: str, patch_sizes
 
     # read pandas data.frame
     df = pd.read_csv(vector_df)
-    print(pd.unique(df['scene']))
+
+    # shuffle rows
+    df = shuffle(df)
 
     # create training set directory
-    if not os.path.exists("./training_set"):
-        os.makedirs("./training_set")
+    if not os.path.exists("./{}".format(out_folder)):
+        os.makedirs("./{}".format(out_folder))
 
     for folder in ['training', 'validation']:
-        if not os.path.exists("./training_set/{}".format(folder)):
-            os.makedirs("./training_set/{}".format(folder))
+        if not os.path.exists("./{}/{}".format(out_folder, folder)):
+            os.makedirs("./{}/{}".format(out_folder, folder))
         for lbl in labels:
-            subdir = "./training_set/{}/{}".format(folder, lbl)
+            subdir = "./{}/{}/{}".format(out_folder, folder, lbl)
             if not os.path.exists(subdir):
                 os.makedirs(subdir)
 
     rasters = []
+    print("Checking input folder for invalid files:\n\n")
     for path, _, files in os.walk(raster_dir):
         for filename in files:
             filename_lower = filename.lower()
             # only add raster files wth annotated points
             if not filename_lower.endswith('.tif'):
-                print('{} is not a valid scene.'.format(filename))
+                print('  {} is not a valid scene.'.format(filename))
                 continue
             if filename not in pd.unique(df['scene']):
-                print('{} is not an annotated scene.'.format(filename))
+                print('  {} is not an annotated scene.'.format(filename))
                 continue
             rasters.append(os.path.join(path, filename))
 
+
+    # shuffle rasters
+    rasters = shuffle(rasters)
+
     # keep track of how many points were processed
     num_imgs = 0
-    for rs in rasters:
+    since = time.time()
+    print("\nCreating dataset:\n")
+    for count, rs in enumerate(rasters):
         gdata = gdal.Open(rs)
 
         # get upper left corners and pixel height and width from raster
@@ -95,13 +109,27 @@ def get_patches(raster_dir: str, vector_df: str, lon: str, lat: str, patch_sizes
                 # combine bands into an image
                 bands = np.dstack(bands)
                 # save patch image to correct subfolder based on label
-                file = "./training_set/{}/{}/{}.jpg".format(p[1]['dataset'], p[1]['label'], num_imgs)
+                file = "./{}/{}/{}/{}.jpg".format(out_folder, p[1]['dataset'], p[1]['label'], num_imgs)
                 cv2.imwrite(file, bands)
                 num_imgs += 1
 
         del data, band
+        print("\n  Processed {} out of {} rasters".format(count + 1, len(rasters)))
+
+    time_elapsed = time.time() - since
+    print("\n\n{} training images created in {:.0f}m {:.0f}s".format(num_imgs, time_elapsed // 60, time_elapsed % 60))
     return None
 
 
-get_patches(raster_dir="/home/bento/imagery", vector_df="temp-nodes.csv", lat='y', lon='x',
-            patch_sizes=[450, 450, 450], labels=["crabeater", "weddell", "other", "pack-ice", "emperor"])
+# set random seed to get same order of samples in both vanilla and multiscale training sets
+random.seed(4)
+
+# create vanilla and multiscale training sets
+get_patches(out_folder="training_set", raster_dir="/home/bento/imagery", vector_df="temp-nodes.csv", lat='y', lon='x',
+            patch_sizes=[450, 450, 450], labels=["crabeater", "weddell", "other", "pack-ice", "emperor", "open-water",
+                                                 "ice-sheet", "marching-emperor", "rock", "crack", "glacier"])
+
+get_patches(out_folder="training_set_multiscale", raster_dir="/home/bento/imagery", vector_df="temp-nodes.csv",
+            lat='y', lon='x', patch_sizes=[450, 1350, 4000], labels=["crabeater", "weddell", "other", "pack-ice",
+                                                                     "open-water", "ice-sheet", "marching-emperor",
+                                                                     "emperor", "rock", "crack", "glacier"])
