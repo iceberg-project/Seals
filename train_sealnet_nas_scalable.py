@@ -655,8 +655,10 @@ use_gpu = torch.cuda.is_available()
 
 months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
 
+
 def train_model(model, criterion, optimizer, scheduler, num_epochs=25):
     since = time.time()
+    now = datetime.datetime.now()
 
     best_model_wts = copy.deepcopy(model.state_dict())
     best_acc = 0.0
@@ -754,7 +756,6 @@ def train_model(model, criterion, optimizer, scheduler, num_epochs=25):
 
     # save the model
 
-    now = datetime.datetime.now()
     torch.save(model.state_dict(), './NASnet_best_{}_{}_{}_{}_{}_{}.tar'.format(data_dir[2:], now.day,
                                                                                 months[now.month - 1], now.year,
                                                                                 now.hour, now.minute))

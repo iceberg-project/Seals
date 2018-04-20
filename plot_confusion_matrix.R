@@ -36,6 +36,7 @@ get_confusion_matrix = function(csv_file, labels, pos_classes){
         pos_classes_stats = rbind(pos_classes_stats, c(class_prec, class_rec))
     }
     colnames(pos_classes_stats) = c('precision', 'recall')
+    row.names(pos_classes_stats) = pos_classes
     
     # melt dataframe for plotting
     plot_df = melt(as.matrix(conf_matrix))
@@ -77,7 +78,7 @@ labels = c('crabeater', 'weddell', 'pack-ice', 'other', 'emperor', 'open-water',
 pos_classes = c('crabeater', 'weddell', 'emperor', 'marching-emperor')
 
 # run for validation data
-output = get_confusion_matrix(csv_file='training_set_12_Apr_2018_17_15_conf_matrix.csv', labels=labels,
+output = get_confusion_matrix(csv_file='Resnet18_training_set_multiscale_17_Apr_2018_12_14_conf_matrix.csv', labels=labels,
                           pos_classes=pos_classes)
 
 

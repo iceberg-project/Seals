@@ -3,6 +3,7 @@ import pandas as pd
 import datetime
 from torchvision import datasets, transforms, models
 from torch.autograd import Variable
+import torch.nn as nn
 import time
 import warnings
 
@@ -37,7 +38,6 @@ def get_conf_matrix(model, val_dir, batch_size=8, input_size=299, to_csv=True):
     dataset = datasets.ImageFolder('./{}/validation'.format(val_dir), data_transforms)
     dataloader = torch.utils.data.DataLoader(dataset, batch_size=batch_size, num_workers=1)
 
-    # extract class names
     class_names = dataset.classes
 
     # check for GPU support
@@ -99,18 +99,21 @@ def get_conf_matrix(model, val_dir, batch_size=8, input_size=299, to_csv=True):
 def main():
     # loading the pretrained model and adding new classes to it
     # create model instance
-    model = models.resnet18(pretrained=False)
-    # load saved model weights from pt_train.py
-    model.load_state_dict(torch.load("./resnet18_best_6_4_2018_16_59.tar"))
+    model = models.resnet18(pretrained=False, num_classes=11)
+    num_ftrs = model.fc.in_features
+    model.fc = nn.Linear(num_ftrs, 11)
 
     # check for GPU support and set model to evaluation mode
-    model.eval()
     use_gpu = torch.cuda.is_available()
     if use_gpu:
         model.cuda()
+    model.eval()
+
+    # load saved model weights from pt_train.py
+    model.load_state_dict(torch.load("./Resnet18_best_training_set_multiscale_17_Apr_2018_0_44.tar"))
 
     # run validation to get confusion matrix
-    conf_matrix = get_conf_matrix(model=model, val_dir='training_set')
+    conf_matrix = get_conf_matrix(model=model, input_size=224, val_dir='training_set_multiscale')
 
 
 if __name__ == '__main__':

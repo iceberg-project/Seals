@@ -124,11 +124,13 @@ def get_patches(out_folder: str, raster_dir: str, vector_df: str, lon: str, lat:
 # set random seed to get same order of samples in both vanilla and multiscale training sets
 random.seed(4)
 
-# create vanilla and multiscale training sets
+# create vanilla and multi-scale training sets
+print('\nCreating vanilla training-set:\n')
 get_patches(out_folder="training_set", raster_dir="/home/bento/imagery", vector_df="temp-nodes.csv", lat='y', lon='x',
             patch_sizes=[450, 450, 450], labels=["crabeater", "weddell", "other", "pack-ice", "emperor", "open-water",
                                                  "ice-sheet", "marching-emperor", "rock", "crack", "glacier"])
 
+print('\nCreating multi-scale training-set:\n')
 get_patches(out_folder="training_set_multiscale", raster_dir="/home/bento/imagery", vector_df="temp-nodes.csv",
             lat='y', lon='x', patch_sizes=[450, 1350, 4000], labels=["crabeater", "weddell", "other", "pack-ice",
                                                                      "open-water", "ice-sheet", "marching-emperor",

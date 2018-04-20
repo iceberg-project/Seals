@@ -1,6 +1,6 @@
 import torch
 from torch.autograd import Variable
-from torchvision import transforms
+from torchvision import transforms, models
 import os
 from sealnet_nas_scalable import *
 import numpy as np
@@ -19,7 +19,7 @@ ImageFile.LOAD_TRUNCATED_IMAGES = True
 
 # Just normalization for prediction
 # IMPORTANT: set the correct dimension for your architecture using arch_input_size global variable
-arch_input_size = 299
+arch_input_size = 224
 data_transforms = transforms.Compose([
         transforms.CenterCrop(arch_input_size),
         transforms.ToTensor(),
@@ -28,17 +28,16 @@ data_transforms = transforms.Compose([
 
 img_exts = ['.jpg', '.jpeg', '.png', '.ppm', '.bmp', '.pgm']
 class_names = args.class_names
-data_dir = 'test_images'
+data_dir = 'Tile_out/WV03'
 
 use_gpu = torch.cuda.is_available()
 
 
 def main():
     # create model instance
-    nn_model = NASNetALarge(in_channels_0=48, out_channels_0=24, out_channels_1=32,
-                            out_channels_2=64, out_channels_3=128)
+    nn_model = models.resnet18(pretrained=False, num_classes=11)
     # load saved model weights from pt_train.py
-    nn_model.load_state_dict(torch.load("./nn_model.pth.tar"))
+    nn_model.load_state_dict(torch.load("./resnet18_2_4_2018_16_51.tar"))
     # make sure it isn't in training mode
     nn_model.eval()
     # use gpu if available
