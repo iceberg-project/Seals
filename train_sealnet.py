@@ -12,7 +12,7 @@ from tensorboardX import SummaryWriter
 import time
 import datetime
 from model_library import *
-from train_sealnet_nas_scalable import NASNetALarge
+from nasnet_scalable import NASNetALarge
 
 parser = argparse.ArgumentParser(description='trains a CNN to find seals in satellite imagery')
 parser.add_argument('training_dir', type=str, help='base directory to recursively search for images in')
