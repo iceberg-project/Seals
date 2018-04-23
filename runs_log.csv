@@ -1,2 +1,0 @@
-Model runs,TensorBoard_log_file,Architecture,Training set,Hyper-parameters,Custom_loss,Balanced accuracy,Precision (Seals),Recall (Seals),Training Sets,Date,N_classes,N_samples,Train/Val split,Hyper-parameter sets,Date,Optimizer,Learning_rate,LR_decay,Batch size,Epochs
-Model_1,Apr16_19-12-57_bento,Resnet18,A (vanilla),A,NO,,,,A,04/16/18,11,77496,10% Validation (random),A,04/16/18,ADAM (default B1 and B2),0.001,0.95,64,30

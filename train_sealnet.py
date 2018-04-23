@@ -7,12 +7,13 @@ from torchvision import datasets, models, transforms
 from torch.autograd import Variable
 import os
 import argparse
-import copy
 from tensorboardX import SummaryWriter
 import time
 import datetime
 from model_library import *
 from nasnet_scalable import NASNetALarge
+from PIL import ImageFile
+import warnings
 
 parser = argparse.ArgumentParser(description='trains a CNN to find seals in satellite imagery')
 parser.add_argument('training_dir', type=str, help='base directory to recursively search for images in')
@@ -27,26 +28,18 @@ parser.add_argument('output_name', type=str, help='name of output file from trai
 args = parser.parse_args()
 
 # check for invalid inputs
-if not args.model_architecture in model_archs: raise Exception("Unsupported architecture")
-
+if args.model_architecture not in model_archs:
+    raise Exception("Unsupported architecture")
 
 # image transforms seem to cause truncated images, so we need this
-from PIL import ImageFile
-
 ImageFile.LOAD_TRUNCATED_IMAGES = True
 
 # we get an RGB warning, but the loader properly converts to RGB -after- this
-import warnings
-
 warnings.filterwarnings('ignore', module='PIL')
 
 # Data augmentation and normalization for training
 # Just normalization for validation
-# IMPORTANT: set the correct dimension for your architecture using arch_input_size global variable
-if args.model_architecture == "Nasnet1":
-    arch_input_size = 299
-else:
-    arch_input_size = 224
+arch_input_size = model_archs[args.model_architecture]
 
 data_transforms = {
     'training': transforms.Compose([
@@ -109,15 +102,10 @@ class_names = image_datasets['training'].classes
 
 use_gpu = torch.cuda.is_available()
 
-months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
-
 
 def train_model(model, criterion, optimizer, scheduler, num_epochs=25):
     since = time.time()
     now = datetime.datetime.now()
-
-    best_model_wts = copy.deepcopy(model.state_dict())
-    best_acc = 0.0
 
     # create summary writer for tensorboardX
     writer = SummaryWriter()
@@ -190,14 +178,12 @@ def train_model(model, criterion, optimizer, scheduler, num_epochs=25):
                 print('training time: {}h {:.0f}m {:.0f}s\n'.format(time_elapsed // 3600, (time_elapsed % 3600) // 60,
                                                                     time_elapsed % 60))
 
-
     time_elapsed = time.time() - since
     print('Training complete in {}h {:.0f}m {:.0f}s'.format(
         time_elapsed // 3600, (time_elapsed % 3600) // 60, time_elapsed % 60))
-    print('Best val Acc: {:4f}'.format(best_acc))
 
     # save the model
-    torch.save(model.state_dict(), args.output_name)
+    torch.save(model.state_dict(), 'saved_models/{}/{}.tar'.format(args.output_name, args.output_name))
 
     return model
 
@@ -211,7 +197,7 @@ def main():
 
     else:
         model_ft = NASNetALarge(in_channels_0=48, out_channels_0=24, out_channels_1=32, out_channels_2=64,
-                                out_channels_3=128)
+                                out_channels_3=128, num_classes=len(class_names))
     if use_gpu:
         # i think we can set parallel GPU usage here. will test
         # http://pytorch.org/docs/master/nn.html
@@ -234,8 +220,6 @@ def main():
     # start training
     model_ft = train_model(model_ft, criterion, optimizer_ft, exp_lr_scheduler,
                            num_epochs=hyperparameters[args.hyperparameter_set]['epochs'])
-
-
 
 
 if __name__ == '__main__':

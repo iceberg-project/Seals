@@ -1,6 +1,15 @@
+# load packages
 library(ggplot2)
 library(reshape2)
 library(scales)
+library(glue)
+library(argparser)
+
+# define arg-parser 
+parser = arg_parser("R script to get validation stats and plot a confusion matrix")
+parser = add_argument(parser, "input_file", help="model name generated during training")
+inp_file = parse_args(parser=parser)
+
 
 # plot confusion matrix
 get_confusion_matrix = function(csv_file, labels, pos_classes){
@@ -37,6 +46,8 @@ get_confusion_matrix = function(csv_file, labels, pos_classes){
     }
     colnames(pos_classes_stats) = c('precision', 'recall')
     row.names(pos_classes_stats) = pos_classes
+    pos_classes_stats['balanced_accuracy'] = rep(balanced_acc, dim(pos_classes_stats)[1])
+    pos_classes_stats['model_name'] = rep(model_name, dim(pos_classes_stats)[1])
     
     # melt dataframe for plotting
     plot_df = melt(as.matrix(conf_matrix))
@@ -63,9 +74,14 @@ get_confusion_matrix = function(csv_file, labels, pos_classes){
         theme(legend.position="none")
     
     # save confusion_matrix as a png figure
-    png("conf_matrix.png")
+    png(glue("./saved_models/{model_name}/{model_name}_conf_matrix.png"))
     print(plot)
     dev.off()
+    
+    # write performance metrics to csv
+    write.csv(pos_classes_stats, glue("./saved_models/{model_name}/{model_name}_prec_recall.csv"))
+    
+    # return output
     return(list('conf_matrix'=conf_matrix, 'pos_class_stats'=pos_classes_stats, 
                 'balanced_accuracy'=balanced_acc))
 }
@@ -78,8 +94,10 @@ labels = c('crabeater', 'weddell', 'pack-ice', 'other', 'emperor', 'open-water',
 pos_classes = c('crabeater', 'weddell', 'emperor', 'marching-emperor')
 
 # run for validation data
-output = get_confusion_matrix(csv_file='Resnet18_training_set_multiscale_17_Apr_2018_12_14_conf_matrix.csv', labels=labels,
+model_name = inp_file$input_file
+output = get_confusion_matrix(csv_file=glue('./saved_models/{model_name}/{model_name}_val.csv'), labels=labels,
                           pos_classes=pos_classes)
+
 
 
 
