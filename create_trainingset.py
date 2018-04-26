@@ -4,11 +4,18 @@ import os
 import cv2
 import time
 import random
+import argparse
 from osgeo import gdal
 from sklearn.utils import shuffle
 
+parser = argparse.ArgumentParser(description='creates training sets to train and validate sealnet instances')
+parser.add_argument('--rasters_dir', type=str, help='root directory where rasters are located')
 
-def get_patches(out_folder: str, raster_dir: str, vector_df: str, lon: str, lat: str, patch_sizes: list,
+
+args = parser.parse_args()
+
+
+def get_patches(out_folder: str, raster_dir: str, shape_file: str, lon: str, lat: str, patch_sizes: list,
                 labels: list) -> object:
     """
     Generates multi-band patches at different scales around vector points to use as a training set.
@@ -16,7 +23,7 @@ def get_patches(out_folder: str, raster_dir: str, vector_df: str, lon: str, lat:
     Input:
         out_folder: folder name for the created dataset
         raster_dir : directory with raster images (.tif) we wish to extract patches from.
-        vector_df : path to pandas data.frame with training points with latitude, longitude, classification label and
+        shape_file : path to .csv shape_file with training points with latitude, longitude, classification label and
             source raster layer.
         lon : column in vector_df containing longitude component.
         lat : column in vector_df containing latitude component.
@@ -32,20 +39,23 @@ def get_patches(out_folder: str, raster_dir: str, vector_df: str, lon: str, lat:
         "Patch sizes with non-increasing dimensions"
 
     # read pandas data.frame
-    df = pd.read_csv(vector_df)
+    df = pd.read_csv(shape_file)
 
     # shuffle rows
     df = shuffle(df)
 
     # create training set directory
-    if not os.path.exists("./{}".format(out_folder)):
-        os.makedirs("./{}".format(out_folder))
+    if not os.path.exists("./training_sets/"):
+        os.makedirs("./training_sets/")
+
+    if not os.path.exists("./training_sets/{}".format(out_folder)):
+        os.makedirs("./training_sets/{}".format(out_folder))
 
     for folder in ['training', 'validation']:
-        if not os.path.exists("./{}/{}".format(out_folder, folder)):
-            os.makedirs("./{}/{}".format(out_folder, folder))
+        if not os.path.exists("./training_sets/{}/{}".format(out_folder, folder)):
+            os.makedirs("./training_sets/{}/{}".format(out_folder, folder))
         for lbl in labels:
-            subdir = "./{}/{}/{}".format(out_folder, folder, lbl)
+            subdir = "./training_sets/{}/{}/{}".format(out_folder, folder, lbl)
             if not os.path.exists(subdir):
                 os.makedirs(subdir)
 
@@ -121,17 +131,26 @@ def get_patches(out_folder: str, raster_dir: str, vector_df: str, lon: str, lat:
     return None
 
 
-# set random seed to get same order of samples in both vanilla and multiscale training sets
-random.seed(4)
+def main():
+    # set random seed to get same order of samples in both vanilla and multiscale training sets
+    random.seed(4)
 
-# create vanilla and multi-scale training sets
-print('\nCreating vanilla training-set:\n')
-get_patches(out_folder="training_set", raster_dir="/home/bento/imagery", vector_df="temp-nodes.csv", lat='y', lon='x',
-            patch_sizes=[450, 450, 450], labels=["crabeater", "weddell", "other", "pack-ice", "emperor", "open-water",
-                                                 "ice-sheet", "marching-emperor", "rock", "crack", "glacier"])
+    raster_dir = args.rasters_dir
 
-print('\nCreating multi-scale training-set:\n')
-get_patches(out_folder="training_set_multiscale", raster_dir="/home/bento/imagery", vector_df="temp-nodes.csv",
-            lat='y', lon='x', patch_sizes=[450, 1350, 4000], labels=["crabeater", "weddell", "other", "pack-ice",
-                                                                     "open-water", "ice-sheet", "marching-emperor",
-                                                                     "emperor", "rock", "crack", "glacier"])
+    # create vanilla and multi-scale training sets
+    print('\nCreating vanilla training-set:\n')
+    get_patches(out_folder="training_set_vanilla", raster_dir=raster_dir, shape_file="temp-nodes.csv",
+                lat='y', lon='x', patch_sizes=[450, 450, 450], labels=["crabeater", "weddell", "other", "pack-ice",
+                                                                       "emperor", "open-water", "ice-sheet",
+                                                                       "marching-emperor", "rock", "crack", "glacier"])
+
+    print('\nCreating multi-scale_A training-set:\n')
+    get_patches(out_folder="training_set_multiscale_A", raster_dir=raster_dir, shape_file="temp-nodes.csv",
+                lat='y', lon='x', patch_sizes=[450, 1350, 4000], labels=["crabeater", "weddell", "other", "pack-ice",
+                                                                         "open-water", "ice-sheet", "marching-emperor",
+
+                                                                         "emperor", "rock", "crack", "glacier"])
+
+
+if __name__ == '__main__':
+    main()

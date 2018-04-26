@@ -9,27 +9,35 @@ import os
 import argparse
 from tensorboardX import SummaryWriter
 import time
-import datetime
 from model_library import *
 from nasnet_scalable import NASNetALarge
 from PIL import ImageFile
 import warnings
 
 parser = argparse.ArgumentParser(description='trains a CNN to find seals in satellite imagery')
-parser.add_argument('training_dir', type=str, help='base directory to recursively search for images in')
-parser.add_argument('model_architecture', type=str, help='model architecture, must be a member of models '
-                                                         'dictionary')
-parser.add_argument('hyperparameter_set', type=str, help='combination of hyperparameters used, must be a member of '
-                                                         'hyperparameters dictionary')
-parser.add_argument('cv_weights', type=str, help='weights for weighted-cross validation, must be a member of cv_weights'
-                                                 'dictionary')
-parser.add_argument('output_name', type=str, help='name of output file from training, this name will also be used in '
-                                                  'subsequent steps of the pipeline')
+parser.add_argument('--training_dir', type=str, help='base directory to recursively search for images in')
+parser.add_argument('--model_architecture', type=str, help='model architecture, must be a member of models '
+                                                           'dictionary')
+parser.add_argument('--hyperparameter_set', type=str, help='combination of hyperparameters used, must be a member of '
+                                                           'hyperparameters dictionary')
+parser.add_argument('--cv_weights', type=str, help='weights for weighted-cross validation, must be a member of '
+                                                   'cv_weights dictionary')
+parser.add_argument('--output_name', type=str, help='name of output file from training, this name will also be used in '
+                                                    'subsequent steps of the pipeline')
 args = parser.parse_args()
 
 # check for invalid inputs
 if args.model_architecture not in model_archs:
     raise Exception("Unsupported architecture")
+
+if args.training_dir not in training_sets:
+    raise Exception("Invalid training set")
+
+if args.cv_weights not in cv_weights:
+    raise Exception("Invalid cross-validation weights")
+
+if args.hyperparameter_set not in hyperparameters:
+    raise Exception("Invalid hyperparameter combination")
 
 # image transforms seem to cause truncated images, so we need this
 ImageFile.LOAD_TRUNCATED_IMAGES = True
@@ -60,7 +68,7 @@ data_transforms = {
     ]),
 }
 
-data_dir = args.training_dir
+data_dir = "./training_sets/{}".format(args.training_dir)
 image_datasets = {x: datasets.ImageFolder(os.path.join(data_dir, x),
                                           data_transforms[x])
                   for x in ['training', 'validation']}
@@ -105,7 +113,6 @@ use_gpu = torch.cuda.is_available()
 
 def train_model(model, criterion, optimizer, scheduler, num_epochs=25):
     since = time.time()
-    now = datetime.datetime.now()
 
     # create summary writer for tensorboardX
     writer = SummaryWriter()
@@ -156,8 +163,8 @@ def train_model(model, criterion, optimizer, scheduler, num_epochs=25):
                     global_step += 1
 
                 # statistics
-                running_loss += loss.data[0] * inputs.size(0)
-                running_corrects += torch.sum(preds == labels.data)
+                running_loss += loss.item() * inputs.size(1)
+                running_corrects += torch.sum(preds == labels.data).item()
 
             epoch_loss = running_loss / dataset_sizes[phase]
             epoch_acc = running_corrects / dataset_sizes[phase]
