@@ -17,13 +17,24 @@ ImageFile.LOAD_TRUNCATED_IMAGES = True
 warnings.filterwarnings('ignore', module='PIL')
 
 parser = argparse.ArgumentParser(description='validates a CNN at the haul out level')
-parser.add_argument('validation_dir', type=str, help='base directory to recursively search for images in')
-parser.add_argument('model_architecture', type=str, help='model architecture, must be a member of models '
-                                                         'dictionary')
-parser.add_argument('input_name', type=str, help='name of input model file from training, this name will also be used'
-                                                 'in subsequent steps of the pipeline')
+parser.add_argument('--training_dir', type=str, help='base directory to recursively search for validation images in')
+parser.add_argument('--model_architecture', type=str, help='model architecture, must be a member of models '
+                                                           'dictionary')
+parser.add_argument('--hyperparameter_set', type=str, help='combination of hyperparameters used, must be a member of '
+                                                           'hyperparameters dictionary')
+parser.add_argument('--input_name', type=str, help='name of input model file from training, this name will also be used'
+                                                   'in subsequent steps of the pipeline')
 args = parser.parse_args()
 
+# check for invalid inputs
+if args.model_architecture not in model_archs:
+    raise Exception("Unsupported architecture")
+
+if args.training_dir not in training_sets:
+    raise Exception("Invalid training set")
+
+if args.hyperparameter_set not in hyperparameters:
+    raise Exception("Invalid hyperparameter combination")
 
 
 def validate_model(model, val_dir, out_file, batch_size=8, input_size=299,  to_csv=True):
@@ -46,7 +57,7 @@ def validate_model(model, val_dir, out_file, batch_size=8, input_size=299,  to_c
     ])
 
     # load dataset
-    dataset = datasets.ImageFolder('./{}/validation'.format(val_dir), data_transforms)
+    dataset = datasets.ImageFolder('./training_sets/{}/validation'.format(val_dir), data_transforms)
     dataloader = torch.utils.data.DataLoader(dataset, batch_size=batch_size, num_workers=1)
 
     class_names = dataset.classes
@@ -82,7 +93,7 @@ def validate_model(model, val_dir, out_file, batch_size=8, input_size=299,  to_c
         _, preds = torch.max(outputs.data, 1)
 
         # keep track of correct answers to get accuracy
-        running_corrects += torch.sum(preds == labels.data)
+        running_corrects += torch.sum(preds == labels.data).item()
 
         # add current predictions to conf_matrix
         conf_matrix_batch = pd.DataFrame(data=[[class_names[int(ele)] for ele in preds],
@@ -105,16 +116,15 @@ def validate_model(model, val_dir, out_file, batch_size=8, input_size=299,  to_c
 
 
 def main():
-    # loading the pretrained model and adding new classes to it
     # create model instance
     if args.model_architecture == "Resnet18":
-        model_ft = models.resnet18(pretrained=False, num_classes=training_sets[args.validation_dir])
+        model_ft = models.resnet18(pretrained=False, num_classes=training_sets[args.training_dir])
         num_ftrs = model_ft.fc.in_features
-        model_ft.fc = nn.Linear(num_ftrs, training_sets[args.validation_dir])
+        model_ft.fc = nn.Linear(num_ftrs, training_sets[args.training_dir])
 
     else:
         model_ft = NASNetALarge(in_channels_0=48, out_channels_0=24, out_channels_1=32, out_channels_2=64,
-                                out_channels_3=128, num_classes=training_sets[args.validation_dir])
+                                out_channels_3=128, num_classes=training_sets[args.training_dir])
 
     # check for GPU support and set model to evaluation mode
     use_gpu = torch.cuda.is_available()
@@ -127,7 +137,8 @@ def main():
 
     # run validation to get confusion matrix
     conf_matrix = validate_model(model=model_ft, input_size=model_archs[args.model_architecture],
-                                 val_dir=args.validation_dir, out_file=args.input_name)
+                                 batch_size=hyperparameters[args.hyperparameter_set]['batch_size_test'],
+                                 val_dir=args.training_dir, out_file=args.input_name)
 
 
 if __name__ == '__main__':
