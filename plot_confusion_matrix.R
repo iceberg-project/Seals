@@ -1,3 +1,5 @@
+# Script to plot a confusion matrix and get refined stats for seal detection models
+
 # load packages
 library(ggplot2)
 library(reshape2)
