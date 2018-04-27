@@ -38,7 +38,7 @@ data_transforms = transforms.Compose([
 ])
 
 img_exts = ['.jpg', '.jpeg', '.png', '.ppm', '.bmp', '.pgm']
-class_names = sorted([subdir for subdir in os.listdir('{}/training'.format(args.training_dir))])
+class_names = sorted([subdir for subdir in os.listdir('./training_sets/{}/training'.format(args.training_dir))])
 data_dir = args.data_dir
 
 use_gpu = torch.cuda.is_available()
