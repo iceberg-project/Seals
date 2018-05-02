@@ -10,7 +10,8 @@ import argparse
 from tensorboardX import SummaryWriter
 import time
 from model_library import *
-from nasnet_scalable import NASNetALarge
+from custom_architectures.nasnet_scalable import NASNetALarge
+from custom_architectures.wide_resnet import WideResNet
 from PIL import ImageFile
 import warnings
 
@@ -47,7 +48,7 @@ warnings.filterwarnings('ignore', module='PIL')
 
 # Data augmentation and normalization for training
 # Just normalization for validation
-arch_input_size = model_archs[args.model_architecture]
+arch_input_size = model_archs[args.model_architecture]['input_size']
 
 data_transforms = {
     'training': transforms.Compose([
@@ -99,11 +100,13 @@ sampler = torch.utils.data.sampler.WeightedRandomSampler(weights, len(weights))
 dataloaders = {"training": torch.utils.data.DataLoader(image_datasets["training"],
                                                        batch_size=
                                                        hyperparameters[args.hyperparameter_set]['batch_size_train'],
-                                                       sampler=sampler, num_workers=1),
+                                                       sampler=sampler, num_workers=
+                                                       hyperparameters[args.hyperparameter_set]['num_workers_train']),
                "validation": torch.utils.data.DataLoader(image_datasets["validation"],
                                                          batch_size=
                                                          hyperparameters[args.hyperparameter_set]['batch_size_val'],
-                                                         num_workers=1)
+                                                         num_workers=
+                                                         hyperparameters[args.hyperparameter_set]['num_workers_val'])
                }
 dataset_sizes = {x: len(image_datasets[x]) for x in ['training', 'validation']}
 class_names = image_datasets['training'].classes
@@ -189,8 +192,11 @@ def train_model(model, criterion, optimizer, scheduler, num_epochs=25):
     print('Training complete in {}h {:.0f}m {:.0f}s'.format(
         time_elapsed // 3600, (time_elapsed % 3600) // 60, time_elapsed % 60))
 
-    # save the model
-    torch.save(model.state_dict(), 'saved_models/{}/{}.tar'.format(args.output_name, args.output_name))
+    # save the model, keeping haulout and single seal models in separate folders
+    if model_archs[args.model_architecture]['haulout']:
+        torch.save(model.state_dict(), 'saved_models/haulout/{}/{}.tar'.format(args.output_name, args.output_name))
+    else:
+        torch.save(model.state_dict(), 'saved_models/single_seal/{}/{}.tar'.format(args.output_name, args.output_name))
 
     return model
 
@@ -201,6 +207,12 @@ def main():
         model_ft = models.resnet18(pretrained=False, num_classes=len(class_names))
         num_ftrs = model_ft.fc.in_features
         model_ft.fc = nn.Linear(num_ftrs, len(class_names))
+
+    elif args.model_architecture == "WideResnetA":
+        model_ft = WideResNet(depth=28, num_classes=11)
+
+    elif args.model_architecture == "WideResnetB":
+        model_ft = WideResNet(depth=16, num_classes=11)
 
     else:
         model_ft = NASNetALarge(in_channels_0=48, out_channels_0=24, out_channels_1=32, out_channels_2=64,
