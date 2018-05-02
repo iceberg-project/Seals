@@ -119,8 +119,8 @@ def get_patches(out_folder: str, raster_dir: str, shape_file: str, lon: str, lat
                 # combine bands into an image
                 bands = np.dstack(bands)
                 # save patch image to correct subfolder based on label
-                file = "./{}/{}/{}/{}.jpg".format(out_folder, p[1]['dataset'], p[1]['label'], num_imgs)
-                cv2.imwrite(file, bands)
+                filename = "./{}/{}/{}/{}.jpg".format(out_folder, p[1]['dataset'], p[1]['label'], num_imgs)
+                cv2.imwrite(filename, bands)
                 num_imgs += 1
 
         del data, band

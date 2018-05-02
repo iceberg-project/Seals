@@ -36,22 +36,24 @@ def create_scene_bank(shape_file, positive_classes):
     scene_bank = {}
 
     # iterate over scenes inside shapefile looking for seals, saving seal counts
-    for scene in scenes:
+    for idx, scene in enumerate(scenes):
         scene_data = shp_file.loc[shp_file['scene'] == scene]
 
-        scene_bank[scene] = {label: sum(scene_data['label'] == label) for label in positive_classes}
-        if sum(scene_bank[scene].values()) > 0:
-            scene_bank[scene]['present'] = 'YES'
+        labels = {label: sum(scene_data['label'] == label) for label in positive_classes}
+        scn = {'scene': scene}
+        scene_bank[idx] = {**scn, **labels}
+        if sum(labels.values()) > 0:
+            scene_bank[idx]['present'] = 1
         else:
-            scene_bank[scene]['present'] = 'NO'
+            scene_bank[idx]['present'] = 0
 
     return pd.DataFrame(scene_bank)
 
 
 def main():
-
     positive_classes = args.positive_classes.split()
     scene_bank = create_scene_bank(shape_file='temp-nodes.csv', positive_classes=positive_classes)
+    scene_bank = scene_bank.transpose()
     scene_bank.to_csv('./training_sets/{}'.format(args.out_file))
 
 
