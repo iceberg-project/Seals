@@ -76,12 +76,12 @@ get_confusion_matrix = function(csv_file, labels, pos_classes){
         theme(legend.position="none")
     
     # save confusion_matrix as a png figure
-    png(glue("./saved_models/{model_name}/{model_name}_conf_matrix.png"))
+    png(glue("./saved_models/haulout/{model_name}/{model_name}_conf_matrix.png"))
     print(plot)
     dev.off()
     
     # write performance metrics to csv
-    write.csv(pos_classes_stats, glue("./saved_models/{model_name}/{model_name}_prec_recall.csv"))
+    write.csv(pos_classes_stats, glue("./saved_models/haulout/{model_name}/{model_name}_haul_prec_recall.csv"))
     
     # return output
     return(list('conf_matrix'=conf_matrix, 'pos_class_stats'=pos_classes_stats, 
@@ -97,8 +97,8 @@ pos_classes = c('crabeater', 'weddell', 'emperor', 'marching-emperor')
 
 # run for validation data
 model_name = inp_file$input_file
-output = get_confusion_matrix(csv_file=glue('./saved_models/{model_name}/{model_name}_val.csv'), labels=labels,
-                          pos_classes=pos_classes)
+output = get_confusion_matrix(csv_file=glue('./saved_models/haulout/{model_name}/{model_name}_haul_val.csv'), labels=labels,
+                              pos_classes=pos_classes)
 
 
 

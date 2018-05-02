@@ -6,7 +6,7 @@ library(reshape2)
 library(gridExtra)
 
 # read csv table from all 
-pooled_data = read.csv('./saved_models/pooled_prec_recall.csv', stringsAsFactors=FALSE)
+pooled_data = read.csv('./saved_models/haulout/pooled_haul_prec_recall.csv', stringsAsFactors=FALSE)
 
 # reshape for plotting
 pooled_data = melt(pooled_data)
@@ -27,6 +27,6 @@ label_plot = ggplot(data=pooled_data,
     facet_wrap(~label) 
 
 # save confusion_matrix as a png figure
-png("./saved_models/model_comparison_plot.png", width=800, height=800)
+png("./saved_models/haulout/model_comparison_plot.png", width=800, height=800)
 print(label_plot)
 dev.off()

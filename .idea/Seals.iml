@@ -3,8 +3,10 @@
   <component name="NewModuleRootManager">
     <content url="file://$MODULE_DIR$">
       <excludeFolder url="file://$MODULE_DIR$/saved_models" />
+      <excludeFolder url="file://$MODULE_DIR$/tiled_images" />
       <excludeFolder url="file://$MODULE_DIR$/training_set" />
       <excludeFolder url="file://$MODULE_DIR$/training_set_multiscale" />
+      <excludeFolder url="file://$MODULE_DIR$/training_sets" />
     </content>
     <orderEntry type="inheritedJdk" />
     <orderEntry type="sourceFolder" forTests="false" />
