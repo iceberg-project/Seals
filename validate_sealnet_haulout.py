@@ -6,7 +6,7 @@ import torch.nn as nn
 import time
 import warnings
 import argparse
-from model_library import *
+from utils.model_library import *
 from custom_architectures.nasnet_scalable import NASNetALarge
 
 # image transforms seem to cause truncated images, so we need this
