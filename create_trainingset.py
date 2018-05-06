@@ -5,11 +5,20 @@ import cv2
 import time
 import random
 import argparse
-from osgeo import gdal
+import rasterio
+import matplotlib.pyplot as plt
 from sklearn.utils import shuffle
 
 parser = argparse.ArgumentParser(description='creates training sets to train and validate sealnet instances')
 parser.add_argument('--rasters_dir', type=str, help='root directory where rasters are located')
+parser.add_argument('--scale_bands', type=str, help='for multi-scale models, string with size of scale bands separated'
+                                                    'by underscores')
+parser.add_argument('--out_folder', type=str, help='directory where training set will be saved to')
+parser.add_argument('--labels', type=str, help='class names, separated by underscores')
+parser.add_argument('--det_classes', type=str, help='classes that will be targeted at detection, '
+                                                    'separated by underscores')
+parser.add_argument('--shape_file', type=str, help='path to shape file with seal points')
+
 
 
 args = parser.parse_args()
@@ -38,11 +47,14 @@ def get_patches(out_folder: str, raster_dir: str, shape_file: str, lon: str, lat
     assert sum([patch_sizes[idx] > patch_sizes[idx+1] for idx in range(len(patch_sizes) - 1)]) == 0,\
         "Patch sizes with non-increasing dimensions"
 
-    # read pandas data.frame
-    df = pd.read_csv(shape_file)
+    # extract detection classes, the training set will store count and (x,y) within tile for objects of those classes
+    det_classes = args.det_classes.split('_')
 
-    # shuffle rows
-    df = shuffle(df)
+    # save seal locations inside images
+    detections = pd.DataFrame()
+
+    # read csv exported from seal points shape file as a pandas DataFrame
+    df = pd.read_csv(shape_file)
 
     # create training set directory
     if not os.path.exists("./training_sets/"):
@@ -73,42 +85,45 @@ def get_patches(out_folder: str, raster_dir: str, shape_file: str, lon: str, lat
                 continue
             rasters.append(os.path.join(path, filename))
 
-
-    # shuffle rasters
+    # shuffle rasters and remove potential duplicates
     rasters = shuffle(rasters)
 
     # keep track of how many points were processed
     num_imgs = 0
     since = time.time()
     print("\nCreating dataset:\n")
-    for count, rs in enumerate(rasters):
-        gdata = gdal.Open(rs)
+    for idx, rs in enumerate(rasters):
+        # extract image data and affine transforms
+        with rasterio.open(rs) as src:
+            band = src.read()[0, :, :].astype(np.uint8)
+            affine_transforms = [src.transform[1], src.transform[2], src.transform[0], src.transform[4],
+                                 src.transform[5], src.transform[3]]
 
-        # get upper left corners and pixel height and width from raster
-        x0, w, _, y0, _, h = gdata.GetGeoTransform()
+        # get coordinates from affine matrix
+        width, _, x0, _, height, y0 = affine_transforms
 
-        # extract raster values and save as numpy array
-        band = gdata.GetRasterBand(1)
-        data = band.ReadAsArray().astype(np.uint8)
+        # get distance to determine which points will fall inside the tile
+        tile_center = patch_sizes[0] // 2
 
-        # free up memory
-        del gdata
+        # pad image
+        pad = patch_sizes[-1] // 2
+        band = np.pad(band, pad_width=pad, mode='constant', constant_values=0)
 
-        # add padding to prevent out of range indices close to borders
-        data = np.pad(data, pad_width=patch_sizes[-1] // 2, mode='constant', constant_values=0)
-
-        # filter points to include points inside current raster
+        # filter points to include points inside current raster, sort them based on coordinates and fix index range
         df_rs = df.loc[df['scene'] == os.path.basename(rs)]
+        df_rs = df_rs.sort_values(by=[lon, lat])
+        df_rs.index = range(len(df_rs.index))
 
         # iterate through the points
-        for p in df_rs.iterrows():
-            x = int((p[1][lon] - x0) / w) + patch_sizes[-1] // 2
-            y = int((p[1][lat] - y0) / h) + patch_sizes[-1] // 2
+        for row, p in enumerate(df_rs.iterrows()):
+            x = int((p[1][lon] - x0) / width) + pad
+            y = int((p[1][lat] - y0) / height) + pad
+            upper_left = [x - int(patch_sizes[0]/2), y - int(patch_sizes[0]/2)]
             bands = []
             # extract patches at different scales
             for scale in patch_sizes:
                 try:
-                    patch = data[y - int(scale/2): y + int((scale+1)/2), x - int(scale/2): x + int((scale+1)/2)]
+                    patch = band[y - int(scale/2): y + int((scale+1)/2), x - int(scale/2): x + int((scale+1)/2)]
                     patch = cv2.resize(patch, (patch_sizes[0], patch_sizes[0]))
                     bands.append(patch)
                 except:
@@ -119,16 +134,78 @@ def get_patches(out_folder: str, raster_dir: str, shape_file: str, lon: str, lat
                 # combine bands into an image
                 bands = np.dstack(bands)
                 # save patch image to correct subfolder based on label
-                filename = "./{}/{}/{}/{}.jpg".format(out_folder, p[1]['dataset'], p[1]['label'], num_imgs)
+                filename = "./training_sets/{}/{}/{}/{}.jpg".format(out_folder, p[1]['dataset'], p[1]['label'],
+                                                                    num_imgs)
                 cv2.imwrite(filename, bands)
+                # store counts and detections
+                count = 0
+                locs = ""
+                # add a detection in the center of the tile if class is in det_classes
+                if p[1]['label'] in det_classes:
+                    count += 1
+                    locs += "{}_{}".format(tile_center, tile_center)
+
+                    # look down the DataFrame for detections that also fall inside the tile
+                    inside = True
+                    search_idx = row + 1
+                    while inside:
+                        # check if idx is still inside DataFrame
+                        if search_idx > (len(df_rs) - 1):
+                            break
+                        # get det_x, det_y
+                        det_x = (int((df_rs.loc[search_idx, lon] - x0) / width) + pad) - upper_left[0]
+                        det_y = (int((df_rs.loc[search_idx, lat] - y0) / height) + pad) - upper_left[1]
+
+                        # check if it falls inside patch
+                        if 0 <= det_x < patch_sizes[0]:
+                            # check label
+                            if 0 <= det_y < patch_sizes[0]:
+                                if df_rs.loc[search_idx, 'label'] in det_classes:
+                                    # search y direction
+                                    plt.imshow(band[det_y - 50: det_y + 50, det_x - 50: det_x + 50])
+                                    locs += "_{}_{}".format(det_x, det_y)
+                                    count += 1
+                            search_idx += 1
+                        else:
+                            inside = False
+
+                    # look up the DataFrame for detections that also fall inside the tile
+                    inside = True
+                    search_idx = row - 1
+                    while inside:
+                        # check if idx is still inside DataFrame
+                        if search_idx < 0:
+                            break
+                        # get det_x, det_y
+                        det_x = (int((df_rs.loc[search_idx, lon] - x0) / width) + pad) - upper_left[0]
+                        det_y = (int((df_rs.loc[search_idx, lat] - y0) / height) + pad) - upper_left[1]
+
+                        # check if it falls inside patch
+                        if 0 <= det_x < patch_sizes[0]:
+                            # check label
+                            if 0 <= det_y < patch_sizes[0]:
+                                if df_rs.loc[search_idx, 'label'] in det_classes:
+                                    # search y direction
+                                    plt.imshow(band[det_y - 50: det_y + 50, det_x - 50: det_x + 50])
+                                    locs += "_{}_{}".format(det_x, det_y)
+                                    count += 1
+                            search_idx -= 1
+                        else:
+                            inside = False
+                if count > 0:
+                    print(filename)
+                    print(count)
+                # add detections
+                detections = detections.append({'file_name': num_imgs, 'count': count, 'locations': locs}, ignore_index=True)
                 num_imgs += 1
 
-        del data, band
-        print("\n  Processed {} out of {} rasters".format(count + 1, len(rasters)))
+        del band
+        detections.to_csv('./training_sets/{}/detections.csv'.format(out_folder))
+        print("\n  Processed {} out of {} rasters".format(idx + 1, len(rasters)))
 
     time_elapsed = time.time() - since
     print("\n\n{} training images created in {:.0f}m {:.0f}s".format(num_imgs, time_elapsed // 60, time_elapsed % 60))
-    return None
+    detections.to_csv('./training_sets/{}/detections.csv'.format(out_folder))
 
 
 def main():
@@ -136,20 +213,15 @@ def main():
     random.seed(4)
 
     raster_dir = args.rasters_dir
+    patch_sizes = [int(ele) for ele in args.scale_bands.split('_')]
+    out_folder = args.out_folder
+    labels = args.labels.split('_')
+    shape_file = args.shape_file
 
     # create vanilla and multi-scale training sets
-    print('\nCreating vanilla training-set:\n')
-    get_patches(out_folder="training_set_vanilla", raster_dir=raster_dir, shape_file="temp-nodes.csv",
-                lat='y', lon='x', patch_sizes=[450, 450, 450], labels=["crabeater", "weddell", "other", "pack-ice",
-                                                                       "emperor", "open-water", "ice-sheet",
-                                                                       "marching-emperor", "rock", "crack", "glacier"])
-
-    print('\nCreating multi-scale_A training-set:\n')
-    get_patches(out_folder="training_set_multiscale_A", raster_dir=raster_dir, shape_file="temp-nodes.csv",
-                lat='y', lon='x', patch_sizes=[450, 1350, 4000], labels=["crabeater", "weddell", "other", "pack-ice",
-                                                                         "open-water", "ice-sheet", "marching-emperor",
-
-                                                                         "emperor", "rock", "crack", "glacier"])
+    print('\nCreating {}:\n'.format(out_folder))
+    get_patches(out_folder=out_folder, raster_dir=raster_dir, shape_file=shape_file, lat='y', lon='x',
+                patch_sizes=patch_sizes, labels=labels)
 
 
 if __name__ == '__main__':
