@@ -9,7 +9,7 @@ import os
 import argparse
 from tensorboardX import SummaryWriter
 import time
-from model_library import *
+from utils.model_library import *
 from custom_architectures.nasnet_scalable import NASNetALarge
 from custom_architectures.wide_resnet import WideResNet
 from PIL import ImageFile

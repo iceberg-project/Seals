@@ -29,6 +29,7 @@ def main():
     with rasterio.open(input_image) as src:
         band = src.read()[0, :, :]
 
+
     # pad image
     pad = scales[-1] // 2
     band = np.pad(band, pad_width=pad, mode='constant', constant_values=0)
