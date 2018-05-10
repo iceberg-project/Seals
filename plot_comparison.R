@@ -7,8 +7,13 @@ library(argparser)
 
 # define arg-parser 
 parser = arg_parser("R script to get validation stats and plot a confusion matrix")
-parser = add_argument(parser, "input_file", help="csv file with precision and recall")
-inp_file = parse_args(parser=parser)
+parser = add_argument(parser, "input_file", help=".csv file with precision and recall")
+parser = add_argument(parser, "output_file", help="filename for the .png plot")
+
+# unroll arguments
+args = parse_args(parser=parser)
+inp_file = args$input_file
+out_file = args$output_file
 
 # read csv table from all 
 pooled_data = read.csv(inp_file, stringsAsFactors=FALSE)
@@ -28,6 +33,6 @@ label_plot = ggplot(data=pooled_data,
     facet_wrap(~label, ncol=2, scales="free") 
 
 # save confusion_matrix as a png figure
-png("comparison_plot.png", width=800, height=800)
+png(out_file, width=800, height=800)
 print(label_plot)
 dev.off()

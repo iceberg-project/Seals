@@ -7,7 +7,7 @@ import time
 import warnings
 import argparse
 from utils.model_library import *
-from custom_architectures.nasnet_scalable import NASNetALarge
+from utils.custom_architectures.nasnet_scalable import NASNetALarge
 
 # image transforms seem to cause truncated images, so we need this
 from PIL import ImageFile
@@ -110,9 +110,7 @@ def validate_model(model, val_dir, out_file, batch_size=8, input_size=299,  to_c
     print('Validation Acc: {:4f}'.format(running_corrects / len(dataset)))
     
     if to_csv:
-        conf_matrix.to_csv('./saved_models/haulout/{}/{}_haul_val.csv'.format(out_file, out_file))
-
-    return conf_matrix
+        conf_matrix.to_csv('./saved_models/haulout/{}/{}_haul_val.csv'.format(out_file, out_file), index=False)
 
 
 def main():
@@ -137,10 +135,10 @@ def main():
     model_ft.load_state_dict(torch.load("./saved_models/haulout/{}/{}.tar".format(args.model_name, args.model_name)))
 
     # run validation to get confusion matrix
-    conf_matrix = validate_model(model=model_ft, input_size=model_archs[args.model_architecture]['input_size'],
-                                 batch_size=hyperparameters[args.hyperparameter_set]['batch_size_test'],
-                                 val_dir=args.training_dir, out_file=args.model_name,
-                                 num_workers=hyperparameters[args.hyperparameter_set]['num_workers_train'])
+    validate_model(model=model_ft, input_size=model_archs[args.model_architecture]['input_size'],
+                   batch_size=hyperparameters[args.hyperparameter_set]['batch_size_test'],
+                   val_dir=args.training_dir, out_file=args.model_name,
+                   num_workers=hyperparameters[args.hyperparameter_set]['num_workers_train'])
 
 
 if __name__ == '__main__':
