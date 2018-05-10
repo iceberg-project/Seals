@@ -1,12 +1,12 @@
 import torch
 from torch.autograd import Variable
 from torchvision import transforms, models
-from utils.data_loader_test import ImageFolderTest
+from utils.dataloaders.data_loader_test import ImageFolderTest
 import os
 from utils.model_library import *
 import torch.nn as nn
 import pandas as pd
-from custom_architectures.nasnet_scalable import NASNetALarge
+from utils.custom_architectures.nasnet_scalable import NASNetALarge
 from PIL import ImageFile
 import argparse
 import affine
@@ -111,7 +111,7 @@ def main():
         model_ft.cuda()
 
     # classify images in dataloader
-    for data in (dataloader):
+    for data in dataloader:
         # get the inputs
         inputs, _, file_names = data
 
@@ -129,9 +129,11 @@ def main():
 
     # save output to .csv file
     if model_archs[args.model_architecture]['haulout']:
-        classified.to_csv('./saved_models/haulout/{}/{}_scene_val_tmp.csv'.format(args.model_name, args.model_name))
+        classified.to_csv('./saved_models/haulout/{}/{}_scene_val_tmp.csv'.format(args.model_name, args.model_name),
+                          index=False)
     else:
-        classified.to_csv('./saved_models/single_seal/{}/{}_scene_val_tmp.csv'.format(args.model_name, args.model_name))
+        classified.to_csv('./saved_models/single_seal/{}/{}_scene_val_tmp.csv'.format(args.model_name, args.model_name),
+                          index=False)
 
 
 if __name__ == '__main__':
