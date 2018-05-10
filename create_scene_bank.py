@@ -52,9 +52,9 @@ def create_scene_bank(shape_file, positive_classes):
 
 def main():
     positive_classes = args.positive_classes.split()
-    scene_bank = create_scene_bank(shape_file='temp-nodes.csv', positive_classes=positive_classes)
+    scene_bank = create_scene_bank(shape_file='seal_points_espg3031.csv', positive_classes=positive_classes)
     scene_bank = scene_bank.transpose()
-    scene_bank.to_csv('./training_sets/{}'.format(args.out_file))
+    scene_bank.to_csv('./training_sets/{}'.format(args.out_file), index=False)
 
 
 if __name__ == '__main__':

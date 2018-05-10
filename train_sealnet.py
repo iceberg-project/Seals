@@ -10,8 +10,8 @@ import argparse
 from tensorboardX import SummaryWriter
 import time
 from utils.model_library import *
-from custom_architectures.nasnet_scalable import NASNetALarge
-from custom_architectures.wide_resnet import WideResNet
+from utils.custom_architectures.nasnet_scalable import NASNetALarge
+from utils.custom_architectures.wide_resnet import WideResNet
 from PIL import ImageFile
 import warnings
 
@@ -56,7 +56,7 @@ data_transforms = {
         transforms.RandomVerticalFlip(),
         transforms.RandomRotation(180, expand=True),
         transforms.CenterCrop(arch_input_size * 1.5),
-        transforms.RandomResizedCrop(arch_input_size),
+        transforms.RandomResizedCrop(size=arch_input_size, scale=(0.8, 1), ratio=(0.95, 1.05)),
         transforms.ColorJitter(brightness=np.random.choice([0, 1]) * 0.05,
                                contrast=np.random.choice([0, 1]) * 0.05),
         transforms.ToTensor(),
@@ -211,12 +211,13 @@ def main():
     elif args.model_architecture == "WideResnetA":
         model_ft = WideResNet(depth=28, num_classes=11)
 
-    elif args.model_architecture == "WideResnetB":
-        model_ft = WideResNet(depth=16, num_classes=11)
-
     else:
         model_ft = NASNetALarge(in_channels_0=48, out_channels_0=24, out_channels_1=32, out_channels_2=64,
                                 out_channels_3=128, num_classes=len(class_names))
+
+    # define criterion
+    criterion = nn.CrossEntropyLoss(weight=torch.FloatTensor(cv_weights[args.cv_weights]))
+
     if use_gpu:
         # i think we can set parallel GPU usage here. will test
         # http://pytorch.org/docs/master/nn.html
@@ -226,8 +227,7 @@ def main():
         # each chunk is the same size (so that each GPU processes the same number of samples).
         # model_ft = nn.DataParallel(model_ft).cuda()
         model_ft = model_ft.cuda()
-
-    criterion = nn.CrossEntropyLoss(weight=torch.FloatTensor(cv_weights[args.cv_weights])).cuda()
+        criterion = criterion.cuda()
 
     # Observe that all parameters are being optimized
     optimizer_ft = optim.Adam(model_ft.parameters(), lr=hyperparameters[args.hyperparameter_set]['learning_rate'])

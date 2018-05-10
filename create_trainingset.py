@@ -138,11 +138,9 @@ def get_patches(out_folder: str, raster_dir: str, shape_file: str, lon: str, lat
                                                                     num_imgs)
                 cv2.imwrite(filename, bands)
                 # store counts and detections
-                count = 0
                 locs = ""
                 # add a detection in the center of the tile if class is in det_classes
                 if p[1]['label'] in det_classes:
-                    count += 1
                     locs += "{}_{}".format(tile_center, tile_center)
 
                     # look down the DataFrame for detections that also fall inside the tile
@@ -164,7 +162,6 @@ def get_patches(out_folder: str, raster_dir: str, shape_file: str, lon: str, lat
                                     # search y direction
                                     plt.imshow(band[det_y - 50: det_y + 50, det_x - 50: det_x + 50])
                                     locs += "_{}_{}".format(det_x, det_y)
-                                    count += 1
                             search_idx += 1
                         else:
                             inside = False
@@ -188,24 +185,20 @@ def get_patches(out_folder: str, raster_dir: str, shape_file: str, lon: str, lat
                                     # search y direction
                                     plt.imshow(band[det_y - 50: det_y + 50, det_x - 50: det_x + 50])
                                     locs += "_{}_{}".format(det_x, det_y)
-                                    count += 1
                             search_idx -= 1
                         else:
                             inside = False
-                if count > 0:
-                    print(filename)
-                    print(count)
                 # add detections
-                detections = detections.append({'file_name': num_imgs, 'count': count, 'locations': locs}, ignore_index=True)
+                detections = detections.append({'file_name': os.path.basename(filename),
+                                                'locations': locs}, ignore_index=True)
                 num_imgs += 1
 
         del band
-        detections.to_csv('./training_sets/{}/detections.csv'.format(out_folder))
         print("\n  Processed {} out of {} rasters".format(idx + 1, len(rasters)))
 
     time_elapsed = time.time() - since
     print("\n\n{} training images created in {:.0f}m {:.0f}s".format(num_imgs, time_elapsed // 60, time_elapsed % 60))
-    detections.to_csv('./training_sets/{}/detections.csv'.format(out_folder))
+    detections.to_csv('./training_sets/{}/detections.csv'.format(out_folder), index=False)
 
 
 def main():
