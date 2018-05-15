@@ -464,10 +464,10 @@ class ReductionCell1(nn.Module):
         return x_out
 
 
-class NASNetALarge(nn.Module):
+class NASNetA(nn.Module):
 
     def __init__(self, in_channels_0, out_channels_0, out_channels_1, out_channels_2, out_channels_3, num_classes=11):
-        super(NASNetALarge, self).__init__()
+        super(NASNetA, self).__init__()
         self.num_classes = num_classes
 
         self.conv0 = nn.Sequential()
