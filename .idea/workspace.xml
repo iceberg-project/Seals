@@ -2,52 +2,51 @@
 <project version="4">
   <component name="ChangeListManager">
     <list default="true" id="f01122e5-c44d-4ea0-9489-87b246f5b794" name="Default" comment="">
-      <change afterPath="$PROJECT_DIR$/train_sealnet_count.py" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/train_sealnet_count_e2e.py" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/validate_sealnet_scene.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.Rhistory" beforeDir="false" afterPath="$PROJECT_DIR$/.Rhistory" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.gitignore" beforeDir="false" afterPath="$PROJECT_DIR$/.gitignore" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.ipynb_checkpoints/model_search-checkpoint.ipynb" beforeDir="false" afterPath="$PROJECT_DIR$/.ipynb_checkpoints/model_search-checkpoint.ipynb" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.ipynb_checkpoints/training_set_generation-checkpoint.ipynb" beforeDir="false" afterPath="$PROJECT_DIR$/.ipynb_checkpoints/training_set_generation-checkpoint.ipynb" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/create_scene_bank.py" beforeDir="false" afterPath="$PROJECT_DIR$/create_scene_bank.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/create_trainingset.py" beforeDir="false" afterPath="$PROJECT_DIR$/create_trainingset.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/custom_architectures/nasnet_scalable.py" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/custom_architectures/wide_resnet.py" beforeDir="false" />
       <change beforePath="$PROJECT_DIR$/model_search.ipynb" beforeDir="false" afterPath="$PROJECT_DIR$/model_search.ipynb" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/plot_comparison.R" beforeDir="false" afterPath="$PROJECT_DIR$/plot_comparison.R" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/predict_sealnet.py" beforeDir="false" afterPath="$PROJECT_DIR$/predict_sealnet.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/saved_models/haulout/model1/model1_conf_matrix.png" beforeDir="false" afterPath="$PROJECT_DIR$/saved_models/haulout/model1/model1_conf_matrix.png" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/saved_models/haulout/model1/model1_haul_prec_recall.csv" beforeDir="false" afterPath="$PROJECT_DIR$/saved_models/haulout/model1/model1_haul_prec_recall.csv" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/saved_models/haulout/model1/model1_haul_val.csv" beforeDir="false" afterPath="$PROJECT_DIR$/saved_models/haulout/model1/model1_haul_val.csv" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/saved_models/haulout/model2/model2_conf_matrix.png" beforeDir="false" afterPath="$PROJECT_DIR$/saved_models/haulout/model2/model2_conf_matrix.png" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/saved_models/haulout/model2/model2_haul_prec_recall.csv" beforeDir="false" afterPath="$PROJECT_DIR$/saved_models/haulout/model2/model2_haul_prec_recall.csv" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/saved_models/haulout/model2/model2_haul_val.csv" beforeDir="false" afterPath="$PROJECT_DIR$/saved_models/haulout/model2/model2_haul_val.csv" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/saved_models/haulout/model3/model3_conf_matrix.png" beforeDir="false" afterPath="$PROJECT_DIR$/saved_models/haulout/model3/model3_conf_matrix.png" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/saved_models/haulout/model3/model3_haul_prec_recall.csv" beforeDir="false" afterPath="$PROJECT_DIR$/saved_models/haulout/model3/model3_haul_prec_recall.csv" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/saved_models/haulout/model3/model3_haul_val.csv" beforeDir="false" afterPath="$PROJECT_DIR$/saved_models/haulout/model3/model3_haul_val.csv" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/saved_models/haulout/model4/model4_conf_matrix.png" beforeDir="false" afterPath="$PROJECT_DIR$/saved_models/haulout/model4/model4_conf_matrix.png" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/saved_models/haulout/model4/model4_haul_prec_recall.csv" beforeDir="false" afterPath="$PROJECT_DIR$/saved_models/haulout/model4/model4_haul_prec_recall.csv" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/saved_models/haulout/model4/model4_haul_val.csv" beforeDir="false" afterPath="$PROJECT_DIR$/saved_models/haulout/model4/model4_haul_val.csv" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/saved_models/haulout/model5/model5_conf_matrix.png" beforeDir="false" afterPath="$PROJECT_DIR$/saved_models/haulout/model5/model5_conf_matrix.png" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/saved_models/haulout/model5/model5_haul_prec_recall.csv" beforeDir="false" afterPath="$PROJECT_DIR$/saved_models/haulout/model5/model5_haul_prec_recall.csv" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/saved_models/haulout/model5/model5_haul_val.csv" beforeDir="false" afterPath="$PROJECT_DIR$/saved_models/haulout/model5/model5_haul_val.csv" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/saved_models/haulout/model6/model6_conf_matrix.png" beforeDir="false" afterPath="$PROJECT_DIR$/saved_models/haulout/model6/model6_conf_matrix.png" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/saved_models/haulout/model6/model6_haul_prec_recall.csv" beforeDir="false" afterPath="$PROJECT_DIR$/saved_models/haulout/model6/model6_haul_prec_recall.csv" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/saved_models/haulout/model6/model6_haul_val.csv" beforeDir="false" afterPath="$PROJECT_DIR$/saved_models/haulout/model6/model6_haul_val.csv" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/saved_models/haulout/model7/model7_conf_matrix.png" beforeDir="false" afterPath="$PROJECT_DIR$/saved_models/haulout/model7/model7_conf_matrix.png" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/saved_models/haulout/model7/model7_haul_prec_recall.csv" beforeDir="false" afterPath="$PROJECT_DIR$/saved_models/haulout/model7/model7_haul_prec_recall.csv" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/saved_models/haulout/model7/model7_haul_val.csv" beforeDir="false" afterPath="$PROJECT_DIR$/saved_models/haulout/model7/model7_haul_val.csv" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/saved_models/haulout/model8/model8_conf_matrix.png" beforeDir="false" afterPath="$PROJECT_DIR$/saved_models/haulout/model8/model8_conf_matrix.png" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/saved_models/haulout/model8/model8_haul_prec_recall.csv" beforeDir="false" afterPath="$PROJECT_DIR$/saved_models/haulout/model8/model8_haul_prec_recall.csv" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/saved_models/haulout/model8/model8_haul_val.csv" beforeDir="false" afterPath="$PROJECT_DIR$/saved_models/haulout/model8/model8_haul_val.csv" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/saved_models/haulout/model_comparison_plot.png" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/saved_models/haulout/pooled_haul_prec_recall.csv" beforeDir="false" afterPath="$PROJECT_DIR$/saved_models/haulout/pooled_haul_prec_recall.csv" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/saved_models/.~lock.pooled_prec_recall.csv#" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/saved_models/haulout/model1/model1.tar" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/saved_models/haulout/model1/model1_conf_matrix.png" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/saved_models/haulout/model1/model1_haul_prec_recall.csv" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/saved_models/haulout/model1/model1_haul_val.csv" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/saved_models/haulout/model2/model2.tar" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/saved_models/haulout/model2/model2_conf_matrix.png" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/saved_models/haulout/model2/model2_haul_prec_recall.csv" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/saved_models/haulout/model2/model2_haul_val.csv" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/saved_models/haulout/model3/model3.tar" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/saved_models/haulout/model3/model3_conf_matrix.png" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/saved_models/haulout/model3/model3_haul_prec_recall.csv" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/saved_models/haulout/model3/model3_haul_val.csv" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/saved_models/haulout/model4/model4.tar" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/saved_models/haulout/model4/model4_conf_matrix.png" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/saved_models/haulout/model4/model4_haul_prec_recall.csv" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/saved_models/haulout/model4/model4_haul_val.csv" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/saved_models/haulout/model5/model5.tar" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/saved_models/haulout/model5/model5_conf_matrix.png" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/saved_models/haulout/model5/model5_haul_prec_recall.csv" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/saved_models/haulout/model5/model5_haul_val.csv" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/saved_models/haulout/model6/model6.tar" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/saved_models/haulout/model6/model6_conf_matrix.png" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/saved_models/haulout/model6/model6_haul_prec_recall.csv" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/saved_models/haulout/model6/model6_haul_val.csv" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/saved_models/haulout/model7/model7.tar" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/saved_models/haulout/model7/model7_conf_matrix.png" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/saved_models/haulout/model7/model7_haul_prec_recall.csv" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/saved_models/haulout/model7/model7_haul_val.csv" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/saved_models/haulout/model8/model8.tar" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/saved_models/haulout/model8/model8_conf_matrix.png" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/saved_models/haulout/model8/model8_haul_prec_recall.csv" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/saved_models/haulout/model8/model8_haul_val.csv" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/saved_models/haulout/pooled_haul_prec_recall.csv" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/saved_models/single_seal/model1/model1.tar" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/saved_models/single_seal/model2/model2.tar" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/saved_models/single_seal/model3/model3.tar" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/saved_models/single_seal/model4/model4.tar" beforeDir="false" />
       <change beforePath="$PROJECT_DIR$/train_sealnet.py" beforeDir="false" afterPath="$PROJECT_DIR$/train_sealnet.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/training_set_generation.ipynb" beforeDir="false" afterPath="$PROJECT_DIR$/training_set_generation.ipynb" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/utils/data_loader_test.py" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/utils/data_loader_train_det.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/utils/custom_architectures/nasnet_scalable.py" beforeDir="false" afterPath="$PROJECT_DIR$/utils/custom_architectures/nasnet_scalable.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/utils/dataloaders/data_loader_train_det.py" beforeDir="false" afterPath="$PROJECT_DIR$/utils/dataloaders/data_loader_train_det.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/utils/model_library.py" beforeDir="false" afterPath="$PROJECT_DIR$/utils/model_library.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/validate_sealnet_haulout.py" beforeDir="false" afterPath="$PROJECT_DIR$/validate_sealnet_haulout.py" afterDir="false" />
     </list>
     <option name="EXCLUDED_CONVERTED_TO_IGNORED" value="true" />
     <option name="TRACKING_ENABLED" value="true" />
@@ -72,17 +71,17 @@
       <file leaf-file-name="validate_sealnet_haulout.py" pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/validate_sealnet_haulout.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="585">
+            <state relative-caret-position="2196">
               <caret line="134" column="117" selection-start-line="134" selection-start-column="4" selection-end-line="134" selection-end-column="117" />
             </state>
           </provider>
         </entry>
       </file>
-      <file leaf-file-name="train_sealnet.py" pinned="false" current-in-tab="false">
+      <file leaf-file-name="train_sealnet.py" pinned="false" current-in-tab="true">
         <entry file="file://$PROJECT_DIR$/train_sealnet.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="522">
-              <caret line="158" column="53" selection-start-line="158" selection-start-column="53" selection-end-line="158" selection-end-column="53" />
+            <state relative-caret-position="311">
+              <caret line="199" column="85" selection-start-line="199" selection-start-column="85" selection-end-line="199" selection-end-column="85" />
               <folding>
                 <element signature="e#0#12#0" expanded="true" />
               </folding>
@@ -90,11 +89,23 @@
           </provider>
         </entry>
       </file>
-      <file leaf-file-name="train_sealnet_count_e2e.py" pinned="false" current-in-tab="true">
+      <file leaf-file-name="train_sealnet_count_e2e.py" pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/train_sealnet_count_e2e.py">
           <provider selected="true" editor-type-id="text-editor">
             <state relative-caret-position="162">
-              <caret line="9" column="38" lean-forward="true" selection-start-line="9" selection-start-column="38" selection-end-line="9" selection-end-column="38" />
+              <caret line="9" column="38" selection-start-line="9" selection-start-column="38" selection-end-line="9" selection-end-column="38" />
+            </state>
+          </provider>
+        </entry>
+      </file>
+      <file leaf-file-name="rename_model.py" pinned="false" current-in-tab="false">
+        <entry file="file://$PROJECT_DIR$/rename_model.py">
+          <provider selected="true" editor-type-id="text-editor">
+            <state relative-caret-position="414">
+              <caret line="25" selection-start-line="25" selection-end-line="25" />
+              <folding>
+                <element signature="e#0#9#0" expanded="true" />
+              </folding>
             </state>
           </provider>
         </entry>
@@ -102,8 +113,11 @@
       <file leaf-file-name="model_library.py" pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/utils/model_library.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="558">
-              <caret line="31" column="52" selection-start-line="31" selection-start-column="52" selection-end-line="31" selection-end-column="52" />
+            <state relative-caret-position="653">
+              <caret line="49" selection-start-line="49" selection-end-line="49" />
+              <folding>
+                <element signature="e#162#202#0" expanded="true" />
+              </folding>
             </state>
           </provider>
         </entry>
@@ -171,15 +185,17 @@
         <option value="$PROJECT_DIR$/predict_sealnet.py" />
         <option value="$PROJECT_DIR$/custom_architectures/nasnet_scalable.py" />
         <option value="$PROJECT_DIR$/custom_architectures/wide_resnet.py" />
-        <option value="$PROJECT_DIR$/train_sealnet.py" />
         <option value="$PROJECT_DIR$/custom_architectures/nasnet_scalable_count.py" />
         <option value="$PROJECT_DIR$/utils/transforms_det.py" />
         <option value="$PROJECT_DIR$/custom_architectures/count_ception.py" />
         <option value="$PROJECT_DIR$/utils/data_loader_train_det.py" />
         <option value="$PROJECT_DIR$/train_sealnet_count.py" />
-        <option value="$PROJECT_DIR$/utils/model_library.py" />
         <option value="$PROJECT_DIR$/custom_architectures/nasnet_scalable_e2e.py" />
         <option value="$PROJECT_DIR$/train_sealnet_count_e2e.py" />
+        <option value="$PROJECT_DIR$/saved_models/haulout/NasnetA_MS/rename_model.py" />
+        <option value="$PROJECT_DIR$/rename_model.py" />
+        <option value="$PROJECT_DIR$/utils/model_library.py" />
+        <option value="$PROJECT_DIR$/train_sealnet.py" />
       </list>
     </option>
   </component>
@@ -214,6 +230,11 @@
             <path>
               <item name="Seals" type="b2602c69:ProjectViewProjectNode" />
               <item name="Seals" type="462c0819:PsiDirectoryNode" />
+              <item name="saved_models" type="462c0819:PsiDirectoryNode" />
+            </path>
+            <path>
+              <item name="Seals" type="b2602c69:ProjectViewProjectNode" />
+              <item name="Seals" type="462c0819:PsiDirectoryNode" />
               <item name="utils" type="462c0819:PsiDirectoryNode" />
             </path>
           </expand>
@@ -224,12 +245,13 @@
   </component>
   <component name="PropertiesComponent">
     <property name="WebServerToolWindowFactoryState" value="false" />
-    <property name="last_opened_file_path" value="$PROJECT_DIR$/utils/data_loader_train_det.py" />
+    <property name="last_opened_file_path" value="$PROJECT_DIR$" />
     <property name="nodejs_interpreter_path.stuck_in_default_project" value="undefined stuck path" />
     <property name="settings.editor.selected.configurable" value="configurable.group.appearance" />
   </component>
   <component name="RecentsManager">
     <key name="CopyFile.RECENT_KEYS">
+      <recent name="$PROJECT_DIR$/saved_models/haulout/NasnetA_MS" />
       <recent name="$PROJECT_DIR$/custom_architectures" />
       <recent name="$PROJECT_DIR$" />
     </key>
@@ -373,20 +395,19 @@
     <servers />
   </component>
   <component name="ToolWindowManager">
-    <frame x="65" y="-4" width="1615" height="1054" extended-state="6" />
+    <frame x="64" y="-11" width="1617" height="1062" extended-state="6" />
     <editor active="true" />
     <layout>
       <window_info anchor="bottom" id="TODO" order="6" />
       <window_info anchor="bottom" id="Event Log" order="12" sideWeight="0.120743036" side_tool="true" weight="0.32769555" />
       <window_info anchor="bottom" id="Database Changes" order="11" show_stripe_button="false" />
       <window_info anchor="bottom" id="Version Control" order="8" />
-      <window_info anchor="bottom" id="Python Console" order="9" sideWeight="0.87925696" weight="0.32769555" />
+      <window_info active="true" anchor="bottom" id="Python Console" order="9" sideWeight="0.87925696" visible="true" weight="0.32769555" />
       <window_info anchor="bottom" id="Run" order="2" sideWeight="0.898452" weight="0.32875264" />
       <window_info anchor="bottom" id="Terminal" order="10" />
-      <window_info active="true" content_ui="combo" id="Project" order="0" visible="true" weight="0.2495356" />
+      <window_info content_ui="combo" id="Project" order="0" visible="true" weight="0.2495356" />
       <window_info anchor="bottom" id="Docker" order="7" show_stripe_button="false" />
       <window_info anchor="right" id="Database" order="4" />
-      <window_info anchor="bottom" id="Find" order="1" />
       <window_info anchor="right" id="SciView" order="3" weight="0.32941177" />
       <window_info id="Structure" order="1" side_tool="true" weight="0.25" />
       <window_info id="Favorites" order="2" side_tool="true" />
@@ -397,6 +418,7 @@
       <window_info anchor="right" id="Ant Build" order="1" weight="0.25" />
       <window_info anchor="bottom" id="Message" order="0" />
       <window_info anchor="bottom" id="Cvs" order="4" weight="0.25" />
+      <window_info anchor="bottom" id="Find" order="1" />
     </layout>
     <layout-to-restore>
       <window_info anchor="right" content_ui="combo" id="Hierarchy" order="2" weight="0.25" />
@@ -445,8 +467,6 @@
     </breakpoint-manager>
   </component>
   <component name="editorHistoryManager">
-    <entry file="file://$PROJECT_DIR$/sealnet_nas_scalable.py" />
-    <entry file="file://$PROJECT_DIR$/pt_conf_matrix.py" />
     <entry file="file://$PROJECT_DIR$/pt_predict.py" />
     <entry file="file://$PROJECT_DIR$/pt_train.py" />
     <entry file="file://$PROJECT_DIR$/create_trainingset.py">
@@ -531,109 +551,63 @@
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/custom_architectures/wide_resnet.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="-585">
-          <caret line="29" column="13" selection-start-line="29" selection-start-column="13" selection-end-line="29" selection-end-column="13" />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/custom_architectures/nasnet_scalable.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="-3375">
-          <caret line="327" selection-start-line="327" selection-end-line="327" />
-        </state>
-      </provider>
-    </entry>
+    <entry file="file://$PROJECT_DIR$/custom_architectures/wide_resnet.py" />
+    <entry file="file://$PROJECT_DIR$/custom_architectures/nasnet_scalable.py" />
     <entry file="file://$PROJECT_DIR$/validate_sealnet_haulout.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="585">
+        <state relative-caret-position="2196">
           <caret line="134" column="117" selection-start-line="134" selection-start-column="4" selection-end-line="134" selection-end-column="117" />
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/custom_architectures/nasnet_scalable_count.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="269">
-          <caret line="545" column="50" selection-start-line="545" selection-start-column="50" selection-end-line="545" selection-end-column="50" />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/utils/data_loader_train_det.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="162">
-          <caret line="9" column="18" selection-start-line="9" selection-start-column="18" selection-end-line="9" selection-end-column="18" />
-          <folding>
-            <element signature="e#48#79#0" expanded="true" />
-          </folding>
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/utils/data_loader_test.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="1548">
-          <caret line="86" selection-start-line="86" selection-end-line="86" />
-          <folding>
-            <element signature="e#48#79#0" expanded="true" />
-          </folding>
-        </state>
-      </provider>
-    </entry>
+    <entry file="file://$PROJECT_DIR$/custom_architectures/nasnet_scalable_count.py" />
+    <entry file="file://$PROJECT_DIR$/utils/data_loader_train_det.py" />
+    <entry file="file://$PROJECT_DIR$/utils/data_loader_test.py" />
     <entry file="file://$PROJECT_DIR$/train_sealnet_count.py">
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="-109">
           <caret line="105" column="70" selection-start-line="105" selection-start-column="70" selection-end-line="105" selection-end-column="70" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/utils/transforms_det.py" />
+    <entry file="file://$PROJECT_DIR$/custom_architectures/count_ception.py" />
+    <entry file="file://$PROJECT_DIR$/custom_architectures/nasnet_scalable_e2e.py" />
+    <entry file="file://$PROJECT_DIR$/saved_models/haulout/NasnetA_MS/rename_model.py" />
+    <entry file="file://$PROJECT_DIR$/rename_model.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="414">
+          <caret line="25" selection-start-line="25" selection-end-line="25" />
           <folding>
-            <element signature="e#0#12#0" expanded="true" />
+            <element signature="e#0#9#0" expanded="true" />
           </folding>
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/utils/transforms_det.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="396">
-          <caret line="28" column="56" selection-start-line="28" selection-start-column="56" selection-end-line="28" selection-end-column="56" />
-          <folding>
-            <element signature="e#0#46#0" expanded="true" />
-          </folding>
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/custom_architectures/count_ception.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="1935">
-          <caret line="113" selection-start-line="113" selection-end-line="113" />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/train_sealnet.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="522">
-          <caret line="158" column="53" selection-start-line="158" selection-start-column="53" selection-end-line="158" selection-end-column="53" />
-          <folding>
-            <element signature="e#0#12#0" expanded="true" />
-          </folding>
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/utils/model_library.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="558">
-          <caret line="31" column="52" selection-start-line="31" selection-start-column="52" selection-end-line="31" selection-end-column="52" />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/custom_architectures/nasnet_scalable_e2e.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="320">
-          <caret line="539" lean-forward="true" selection-start-line="539" selection-end-line="539" />
         </state>
       </provider>
     </entry>
     <entry file="file://$PROJECT_DIR$/train_sealnet_count_e2e.py">
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="162">
-          <caret line="9" column="38" lean-forward="true" selection-start-line="9" selection-start-column="38" selection-end-line="9" selection-end-column="38" />
+          <caret line="9" column="38" selection-start-line="9" selection-start-column="38" selection-end-line="9" selection-end-column="38" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/utils/model_library.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="653">
+          <caret line="49" selection-start-line="49" selection-end-line="49" />
+          <folding>
+            <element signature="e#162#202#0" expanded="true" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/train_sealnet.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="311">
+          <caret line="199" column="85" selection-start-line="199" selection-start-column="85" selection-end-line="199" selection-end-column="85" />
+          <folding>
+            <element signature="e#0#12#0" expanded="true" />
+          </folding>
         </state>
       </provider>
     </entry>

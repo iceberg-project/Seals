@@ -3,15 +3,13 @@ import torch.nn as nn
 import torch.optim as optim
 from torch.optim import lr_scheduler
 import numpy as np
-from torchvision import datasets, models, transforms
+from torchvision import datasets, transforms
 from torch.autograd import Variable
 import os
 import argparse
 from tensorboardX import SummaryWriter
 import time
 from utils.model_library import *
-from utils.custom_architectures.nasnet_scalable import NASNetALarge
-from utils.custom_architectures.wide_resnet import WideResNet
 from PIL import ImageFile
 import warnings
 
@@ -25,6 +23,8 @@ parser.add_argument('--cv_weights', type=str, help='weights for weighted-cross v
                                                    'cv_weights dictionary')
 parser.add_argument('--output_name', type=str, help='name of output file from training, this name will also be used in '
                                                     'subsequent steps of the pipeline')
+parser.add_argument('--pipeline', type=str, help='name of the detection pipeline where the model will be saved')
+
 args = parser.parse_args()
 
 # check for invalid inputs
@@ -56,7 +56,7 @@ data_transforms = {
         transforms.RandomVerticalFlip(),
         transforms.RandomRotation(180, expand=True),
         transforms.CenterCrop(arch_input_size * 1.5),
-        transforms.RandomResizedCrop(size=arch_input_size, scale=(0.8, 1), ratio=(0.95, 1.05)),
+        transforms.RandomResizedCrop(size=arch_input_size, scale=(0.8, 1), ratio=(1, 1)),
         transforms.ColorJitter(brightness=np.random.choice([0, 1]) * 0.05,
                                contrast=np.random.choice([0, 1]) * 0.05),
         transforms.ToTensor(),
@@ -69,10 +69,13 @@ data_transforms = {
     ]),
 }
 
+# load datasets
 data_dir = "./training_sets/{}".format(args.training_dir)
-image_datasets = {x: datasets.ImageFolder(os.path.join(data_dir, x),
-                                          data_transforms[x])
+image_datasets = {x: model_dataloaders[args.pipeline](os.path.join(data_dir, x), data_transforms[x])
                   for x in ['training', 'validation']}
+
+# store number of classes
+num_classes = len(image_datasets['training'].classes)
 
 
 # Force minibatches to have an equal representation amongst classes during training with a weighted sampler
@@ -91,7 +94,7 @@ def make_weights_for_balanced_classes(images, nclasses):
 
 
 # For unbalanced dataset we create a weighted sampler
-weights = make_weights_for_balanced_classes(image_datasets['training'].imgs, len(image_datasets['training'].classes))
+weights = make_weights_for_balanced_classes(image_datasets['training'].imgs, num_classes)
 weights = torch.DoubleTensor(weights)
 sampler = torch.utils.data.sampler.WeightedRandomSampler(weights, len(weights))
 
@@ -193,30 +196,18 @@ def train_model(model, criterion, optimizer, scheduler, num_epochs=25):
         time_elapsed // 3600, (time_elapsed % 3600) // 60, time_elapsed % 60))
 
     # save the model, keeping haulout and single seal models in separate folders
-    if model_archs[args.model_architecture]['haulout']:
-        torch.save(model.state_dict(), 'saved_models/haulout/{}/{}.tar'.format(args.output_name, args.output_name))
-    else:
-        torch.save(model.state_dict(), 'saved_models/single_seal/{}/{}.tar'.format(args.output_name, args.output_name))
+
+    torch.save(model.state_dict(), 'saved_models/{}/{}/{}.tar'.format(args.pipeline, args.output_name, args.output_name))
 
     return model
 
 
 def main():
     # loading the pretrained model and adding new classes to it
-    if args.model_architecture == "Resnet18":
-        model_ft = models.resnet18(pretrained=False, num_classes=len(class_names))
-        num_ftrs = model_ft.fc.in_features
-        model_ft.fc = nn.Linear(num_ftrs, len(class_names))
-
-    elif args.model_architecture == "WideResnetA":
-        model_ft = WideResNet(depth=28, num_classes=11)
-
-    else:
-        model_ft = NASNetALarge(in_channels_0=48, out_channels_0=24, out_channels_1=32, out_channels_2=64,
-                                out_channels_3=128, num_classes=len(class_names))
+    model_ft = model_defs[args.pipeline][args.model_architecture](num_classes)
 
     # define criterion
-    criterion = nn.CrossEntropyLoss(weight=torch.FloatTensor(cv_weights[args.cv_weights]))
+    criterion = nn.CrossEntropyLoss(weight=torch.FloatTensor(cv_weights[args.cv_weights](num_classes)))
 
     if use_gpu:
         # i think we can set parallel GPU usage here. will test
@@ -237,8 +228,8 @@ def main():
                                            , gamma=hyperparameters[args.hyperparameter_set]['gamma'])
 
     # start training
-    model_ft = train_model(model_ft, criterion, optimizer_ft, exp_lr_scheduler,
-                           num_epochs=hyperparameters[args.hyperparameter_set]['epochs'])
+    train_model(model_ft, criterion, optimizer_ft, exp_lr_scheduler,
+                num_epochs=hyperparameters[args.hyperparameter_set]['epochs'])
 
 
 if __name__ == '__main__':

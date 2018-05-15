@@ -1,13 +1,29 @@
 # Script to store model architectures and hyperparameter combinations
+__all__ = ['model_archs', 'training_sets', 'hyperparameters', 'cv_weights', 'model_defs', 'model_dataloaders']
 
+
+from utils.custom_architectures import *
+from utils.dataloaders import *
+from torchvision import models, datasets
 
 # architecture definitions with input size and whether the model is used at the haulout level or single seal level
-model_archs = {'NasnetA': {'input_size': 299, 'haulout': True},
-               'Resnet18': {'input_size': 224, 'haulout': True},
-               'WideResnetA': {'input_size': 28, 'haulout': False},
-               'CountCeption': {'input_size': 32, 'haulout': False},
-               'NasnetACount': {'input_size': 299, 'haulout': False},
-               'NasnetAe2e': {'input_size': 299, 'haulout': False}}
+model_archs = {'NasnetA': {'input_size': 299},
+               'Resnet18': {'input_size': 224},
+               'WideResnetA': {'input_size': 28},
+               'CountCeption': {'input_size': 32},
+               'NasnetACount': {'input_size': 299},
+               'NasnetAe2e': {'input_size': 299}}
+
+# model definitions
+model_defs = {'Pipeline1': {'NasnetA': lambda num_classes: NASNetA(in_channels_0=48, out_channels_0=24,
+                                                                   out_channels_1=32, out_channels_2=64,
+                                                                   out_channels_3=128, num_classes=num_classes),
+                            'Resnet18': lambda num_classes: models.resnet18(pretrained=False, num_classes=num_classes)}}
+
+# model dataloaders
+model_dataloaders = {'Pipeline1': lambda dataset, transforms: datasets.ImageFolder(dataset, transforms),
+                     'Pipeline1.1': lambda dataset, transforms: ImageFolderTrainDet(dataset, transforms)}
+
 
 # training sets with number of classes and size of scale bands
 training_sets = {'training_set_vanilla': {'num_classes': 11, 'scale_bands': [450, 450, 450]},
@@ -29,9 +45,8 @@ hyperparameters = {'A': {'learning_rate': 1E-3, 'batch_size_train': 64, 'batch_s
                    }
 
 # cross-validation weights
-#TODO: make cv_weights flexible to number of classes
-cv_weights = {'NO': [1 for ele in range(9)],
-              'A': [5, 1, 1, 1, 1, 1, 1, 1, 1, 1, 5]}
+cv_weights = {'NO': lambda x: [1] * x,
+              'A': lambda x: [5] + [1] * (x-2) + [5]}
 
 
 
