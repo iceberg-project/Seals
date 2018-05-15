@@ -190,7 +190,7 @@ class ImageFolderTrainDet(DatasetFolder):
     def __init__(self, root, shape_transform=None, int_transform=None,
                  loader=default_loader):
         super(ImageFolderTrainDet, self).__init__(root, loader, IMG_EXTENSIONS,
-                                                  shape_transform=shape_transform,
-                                                  int_transform=int_transform)
+                                                    shape_transform=shape_transform,
+                                                    int_transform=int_transform)
         self.imgs = self.samples
 
