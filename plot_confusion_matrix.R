@@ -5,12 +5,13 @@ library(ggplot2)
 library(reshape2)
 library(scales)
 library(glue)
-library(argparser)
+library(argparse)
 
 # define arg-parser 
-parser = arg_parser("R script to get validation stats and plot a confusion matrix")
-parser = add_argument(parser, "input_file", help="model name generated during training")
-inp_file = parse_args(parser=parser)
+parser = ArgumentParser(description="R script to get validation stats and plot a confusion matrix")
+parser$add_argument("--input_file", type="character", help="model name generated during training")
+parser$add_argument("--pipeline", type="character", help='model pipeline')
+args = parser$parse_args()
 
 
 # plot confusion matrix
@@ -47,7 +48,7 @@ get_confusion_matrix = function(csv_file, labels, pos_classes){
         pos_classes_stats = rbind(pos_classes_stats, c(class_prec, class_rec))
     }
     colnames(pos_classes_stats) = c('precision', 'recall')
-    row.names(pos_classes_stats) = pos_classes
+    pos_classes_stats['label'] = pos_classes
     pos_classes_stats['balanced_accuracy'] = rep(balanced_acc, dim(pos_classes_stats)[1])
     pos_classes_stats['model_name'] = rep(model_name, dim(pos_classes_stats)[1])
     
@@ -76,16 +77,12 @@ get_confusion_matrix = function(csv_file, labels, pos_classes){
         theme(legend.position="none")
     
     # save confusion_matrix as a png figure
-    png(glue("./saved_models/haulout/{model_name}/{model_name}_conf_matrix.png"))
+    png(glue("./saved_models/{pipeline}/{model_name}/{model_name}_conf_matrix.png"))
     print(plot)
     dev.off()
     
     # write performance metrics to csv
-    write.csv(pos_classes_stats, glue("./saved_models/haulout/{model_name}/{model_name}_haul_prec_recall.csv"))
-    
-    # return output
-    return(list('conf_matrix'=conf_matrix, 'pos_class_stats'=pos_classes_stats, 
-                'balanced_accuracy'=balanced_acc))
+    write.csv(pos_classes_stats, glue("./saved_models/{pipeline}/{model_name}/{model_name}_prec_recall.csv"))
 }
 
 # define labels
@@ -96,9 +93,10 @@ labels = c('crabeater', 'weddell', 'pack-ice', 'other', 'emperor', 'open-water',
 pos_classes = c('crabeater', 'weddell', 'emperor', 'marching-emperor')
 
 # run for validation data
-model_name = inp_file$input_file
-output = get_confusion_matrix(csv_file=glue('./saved_models/haulout/{model_name}/{model_name}_haul_val.csv'), labels=labels,
-                              pos_classes=pos_classes)
+model_name = args$input_file
+pipeline = args$pipeline
+get_confusion_matrix(csv_file=glue('./saved_models/{pipeline}/{model_name}/{model_name}_validation.csv'), labels=labels,
+                     pos_classes=pos_classes)
 
 
 
