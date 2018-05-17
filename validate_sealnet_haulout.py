@@ -113,6 +113,14 @@ def validate_model(model, val_dir, out_file, pipeline, batch_size=8, input_size=
         time_elapsed // 3600, time_elapsed // 60, time_elapsed % 60))
     print('Validation Acc: {:4f}'.format(running_corrects / len(dataset)))
 
+    # get total number of tunable parameters
+    total_params = sum(p.numel() for p in model.parameters() if p.requires_grad)
+
+    # add running time and total number of parameters to conf matrix
+    conf_matrix = conf_matrix.append({'ground_truth': (time_elapsed / len(dataset)) * 1000, 'predicted': total_params},
+                                     ignore_index=True)
+
+    # save output to .csv for plotting
     conf_matrix.to_csv('./saved_models/{}/{}/{}_validation.csv'.format(pipeline, out_file, out_file), index=False)
 
 

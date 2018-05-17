@@ -19,6 +19,13 @@ get_confusion_matrix = function(csv_file, labels, pos_classes){
     # read validation output from validate 
     rows = read.csv(csv_file, stringsAsFactors=FALSE)
     
+    # get running time and parameters (last row)
+    total_params = as.integer(rows[dim(rows)[1], 1])
+    running_time = as.double(rows[dim(rows)[1], 2])
+    
+    # remove last row
+    rows = rows[-dim(rows)[1],]
+    
     # reformat as confusion matrix
     n_labels = length(labels)
     conf_matrix = data.frame(matrix(0, nrow=n_labels, ncol=n_labels), row.names=labels)
@@ -51,6 +58,8 @@ get_confusion_matrix = function(csv_file, labels, pos_classes){
     pos_classes_stats['label'] = pos_classes
     pos_classes_stats['balanced_accuracy'] = rep(balanced_acc, dim(pos_classes_stats)[1])
     pos_classes_stats['model_name'] = rep(model_name, dim(pos_classes_stats)[1])
+    pos_classes_stats['n_parameters'] = rep(total_params, dim(pos_classes_stats)[1])
+    pos_classes_stats['running_time'] = rep(running_time, dim(pos_classes_stats)[1])
     
     # melt dataframe for plotting
     plot_df = melt(as.matrix(conf_matrix))
