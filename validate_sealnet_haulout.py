@@ -2,12 +2,10 @@ import torch
 import pandas as pd
 from torchvision import datasets, transforms, models
 from torch.autograd import Variable
-import torch.nn as nn
 import time
 import warnings
 import argparse
 from utils.model_library import *
-from utils.custom_architectures.nasnet_scalable import NASNetALarge
 
 # image transforms seem to cause truncated images, so we need this
 from PIL import ImageFile
@@ -24,20 +22,26 @@ parser.add_argument('--hyperparameter_set', type=str, help='combination of hyper
                                                            'hyperparameters dictionary')
 parser.add_argument('--model_name', type=str, help='name of input model file from training, this name will also be used'
                                                    'in subsequent steps of the pipeline')
+parser.add_argument('--pipeline', type=str, help='name of the detection pipeline where the model is loaded from')
+
+# load arguments
 args = parser.parse_args()
 
 # check for invalid inputs
 if args.model_architecture not in model_archs:
-    raise Exception("Unsupported architecture")
+    raise Exception("Invalid architecture -- see supported architectures:  {}".format(list(model_archs.keys())))
 
 if args.training_dir not in training_sets:
-    raise Exception("Invalid training set")
+    raise Exception("Training set is not defined in ./utils/model_library.py")
 
 if args.hyperparameter_set not in hyperparameters:
-    raise Exception("Invalid hyperparameter combination")
+    raise Exception("Hyperparameter combination is not defined in ./utils/model_library.py")
+
+if args.pipeline not in model_defs:
+    raise Exception('Pipeline is not defined in ./utils/model_library.py')
 
 
-def validate_model(model, val_dir, out_file, batch_size=8, input_size=299,  to_csv=True, num_workers=1):
+def validate_model(model, val_dir, out_file, pipeline, batch_size=8, input_size=299, num_workers=1):
     """
     Generates a confusion matrix from a PyTorch model and validation images
 
@@ -97,7 +101,7 @@ def validate_model(model, val_dir, out_file, batch_size=8, input_size=299,  to_c
 
         # add current predictions to conf_matrix
         conf_matrix_batch = pd.DataFrame(data=[[class_names[int(ele)] for ele in preds],
-                                               [class_names[int(ele)] for ele in labels]])
+                                               [class_names[int(ele)] for ele in labels.data]])
         conf_matrix_batch = conf_matrix_batch.transpose()
         conf_matrix_batch.columns = ['predicted', 'ground_truth']
         conf_matrix = conf_matrix.append(conf_matrix_batch)
@@ -108,22 +112,14 @@ def validate_model(model, val_dir, out_file, batch_size=8, input_size=299,  to_c
     print('Validation complete in {}h {:.0f}m {:.0f}s'.format(
         time_elapsed // 3600, time_elapsed // 60, time_elapsed % 60))
     print('Validation Acc: {:4f}'.format(running_corrects / len(dataset)))
-    
-    if to_csv:
-        conf_matrix.to_csv('./saved_models/haulout/{}/{}_haul_val.csv'.format(out_file, out_file), index=False)
+
+    conf_matrix.to_csv('./saved_models/{}/{}/{}_validation.csv'.format(pipeline, out_file, out_file), index=False)
 
 
 def main():
     # create model instance
     num_classes = training_sets[args.training_dir]['num_classes']
-    if args.model_architecture == "Resnet18":
-        model_ft = models.resnet18(pretrained=False, num_classes=num_classes)
-        num_ftrs = model_ft.fc.in_features
-        model_ft.fc = nn.Linear(num_ftrs, num_classes)
-
-    else:
-        model_ft = NASNetALarge(in_channels_0=48, out_channels_0=24, out_channels_1=32, out_channels_2=64,
-                                out_channels_3=128, num_classes=num_classes)
+    model_ft = model_defs[args.pipeline][args.model_architecture](num_classes)
 
     # check for GPU support and set model to evaluation mode
     use_gpu = torch.cuda.is_available()
@@ -132,11 +128,12 @@ def main():
     model_ft.eval()
 
     # load saved model weights from pt_train.py
-    model_ft.load_state_dict(torch.load("./saved_models/haulout/{}/{}.tar".format(args.model_name, args.model_name)))
+    model_ft.load_state_dict(torch.load("./saved_models/{}/{}/{}.tar".format(args.pipeline, args.model_name,
+                                                                             args.model_name)))
 
     # run validation to get confusion matrix
     validate_model(model=model_ft, input_size=model_archs[args.model_architecture]['input_size'],
-                   batch_size=hyperparameters[args.hyperparameter_set]['batch_size_test'],
+                   pipeline=args.pipeline, batch_size=hyperparameters[args.hyperparameter_set]['batch_size_test'],
                    val_dir=args.training_dir, out_file=args.model_name,
                    num_workers=hyperparameters[args.hyperparameter_set]['num_workers_train'])
 

@@ -3,7 +3,7 @@ import torch.nn as nn
 import torch.optim as optim
 from torch.optim import lr_scheduler
 import numpy as np
-from torchvision import datasets, models, transforms
+from torchvision import transforms
 from torch.autograd import Variable
 import os
 import argparse
@@ -12,8 +12,6 @@ import time
 from utils.model_library import *
 from utils.dataloaders.data_loader_train_det import ImageFolderTrainDet
 from utils.dataloaders.transforms_det import ShapeTransform
-from utils.custom_architectures.count_ception import ModelCountception
-from utils.custom_architectures.nasnet_scalable_count import NASNetALarge
 from PIL import ImageFile
 import warnings
 
@@ -23,24 +21,29 @@ parser.add_argument('--model_architecture', type=str, help='model architecture, 
                                                            'dictionary')
 parser.add_argument('--hyperparameter_set', type=str, help='combination of hyperparameters used, must be a member of '
                                                            'hyperparameters dictionary')
-parser.add_argument('--cv_weights', type=str, help='weights for weighted-cross validation, must be a member of '
-                                                   'cv_weights dictionary')
+parser.add_argument('--cv_weights', nargs='?', type=str, default='NO', help='weights for weighted-cross validation, '
+                                                                            'must be a member of cv_weights dictionary')
 parser.add_argument('--output_name', type=str, help='name of output file from training, this name will also be used in '
                                                     'subsequent steps of the pipeline')
+parser.add_argument('--pipeline', type=str, help='name of the detection pipeline where the model will be saved')
+
 args = parser.parse_args()
 
 # check for invalid inputs
 if args.model_architecture not in model_archs:
-    raise Exception("Unsupported architecture")
+    raise Exception("Invalid architecture -- see supported architectures:  {}".format(list(model_archs.keys())))
 
 if args.training_dir not in training_sets:
-    raise Exception("Invalid training set")
-
-if args.cv_weights not in cv_weights:
-    raise Exception("Invalid cross-validation weights")
+    raise Exception("Training set is not defined in ./utils/model_library.py")
 
 if args.hyperparameter_set not in hyperparameters:
-    raise Exception("Invalid hyperparameter combination")
+    raise Exception("Hyperparameter combination is not defined in ./utils/model_library.py")
+
+if args.pipeline not in model_defs:
+    raise Exception('Pipeline is not defined in ./utils/model_library.py')
+
+if args.cv_weights not in cv_weights:
+    raise Exception("Cross-validation are not defined in ./utils/model_library.py")
 
 # image transforms seem to cause truncated images, so we need this
 ImageFile.LOAD_TRUNCATED_IMAGES = True
@@ -157,7 +160,6 @@ def train_model(model, criterion, optimizer, scheduler, num_epochs=25):
                 optimizer.zero_grad()
 
                 # forward
-
                 outputs = torch.Tensor([ele for ele in model(inputs)])
                 outputs = Variable(outputs, requires_grad=True)
                 outputs = outputs.cuda()
@@ -192,31 +194,20 @@ def train_model(model, criterion, optimizer, scheduler, num_epochs=25):
         time_elapsed // 3600, (time_elapsed % 3600) // 60, time_elapsed % 60))
 
     # save the model, keeping haulout and single seal models in separate folders
-    if model_archs[args.model_architecture]['haulout']:
-        torch.save(model.state_dict(), 'saved_models/haulout/{}/{}.tar'.format(args.output_name, args.output_name))
-    else:
-        torch.save(model.state_dict(), 'saved_models/single_seal/{}/{}.tar'.format(args.output_name, args.output_name))
+    torch.save(model.state_dict(), 'saved_models/{}/{}/{}.tar'.format(args.pipeline, args.output_name,
+                                                                      args.output_name))
 
     return model
 
 
 def main():
-    use_gpu = torch.cuda.is_available()
+    model_ft = model_defs[args.pipeline][args.model_architecture]
 
-    if args.model_architecture == 'CountCeption':
-        model = ModelCountception()
+    # get weight
+    cv_weight = cv_weights[args.cv_weights](1)
 
-    elif args.model_architecture == 'NasnetACount':
-        model = NASNetALarge(in_channels_0=48, out_channels_0=24, out_channels_1=32, out_channels_2=64,
-                             out_channels_3=128, num_classes=11)
-        # load weights from classification
-        model.load_state_dict(
-            torch.load("./saved_models/haulout/model5/model5.tar"))
-        # replace last linear
-        model.last_linear = nn.Linear(128*12, 1)
-
-    # define criterion for counting
-    criterion = nn.MSELoss()
+    # define criterion
+    criterion = loss_functions[args.pipeline](cv_weight)
 
     if use_gpu:
         # i think we can set parallel GPU usage here. will test
@@ -226,19 +217,19 @@ def main():
         # It should also be an integer multiple of the number of GPUs so that
         # each chunk is the same size (so that each GPU processes the same number of samples).
         # model_ft = nn.DataParallel(model_ft).cuda()
-        model = model.cuda()
+        model_ft = model_ft.cuda()
         criterion = criterion.cuda()
 
     # Observe that all parameters are being optimized
-    optimizer_ft = optim.Adam(model.parameters(), lr=hyperparameters[args.hyperparameter_set]['learning_rate'])
+    optimizer_ft = optim.Adam(model_ft.parameters(), lr=hyperparameters[args.hyperparameter_set]['learning_rate'])
 
     # Decay LR by a factor of 0.1 every 7 epochs
     exp_lr_scheduler = lr_scheduler.StepLR(optimizer_ft, step_size=hyperparameters[args.hyperparameter_set]['step_size']
                                            , gamma=hyperparameters[args.hyperparameter_set]['gamma'])
 
     # start training
-    model_ft = train_model(model, criterion, optimizer_ft, exp_lr_scheduler,
-                           num_epochs=hyperparameters[args.hyperparameter_set]['epochs'])
+    train_model(model_ft, criterion, optimizer_ft, exp_lr_scheduler,
+                num_epochs=hyperparameters[args.hyperparameter_set]['epochs'])
 
 
 if __name__ == '__main__':
