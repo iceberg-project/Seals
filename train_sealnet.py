@@ -19,8 +19,8 @@ parser.add_argument('--model_architecture', type=str, help='model architecture, 
                                                            'dictionary')
 parser.add_argument('--hyperparameter_set', type=str, help='combination of hyperparameters used, must be a member of '
                                                            'hyperparameters dictionary')
-parser.add_argument('--cv_weights', type=str, help='weights for weighted-cross validation, must be a member of '
-                                                   'cv_weights dictionary')
+parser.add_argument('--cv_weights', nargs='?', type=str, default='NO', help='weights for weighted-cross validation, '
+                                                                            'must be a member of cv_weights dictionary')
 parser.add_argument('--output_name', type=str, help='name of output file from training, this name will also be used in '
                                                     'subsequent steps of the pipeline')
 parser.add_argument('--pipeline', type=str, help='name of the detection pipeline where the model will be saved')
@@ -29,16 +29,19 @@ args = parser.parse_args()
 
 # check for invalid inputs
 if args.model_architecture not in model_archs:
-    raise Exception("Unsupported architecture")
+    raise Exception("Invalid architecture -- see supported architectures:\n\n  {}".format(model_archs.keys()))
 
 if args.training_dir not in training_sets:
-    raise Exception("Invalid training set")
-
-if args.cv_weights not in cv_weights:
-    raise Exception("Invalid cross-validation weights")
+    raise Exception("Training set is not defined in ./utils/model_library.py")
 
 if args.hyperparameter_set not in hyperparameters:
-    raise Exception("Invalid hyperparameter combination")
+    raise Exception("Hyperparameter combination is not defined in ./utils/model_library.py")
+
+if args.pipeline not in model_defs:
+    raise Exception('Pipeline is not defined in ./utils/model_library.py')
+
+if args.cv_weights not in cv_weights:
+    raise Exception("Cross-validation are not defined in ./utils/model_library.py")
 
 # image transforms seem to cause truncated images, so we need this
 ImageFile.LOAD_TRUNCATED_IMAGES = True
@@ -71,7 +74,7 @@ data_transforms = {
 
 # load datasets
 data_dir = "./training_sets/{}".format(args.training_dir)
-image_datasets = {x: model_dataloaders[args.pipeline](os.path.join(data_dir, x), data_transforms[x])
+image_datasets = {x: dataloaders[args.pipeline](os.path.join(data_dir, x), data_transforms[x])
                   for x in ['training', 'validation']}
 
 # store number of classes
@@ -143,24 +146,26 @@ def train_model(model, criterion, optimizer, scheduler, num_epochs=25):
             # Iterate over data.
             for data in dataloaders[phase]:
                 # get the inputs
-                inputs, labels = data
+                inputs, targets = data
 
                 # create tensorboard variables
 
                 # wrap them in Variable
                 if use_gpu:
                     inputs = Variable(inputs.cuda())
-                    labels = Variable(labels.cuda())
+                    targets = Variable(targets.cuda())
                 else:
-                    inputs, labels = Variable(inputs), Variable(labels)
+                    inputs, targets = Variable(inputs), Variable(targets)
 
                 # zero the parameter gradients
                 optimizer.zero_grad()
 
                 # forward
                 outputs = model(inputs)
+
                 _, preds = torch.max(outputs.data, 1)
-                loss = criterion(outputs, labels)
+
+                loss = criterion(outputs, targets)
 
                 # backward + optimize only if in training phase
                 if phase == 'training':
@@ -183,8 +188,8 @@ def train_model(model, criterion, optimizer, scheduler, num_epochs=25):
                 writer.add_scalar('training_accuracy', epoch_acc, global_step=global_step)
                 writer.add_scalar('learning_rate', optimizer.param_groups[-1]['lr'], global_step=global_step)
 
-            print('{} Loss: {:.4f} Acc: {:.4f}'.format(
-                phase, epoch_loss, epoch_acc))
+            print('{} Loss: {:.4f} {} Acc: {:.4f}'.format(
+                phase, epoch_loss, phase, epoch_acc))
 
             if phase == 'validation':
                 time_elapsed = time.time() - since
@@ -206,8 +211,11 @@ def main():
     # loading the pretrained model and adding new classes to it
     model_ft = model_defs[args.pipeline][args.model_architecture](num_classes)
 
+    # get weight
+    cv_weight = cv_weights[args.cv_weights](num_classes)
+
     # define criterion
-    criterion = nn.CrossEntropyLoss(weight=torch.FloatTensor(cv_weights[args.cv_weights](num_classes)))
+    criterion = loss_functions[args.pipeline](cv_weight)
 
     if use_gpu:
         # i think we can set parallel GPU usage here. will test
