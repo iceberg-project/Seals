@@ -6,19 +6,20 @@ import os
 from utils.model_library import *
 import torch.nn as nn
 import pandas as pd
-from utils.custom_architectures.nasnet_scalable import NASNetALarge
 from PIL import ImageFile
 import argparse
 import affine
 
 parser = argparse.ArgumentParser(description='predict new images using a previously trained model')
-parser.add_argument('--training_dir', type=str, help='base directory to search for classification labels')
+parser.add_argument('--training_dir', type=str, help='base directory to recursively search for images in')
 parser.add_argument('--model_architecture', type=str, help='model architecture, must be a member of models '
                                                            'dictionary')
 parser.add_argument('--hyperparameter_set', type=str, help='combination of hyperparameters used, must be a member of '
                                                            'hyperparameters dictionary')
-parser.add_argument('--model_name', type=str, help='name of input model file from training, this name will also be used'
-                                                   'in subsequent steps of the pipeline')
+parser.add_argument('--output_name', type=str, help='name of output file from training, this name will also be used in '
+                                                    'subsequent steps of the pipeline')
+parser.add_argument('--pipeline', type=str, help='name of the detection pipeline where the model will be saved')
+
 parser.add_argument('--data_dir', type=str, help='directory with tiles to be classified')
 parser.add_argument('--affine_transforms', type=str, help='name of .csv file with affine data transforms')
 parser.add_argument('--scene', type=str, help='name of raster file where data_dir is located')
@@ -27,10 +28,16 @@ args = parser.parse_args()
 
 # check for invalid inputs
 if args.model_architecture not in model_archs:
-    raise Exception("Unsupported architecture")
+    raise Exception("Invalid architecture -- see supported architectures:  {}".format(list(model_archs.keys())))
 
 if args.training_dir not in training_sets:
-    raise Exception("Invalid training set")
+    raise Exception("Training set is not defined in ./utils/model_library.py")
+
+if args.hyperparameter_set not in hyperparameters:
+    raise Exception("Hyperparameter combination is not defined in ./utils/model_library.py")
+
+if args.pipeline not in model_defs:
+    raise Exception('Pipeline is not defined in ./utils/model_library.py')
 
 # load data transforms
 affine_transforms = pd.read_csv(args.affine_transforms).to_dict('list')
@@ -82,18 +89,11 @@ for path, _, files in os.walk(data_dir):
 
 # classify images with CNN
 def main():
-    # create a pandas DataFrame to save classified images
+    # load number of classes
     num_classes = training_sets[args.training_dir]['num_classes']
 
-    # create model instance
-    if args.model_architecture == "Resnet18":
-        model_ft = models.resnet18(pretrained=False, num_classes=num_classes)
-        num_ftrs = model_ft.fc.in_features
-        model_ft.fc = nn.Linear(num_ftrs, num_classes)
-
-    else:
-        model_ft = NASNetALarge(in_channels_0=48, out_channels_0=24, out_channels_1=32, out_channels_2=64,
-                                out_channels_3=128, num_classes=num_classes)
+    # create model
+    model_ft = model_defs[args.pipeline][args.model_architecture]
 
     # check for GPU support and set model to evaluation mode
     use_gpu = torch.cuda.is_available()
