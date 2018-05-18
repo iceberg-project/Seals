@@ -148,8 +148,6 @@ def train_model(model, criterion, optimizer, scheduler, num_epochs=25):
                 # get the inputs
                 inputs, targets = data
 
-                # create tensorboard variables
-
                 # wrap them in Variable
                 if use_gpu:
                     inputs = Variable(inputs.cuda())
@@ -175,7 +173,7 @@ def train_model(model, criterion, optimizer, scheduler, num_epochs=25):
 
                 # statistics
                 running_loss += loss.item() * inputs.size(1)
-                running_corrects += torch.sum(preds == labels.data).item()
+                running_corrects += torch.sum(preds == targets.data).item()
 
             epoch_loss = running_loss / dataset_sizes[phase]
             epoch_acc = running_corrects / dataset_sizes[phase]

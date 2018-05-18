@@ -19,8 +19,6 @@ parser.add_argument('--det_classes', type=str, help='classes that will be target
                                                     'separated by underscores')
 parser.add_argument('--shape_file', type=str, help='path to shape file with seal points')
 
-
-
 args = parser.parse_args()
 
 
@@ -135,7 +133,7 @@ def get_patches(out_folder: str, raster_dir: str, shape_file: str, lon: str, lat
                 bands = np.dstack(bands)
                 # save patch image to correct subfolder based on label
                 filename = "./training_sets/{}/{}/{}/{}.jpg".format(out_folder, p[1]['dataset'], p[1]['label'],
-                                                                    num_imgs)
+                                                                    p[1]['shapeid'])
                 cv2.imwrite(filename, bands)
                 # store counts and detections
                 locs = ""
