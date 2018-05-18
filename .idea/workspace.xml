@@ -2,10 +2,23 @@
 <project version="4">
   <component name="ChangeListManager">
     <list default="true" id="f01122e5-c44d-4ea0-9489-87b246f5b794" name="Default" comment="">
+      <change afterPath="$PROJECT_DIR$/.idea/libraries/R_User_Library.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/predict_sealnet_ablation.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.Rhistory" beforeDir="false" afterPath="$PROJECT_DIR$/.Rhistory" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/Seals.iml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/Seals.iml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.ipynb_checkpoints/model_search-checkpoint.ipynb" beforeDir="false" afterPath="$PROJECT_DIR$/.ipynb_checkpoints/model_search-checkpoint.ipynb" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/create_trainingset.py" beforeDir="false" afterPath="$PROJECT_DIR$/create_trainingset.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/model_search.ipynb" beforeDir="false" afterPath="$PROJECT_DIR$/model_search.ipynb" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/plot_comparison.R" beforeDir="false" afterPath="$PROJECT_DIR$/plot_comparison.R" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/plot_confusion_matrix.R" beforeDir="false" afterPath="$PROJECT_DIR$/plot_confusion_matrix.R" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/validate_sealnet_haulout.py" beforeDir="false" afterPath="$PROJECT_DIR$/validate_sealnet_haulout.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/predict_sealnet.py" beforeDir="false" afterPath="$PROJECT_DIR$/predict_sealnet.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/seal_points_espg3031.csv" beforeDir="false" afterPath="$PROJECT_DIR$/seal_points_espg3031.csv" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/shape_files/seal_points_3031.dbf" beforeDir="false" afterPath="$PROJECT_DIR$/shape_files/seal_points_3031.dbf" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/train_sealnet.py" beforeDir="false" afterPath="$PROJECT_DIR$/train_sealnet.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/training_set_generation.ipynb" beforeDir="false" afterPath="$PROJECT_DIR$/training_set_generation.ipynb" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/utils/custom_architectures/nasnet_scalable_count.py" beforeDir="false" afterPath="$PROJECT_DIR$/utils/custom_architectures/nasnet_scalable_count.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/utils/dataloaders/data_loader_train_det.py" beforeDir="false" afterPath="$PROJECT_DIR$/utils/dataloaders/data_loader_train_det.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/utils/model_library.py" beforeDir="false" afterPath="$PROJECT_DIR$/utils/model_library.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/validate_sealnet_haulout.py" beforeDir="false" afterPath="$PROJECT_DIR$/validate_sealnet.py" afterDir="false" />
     </list>
     <option name="EXCLUDED_CONVERTED_TO_IGNORED" value="true" />
     <option name="TRACKING_ENABLED" value="true" />
@@ -27,11 +40,20 @@
   </component>
   <component name="FileEditorManager">
     <leaf SIDE_TABS_SIZE_LIMIT_KEY="300">
-      <file leaf-file-name="train_sealnet_count_e2e.py" pinned="false" current-in-tab="false">
-        <entry file="file://$PROJECT_DIR$/train_sealnet_count_e2e.py">
+      <file leaf-file-name="model_library.py" pinned="false" current-in-tab="false">
+        <entry file="file://$PROJECT_DIR$/utils/model_library.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="306">
-              <caret line="35" selection-start-line="35" selection-end-line="35" />
+            <state relative-caret-position="756">
+              <caret line="46" column="115" selection-start-line="46" selection-start-column="115" selection-end-line="46" selection-end-column="115" />
+            </state>
+          </provider>
+        </entry>
+      </file>
+      <file leaf-file-name="predict_sealnet.py" pinned="false" current-in-tab="false">
+        <entry file="file://$PROJECT_DIR$/predict_sealnet.py">
+          <provider selected="true" editor-type-id="text-editor">
+            <state relative-caret-position="720">
+              <caret line="50" column="44" selection-start-line="50" selection-start-column="44" selection-end-line="50" selection-end-column="44" />
               <folding>
                 <element signature="e#0#12#0" expanded="true" />
               </folding>
@@ -39,23 +61,11 @@
           </provider>
         </entry>
       </file>
-      <file leaf-file-name="rename_model.py" pinned="false" current-in-tab="false">
-        <entry file="file://$PROJECT_DIR$/rename_model.py">
+      <file leaf-file-name="predict_sealnet_ablation.py" pinned="false" current-in-tab="false">
+        <entry file="file://$PROJECT_DIR$/predict_sealnet_ablation.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="414">
-              <caret line="25" selection-start-line="25" selection-end-line="25" />
-              <folding>
-                <element signature="e#0#9#0" expanded="true" />
-              </folding>
-            </state>
-          </provider>
-        </entry>
-      </file>
-      <file leaf-file-name="model_library.py" pinned="false" current-in-tab="false">
-        <entry file="file://$PROJECT_DIR$/utils/model_library.py">
-          <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="396">
-              <caret line="26" column="45" selection-start-line="26" selection-start-column="45" selection-end-line="26" selection-end-column="45" />
+            <state relative-caret-position="545">
+              <caret line="108" column="71" selection-start-line="108" selection-start-column="71" selection-end-line="108" selection-end-column="71" />
             </state>
           </provider>
         </entry>
@@ -63,17 +73,11 @@
       <file leaf-file-name="nasnet_scalable_count.py" pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/utils/custom_architectures/nasnet_scalable_count.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="9792">
-              <caret line="545" column="30" selection-start-line="545" selection-start-column="30" selection-end-line="545" selection-end-column="30" />
-            </state>
-          </provider>
-        </entry>
-      </file>
-      <file leaf-file-name="data_loader_train_det.py" pinned="false" current-in-tab="false">
-        <entry file="file://$PROJECT_DIR$/utils/dataloaders/data_loader_train_det.py">
-          <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="1674">
-              <caret line="100" column="11" selection-start-line="100" selection-start-column="11" selection-end-line="100" selection-end-column="11" />
+            <state relative-caret-position="9450">
+              <caret line="525" selection-start-line="525" selection-end-line="525" />
+              <folding>
+                <element signature="e#121#133#0" expanded="true" />
+              </folding>
             </state>
           </provider>
         </entry>
@@ -81,8 +85,17 @@
       <file leaf-file-name="train_sealnet_count.py" pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/train_sealnet_count.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="468">
-              <caret line="41" column="35" selection-start-line="41" selection-start-column="35" selection-end-line="41" selection-end-column="35" />
+            <state relative-caret-position="-3234">
+              <caret line="11" column="33" selection-start-line="11" selection-start-column="33" selection-end-line="11" selection-end-column="33" />
+            </state>
+          </provider>
+        </entry>
+      </file>
+      <file leaf-file-name="validate_sealnet.py" pinned="false" current-in-tab="false">
+        <entry file="file://$PROJECT_DIR$/validate_sealnet.py">
+          <provider selected="true" editor-type-id="text-editor">
+            <state relative-caret-position="-1435">
+              <caret line="74" column="36" selection-start-line="74" selection-start-column="36" selection-end-line="74" selection-end-column="36" />
               <folding>
                 <element signature="e#0#12#0" expanded="true" />
               </folding>
@@ -90,26 +103,20 @@
           </provider>
         </entry>
       </file>
-      <file leaf-file-name="resnet_count.py" pinned="false" current-in-tab="false">
-        <entry file="file://$PROJECT_DIR$/utils/custom_architectures/resnet_count.py">
+      <file leaf-file-name="data_loader_train_det.py" pinned="false" current-in-tab="true">
+        <entry file="file://$PROJECT_DIR$/utils/dataloaders/data_loader_train_det.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="311">
-              <caret line="120" column="31" selection-start-line="120" selection-start-column="31" selection-end-line="120" selection-end-column="31" />
-              <folding>
-                <element signature="e#0#21#0" expanded="true" />
-              </folding>
+            <state relative-caret-position="270">
+              <caret line="40" lean-forward="true" selection-start-line="40" selection-end-line="40" />
             </state>
           </provider>
         </entry>
       </file>
-      <file leaf-file-name="validate_sealnet_haulout.py" pinned="false" current-in-tab="true">
-        <entry file="file://$PROJECT_DIR$/validate_sealnet_haulout.py">
+      <file leaf-file-name="create_trainingset.py" pinned="false" current-in-tab="false">
+        <entry file="file://$PROJECT_DIR$/create_trainingset.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="378">
-              <caret line="123" column="74" selection-start-line="123" selection-start-column="74" selection-end-line="123" selection-end-column="74" />
-              <folding>
-                <element signature="e#0#12#0" expanded="true" />
-              </folding>
+            <state relative-caret-position="732">
+              <caret line="145" column="36" selection-start-line="145" selection-start-column="33" selection-end-line="145" selection-end-column="36" />
             </state>
           </provider>
         </entry>
@@ -117,8 +124,8 @@
       <file leaf-file-name="train_sealnet.py" pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/train_sealnet.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="2592">
-              <caret line="157" column="35" selection-start-line="157" selection-start-column="35" selection-end-line="157" selection-end-column="35" />
+            <state relative-caret-position="18">
+              <caret line="76" column="14" selection-start-line="76" selection-end-line="76" selection-end-column="14" />
               <folding>
                 <element signature="e#0#12#0" expanded="true" />
               </folding>
@@ -144,6 +151,7 @@
       <find>model</find>
       <find>from custom_architectures</find>
       <find>from utils.data_loader</find>
+      <find>row</find>
     </findStrings>
     <replaceStrings>
       <replace>args.model_name</replace>
@@ -169,7 +177,6 @@
         <option value="$PROJECT_DIR$/validate_resnet18.py" />
         <option value="$PROJECT_DIR$/train_resnet18.py" />
         <option value="$PROJECT_DIR$/nasnet_scalable.py" />
-        <option value="$PROJECT_DIR$/validate_sealnet.py" />
         <option value="$PROJECT_DIR$/extract_metadata.py" />
         <option value="$PROJECT_DIR$/coco.py" />
         <option value="$PROJECT_DIR$/sealnet_tiny.py" />
@@ -183,9 +190,7 @@
         <option value="$PROJECT_DIR$/tile_raster.py" />
         <option value="$PROJECT_DIR$/create_trainingset_rasterio.py" />
         <option value="$PROJECT_DIR$/create_scene_bank.py" />
-        <option value="$PROJECT_DIR$/create_trainingset.py" />
         <option value="$PROJECT_DIR$/validate_sealnet_scene.py" />
-        <option value="$PROJECT_DIR$/predict_sealnet.py" />
         <option value="$PROJECT_DIR$/custom_architectures/nasnet_scalable.py" />
         <option value="$PROJECT_DIR$/custom_architectures/wide_resnet.py" />
         <option value="$PROJECT_DIR$/custom_architectures/nasnet_scalable_count.py" />
@@ -197,12 +202,18 @@
         <option value="$PROJECT_DIR$/saved_models/haulout/NasnetA_MS/rename_model.py" />
         <option value="$PROJECT_DIR$/rename_model.py" />
         <option value="$PROJECT_DIR$/utils/custom_architectures/resnet_e2e.py" />
-        <option value="$PROJECT_DIR$/utils/custom_architectures/nasnet_scalable_count.py" />
-        <option value="$PROJECT_DIR$/train_sealnet.py" />
-        <option value="$PROJECT_DIR$/train_sealnet_count.py" />
         <option value="$PROJECT_DIR$/utils/custom_architectures/resnet_count.py" />
-        <option value="$PROJECT_DIR$/utils/model_library.py" />
+        <option value="$PROJECT_DIR$/validate_sealnet_count.py" />
+        <option value="$PROJECT_DIR$/train_sealnet.py" />
         <option value="$PROJECT_DIR$/validate_sealnet_haulout.py" />
+        <option value="$PROJECT_DIR$/utils/model_library.py" />
+        <option value="$PROJECT_DIR$/predict_sealnet.py" />
+        <option value="$PROJECT_DIR$/predict_sealnet_ablation.py" />
+        <option value="$PROJECT_DIR$/validate_sealnet.py" />
+        <option value="$PROJECT_DIR$/create_trainingset.py" />
+        <option value="$PROJECT_DIR$/train_sealnet_count.py" />
+        <option value="$PROJECT_DIR$/utils/custom_architectures/nasnet_scalable_count.py" />
+        <option value="$PROJECT_DIR$/utils/dataloaders/data_loader_train_det.py" />
       </list>
     </option>
   </component>
@@ -226,7 +237,6 @@
       <foldersAlwaysOnTop value="true" />
     </navigator>
     <panes>
-      <pane id="Scope" />
       <pane id="ProjectPane">
         <subPane>
           <expand>
@@ -260,6 +270,7 @@
           <select />
         </subPane>
       </pane>
+      <pane id="Scope" />
     </panes>
   </component>
   <component name="PropertiesComponent">
@@ -270,9 +281,9 @@
   </component>
   <component name="RecentsManager">
     <key name="CopyFile.RECENT_KEYS">
+      <recent name="$PROJECT_DIR$" />
       <recent name="$PROJECT_DIR$/saved_models/haulout/NasnetA_MS" />
       <recent name="$PROJECT_DIR$/custom_architectures" />
-      <recent name="$PROJECT_DIR$" />
     </key>
   </component>
   <component name="RunDashboard">
@@ -421,11 +432,13 @@
       <window_info anchor="bottom" id="Event Log" order="12" sideWeight="0.120743036" side_tool="true" weight="0.32769555" />
       <window_info anchor="bottom" id="Database Changes" order="11" show_stripe_button="false" />
       <window_info anchor="bottom" id="Version Control" order="8" />
-      <window_info anchor="bottom" id="Python Console" order="9" sideWeight="0.87925696" visible="true" weight="0.32769555" />
+      <window_info active="true" anchor="bottom" id="Python Console" order="9" sideWeight="0.87925696" visible="true" weight="0.32769555" />
       <window_info anchor="bottom" id="Run" order="2" sideWeight="0.898452" weight="0.32875264" />
       <window_info anchor="bottom" id="Terminal" order="10" />
-      <window_info active="true" content_ui="combo" id="Project" order="0" visible="true" weight="0.2495356" />
+      <window_info content_ui="combo" id="Project" order="0" visible="true" weight="0.2495356" />
+      <window_info anchor="right" id="R Packages" />
       <window_info anchor="bottom" id="Docker" order="7" show_stripe_button="false" />
+      <window_info anchor="right" id="R Graphics" />
       <window_info anchor="right" id="Database" order="4" />
       <window_info anchor="right" id="SciView" order="3" weight="0.32941177" />
       <window_info id="Structure" order="1" side_tool="true" weight="0.25" />
@@ -443,24 +456,24 @@
       <window_info anchor="right" content_ui="combo" id="Hierarchy" order="2" weight="0.25" />
       <window_info anchor="bottom" id="Docker" order="7" show_stripe_button="false" />
       <window_info anchor="bottom" id="Inspection" order="5" weight="0.4" />
-      <window_info anchor="bottom" id="Cvs" order="4" weight="0.25" />
-      <window_info id="Favorites" order="2" side_tool="true" />
       <window_info content_ui="combo" id="Project" order="0" visible="true" weight="0.2495356" />
       <window_info id="Structure" order="1" side_tool="true" weight="0.25" />
       <window_info anchor="right" id="Commander" order="0" weight="0.4" />
       <window_info anchor="right" id="Ant Build" order="1" weight="0.25" />
       <window_info anchor="bottom" id="TODO" order="6" />
+      <window_info anchor="bottom" id="Version Control" order="8" />
       <window_info anchor="bottom" id="Run" order="2" sideWeight="0.898452" weight="0.32875264" />
-      <window_info anchor="bottom" id="Message" order="0" />
+      <window_info anchor="bottom" id="Find" order="1" />
+      <window_info active="true" anchor="bottom" id="Python Console" order="9" sideWeight="0.87925696" visible="true" weight="0.32769555" />
       <window_info anchor="bottom" id="Debug" order="3" weight="0.4" />
       <window_info anchor="right" id="Database" order="4" />
       <window_info anchor="bottom" id="Terminal" order="10" />
       <window_info anchor="bottom" id="Event Log" order="12" sideWeight="0.120743036" side_tool="true" visible="true" weight="0.32769555" />
       <window_info anchor="bottom" id="Database Changes" order="11" show_stripe_button="false" />
-      <window_info anchor="bottom" id="Version Control" order="8" />
+      <window_info anchor="bottom" id="Cvs" order="4" weight="0.25" />
       <window_info anchor="right" id="SciView" order="3" weight="0.32941177" />
-      <window_info anchor="bottom" id="Find" order="1" />
-      <window_info active="true" anchor="bottom" id="Python Console" order="9" sideWeight="0.87925696" visible="true" weight="0.32769555" />
+      <window_info anchor="bottom" id="Message" order="0" />
+      <window_info id="Favorites" order="2" side_tool="true" />
     </layout-to-restore>
   </component>
   <component name="TypeScriptGeneratedFilesManager">
@@ -486,19 +499,6 @@
     </breakpoint-manager>
   </component>
   <component name="editorHistoryManager">
-    <entry file="file://$PROJECT_DIR$/utils/custom_architectures/resnet_count.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="2142">
-          <caret line="120" column="31" selection-start-line="120" selection-start-column="31" selection-end-line="120" selection-end-column="31" />
-          <folding>
-            <element signature="e#0#21#0" expanded="true" />
-          </folding>
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/pt_train.py" />
-    <entry file="file://$PROJECT_DIR$/pt_conf_matrix.py" />
-    <entry file="file://$PROJECT_DIR$/pt_predict.py" />
     <entry file="file://$PROJECT_DIR$/create_trainingset.py">
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="1836">
@@ -549,27 +549,6 @@
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/validate_sealnet_scene.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="545">
-          <caret line="62" column="10" selection-start-line="62" selection-start-column="10" selection-end-line="62" selection-end-column="10" />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/create_trainingset.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="113">
-          <caret line="195" column="16" selection-start-line="195" selection-start-column="16" selection-end-line="195" selection-end-column="16" />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/predict_sealnet.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="450">
-          <caret line="55" selection-start-line="55" selection-end-line="55" />
-        </state>
-      </provider>
-    </entry>
     <entry file="file://$PROJECT_DIR$/custom_architectures/wide_resnet.py" />
     <entry file="file://$PROJECT_DIR$/custom_architectures/nasnet_scalable.py" />
     <entry file="file://$PROJECT_DIR$/custom_architectures/nasnet_scalable_count.py" />
@@ -583,26 +562,6 @@
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="414">
           <caret line="25" selection-start-line="25" selection-end-line="25" />
-          <folding>
-            <element signature="e#0#9#0" expanded="true" />
-          </folding>
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/utils/dataloaders/data_loader_train_det.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="1674">
-          <caret line="100" column="11" selection-start-line="100" selection-start-column="11" selection-end-line="100" selection-end-column="11" />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/train_sealnet.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="2592">
-          <caret line="157" column="35" selection-start-line="157" selection-start-column="35" selection-end-line="157" selection-end-column="35" />
-          <folding>
-            <element signature="e#0#12#0" expanded="true" />
-          </folding>
         </state>
       </provider>
     </entry>
@@ -610,39 +569,13 @@
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="306">
           <caret line="35" selection-start-line="35" selection-end-line="35" />
-          <folding>
-            <element signature="e#0#12#0" expanded="true" />
-          </folding>
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/train_sealnet_count.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="468">
-          <caret line="41" column="35" selection-start-line="41" selection-start-column="35" selection-end-line="41" selection-end-column="35" />
-          <folding>
-            <element signature="e#0#12#0" expanded="true" />
-          </folding>
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/utils/model_library.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="396">
-          <caret line="26" column="45" selection-start-line="26" selection-start-column="45" selection-end-line="26" selection-end-column="45" />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/utils/custom_architectures/nasnet_scalable_count.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="9792">
-          <caret line="545" column="30" selection-start-line="545" selection-start-column="30" selection-end-line="545" selection-end-column="30" />
-        </state>
-      </provider>
-    </entry>
+    <entry file="file://$PROJECT_DIR$/validate_sealnet_count.py" />
     <entry file="file://$PROJECT_DIR$/utils/custom_architectures/resnet_count.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="311">
+        <state relative-caret-position="2142">
           <caret line="120" column="31" selection-start-line="120" selection-start-column="31" selection-end-line="120" selection-end-column="31" />
           <folding>
             <element signature="e#0#21#0" expanded="true" />
@@ -650,13 +583,97 @@
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/validate_sealnet_haulout.py">
+    <entry file="file://$PROJECT_DIR$/validate_sealnet_scene.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="378">
-          <caret line="123" column="74" selection-start-line="123" selection-start-column="74" selection-end-line="123" selection-end-column="74" />
+        <state relative-caret-position="1062">
+          <caret line="62" column="10" selection-start-line="62" selection-start-column="10" selection-end-line="62" selection-end-column="10" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/utils/model_library.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="756">
+          <caret line="46" column="115" selection-start-line="46" selection-start-column="115" selection-end-line="46" selection-end-column="115" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/predict_sealnet.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="720">
+          <caret line="50" column="44" selection-start-line="50" selection-start-column="44" selection-end-line="50" selection-end-column="44" />
           <folding>
             <element signature="e#0#12#0" expanded="true" />
           </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/get_mse.R">
+      <provider selected="true" editor-type-id="text-editor" />
+    </entry>
+    <entry file="file://$PROJECT_DIR$/validate_sealnet.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="-1435">
+          <caret line="74" column="36" selection-start-line="74" selection-start-column="36" selection-end-line="74" selection-end-column="36" />
+          <folding>
+            <element signature="e#0#12#0" expanded="true" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/predict_sealnet_ablation.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="545">
+          <caret line="108" column="71" selection-start-line="108" selection-start-column="71" selection-end-line="108" selection-end-column="71" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/train_sealnet_count.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="-3234">
+          <caret line="11" column="33" selection-start-line="11" selection-start-column="33" selection-end-line="11" selection-end-column="33" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/utils/custom_architectures/__init__.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state>
+          <folding>
+            <element signature="e#0#36#0" expanded="true" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/utils/custom_architectures/nasnet_scalable_count.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="9450">
+          <caret line="525" selection-start-line="525" selection-end-line="525" />
+          <folding>
+            <element signature="e#121#133#0" expanded="true" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/train_sealnet.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="18">
+          <caret line="76" column="14" selection-start-line="76" selection-end-line="76" selection-end-column="14" />
+          <folding>
+            <element signature="e#0#12#0" expanded="true" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/create_trainingset.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="732">
+          <caret line="145" column="36" selection-start-line="145" selection-start-column="33" selection-end-line="145" selection-end-column="36" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/utils/dataloaders/data_loader_train_det.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="270">
+          <caret line="40" lean-forward="true" selection-start-line="40" selection-end-line="40" />
         </state>
       </provider>
     </entry>
