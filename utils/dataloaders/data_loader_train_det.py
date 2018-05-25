@@ -33,7 +33,7 @@ def make_dataset(dir, class_to_idx, extensions):
     locations = []
     dir = os.path.expanduser(dir)
     det_df = pd.read_csv('./training_sets/training_set_vanilla/detections.csv')
-    det_df.index = sorted(ele.split('.')[0] for ele in det_df['file_name'])
+    det_df.index = [ele.split('.')[0] for ele in det_df['file_name']]
     for target in sorted(os.listdir(dir)):
         d = os.path.join(dir, target)
         if not os.path.isdir(d):
