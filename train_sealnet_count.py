@@ -147,7 +147,7 @@ def train_model(model, criterion, optimizer, scheduler, num_epochs=25):
                 inputs, _, counts = data
 
                 # create tensorboard variables
-                counts.type(torch.FloatTensor)
+                counts.type(torch.int)
 
                 # wrap them in Variable
                 if use_gpu:
@@ -160,16 +160,20 @@ def train_model(model, criterion, optimizer, scheduler, num_epochs=25):
                 optimizer.zero_grad()
 
                 # forward
-                outputs = torch.Tensor([ele for ele in model(inputs)])
-                outputs = Variable(outputs, requires_grad=True)
+                outputs = model(inputs)
                 outputs = outputs.cuda()
-                loss = criterion(outputs, counts)
+                loss = torch.sqrt(criterion(outputs, counts))
 
                 # backward + optimize only if in training phase
                 if phase == 'training':
                     loss.backward()
                     optimizer.step()
                     global_step += 1
+
+                #if idx % 10 == 0:
+                #    print('predicted :', outputs)
+                #    print('ground-truth:', counts)
+                #    print('loss:', running_loss / (len(counts) * (idx+1)))
 
                 # statistics
                 running_loss += loss.item() * inputs.size(1)

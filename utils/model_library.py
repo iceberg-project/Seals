@@ -13,11 +13,13 @@ import torch.nn as nn
 model_archs = {'NasnetA': {'input_size': 299},
                'Resnet18': {'input_size': 224},
                'WideResnetA': {'input_size': 28},
+               'WideResnetCount': {'input_size': 28},
                'Resnet18count': {'input_size': 224},
                'Resnet34count': {'input_size': 224},
                'Resnet50count': {'input_size': 224},
                'NasnetAcount': {'input_size': 224},
-               'NasnetAe2e': {'input_size': 299}}
+               'NasnetAe2e': {'input_size': 299},
+               'CountCeption': {'input_size': 100}}
 
 # model definitions
 model_defs = {'Pipeline1': {'NasnetA': lambda num_classes: NASNetA(in_channels_0=48, out_channels_0=24,
@@ -27,7 +29,9 @@ model_defs = {'Pipeline1': {'NasnetA': lambda num_classes: NASNetA(in_channels_0
               'Pipeline1.1': {'Resnet18count': resnet18_count(),
                               'Resnet34count': resnet34_count(),
                               'Resnet50count': resnet50_count(),
-                              'NasnetAcount': NASNetA_count()}}
+                              'NasnetAcount': NASNetA_count(),
+                              'WideResnetCount': wrn_count(depth=28),
+                              'CountCeption': ModelCountception()}}
 
 # model dataloaders
 dataloaders = {'Pipeline1': lambda dataset, transforms: datasets.ImageFolder(dataset, transforms),
@@ -50,8 +54,8 @@ hyperparameters = {'A': {'learning_rate': 1E-3, 'batch_size_train': 64, 'batch_s
                          'step_size': 1, 'gamma': 0.95, 'epochs': 5, 'num_workers_train': 8, 'num_workers_val': 1},
                    'C': {'learning_rate': 1E-3, 'batch_size_train': 64, 'batch_size_val': 8, 'batch_size_test': 64,
                          'step_size': 1, 'gamma': 0.95, 'epochs': 30, 'num_workers_train': 16, 'num_workers_val': 8},
-                   'D': {'learning_rate': 1E-3, 'batch_size_train': 32, 'batch_size_val': 8, 'batch_size_test': 32,
-                         'step_size': 1, 'gamma': 0.95, 'epochs': 5, 'num_workers_train': 16, 'num_workers_val': 8},
+                   'D': {'learning_rate': 1E-3, 'batch_size_train': 16, 'batch_size_val': 8, 'batch_size_test': 32,
+                         'step_size': 1, 'gamma': 0.95, 'epochs': 5, 'num_workers_train': 8, 'num_workers_val': 8},
                    'E': {'learning_rate': 1E-3, 'batch_size_train': 16, 'batch_size_val': 1, 'batch_size_test': 8,
                          'step_size': 1, 'gamma': 0.95, 'epochs': 10, 'num_workers_train': 4, 'num_workers_val': 1}
                    }
