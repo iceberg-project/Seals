@@ -553,6 +553,7 @@ class NASNetAMobile(nn.Module):
     def forward(self, input):
         x = self.features(input)
         x = self.logits(x)
+        x = torch.squeeze(x)
         return x
 
 
