@@ -32,8 +32,7 @@ def make_dataset(dir, class_to_idx, extensions):
     images = []
     locations = []
     dir = os.path.expanduser(dir)
-    det_df = pd.read_csv('./training_sets/training_set_vanilla/detections.csv')
-    det_df.index = [ele.split('.')[0] for ele in det_df['file_name']]
+    det_df = pd.read_csv('./training_sets/training_set_vanilla/detections.csv', index_col=0)
     for target in sorted(os.listdir(dir)):
         d = os.path.join(dir, target)
         if not os.path.isdir(d):
@@ -45,7 +44,7 @@ def make_dataset(dir, class_to_idx, extensions):
                     path = os.path.join(root, fname)
                     images.append((path, class_to_idx[target]))
                     # get locations
-                    locs = det_df.loc[fname.split('.')[0], 'locations']
+                    locs = det_df.loc[int(fname.split('.')[0]), 'locations']
                     if type(locs) == str:
                         locs = [int(ele) for ele in locs.split("_")]
                         locs = np.array([(locs[i+1], locs[i]) for i in range(0, len(locs)-1, 2)]).reshape(-1, 2)
@@ -115,7 +114,6 @@ class DatasetFolder(data.Dataset):
             locations[ele[0], ele[1]] = hit_value
         locations = Image.fromarray(locations)
 
-        sample = self.loader(path)
         if self.shape_transform is not None:
             sample, locations = self.shape_transform(sample, locations)
 
@@ -190,7 +188,7 @@ class ImageFolderTrainDet(DatasetFolder):
     def __init__(self, root, shape_transform=None, int_transform=None,
                  loader=default_loader):
         super(ImageFolderTrainDet, self).__init__(root, loader, IMG_EXTENSIONS,
-                                                    shape_transform=shape_transform,
-                                                    int_transform=int_transform)
+                                                  shape_transform=shape_transform,
+                                                  int_transform=int_transform)
         self.imgs = self.samples
 
