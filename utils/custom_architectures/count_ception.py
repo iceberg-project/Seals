@@ -62,6 +62,7 @@ class ModelCountception(nn.Module):
         else:
             self.conv6 = ConvBlock(64, self.outplanes, ksize=1, activation=self.final_activation)
         self.max_pool = nn.MaxPool2d([15, 15])
+        self.fc = nn.Linear(1024, 16)
 
 
         # Weight initialization
@@ -77,7 +78,6 @@ class ModelCountception(nn.Module):
             print(x.size())
 
     def forward(self, x):
-        batch_size = x.size(0)
         net = self.conv1(x)  # 32
         self._print(net)
         net = self.simple1(net)
@@ -108,8 +108,7 @@ class ModelCountception(nn.Module):
             self._print(net)
         net = self.max_pool(net)
         net = net.view(net.numel())
-        linear = nn.Linear(batch_size/2 * self.patch_size, 1).cuda()
-        net = linear(net)
+        net = self.fc(net)
         return net
 
     def name(self):
