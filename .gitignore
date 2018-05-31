@@ -4,7 +4,6 @@
 /tiled_images
 /saved_models/*/*/*tar
 /saved_models_stable/*/*/*tar
-/saved_models_stable
 __pycache__
 .DS_Store
 .ipynb_checkpoints/
