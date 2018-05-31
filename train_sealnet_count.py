@@ -194,8 +194,8 @@ def train_model(model, criterion, optimizer, scheduler, num_epochs=25):
         time_elapsed // 3600, (time_elapsed % 3600) // 60, time_elapsed % 60))
 
     # save the model, keeping haulout and single seal models in separate folders
-    torch.save(model.state_dict(), '{}/{}/{}/{}.tar'.format(args.dest_folder, args.pipeline,
-                                                            args.output_name, args.output_name))
+    torch.save(model.state_dict(), './{}/{}/{}/{}.tar'.format(args.dest_folder, args.pipeline,
+                                                              args.output_name, args.output_name))
 
     return model
 
