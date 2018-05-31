@@ -62,7 +62,7 @@ class ModelCountception(nn.Module):
         else:
             self.conv6 = ConvBlock(64, self.outplanes, ksize=1, activation=self.final_activation)
         self.max_pool = nn.MaxPool2d([15, 15])
-        self.fc = nn.Linear(1024, 16)
+        self.fc = nn.Linear(1024, 1)
 
 
         # Weight initialization
@@ -107,8 +107,9 @@ class ModelCountception(nn.Module):
             net = self.conv6(net)
             self._print(net)
         net = self.max_pool(net)
-        net = net.view(net.numel())
+        net = net.view(net.size(0), -1)
         net = self.fc(net)
+        net = torch.squeeze(net)
         return net
 
     def name(self):
