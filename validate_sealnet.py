@@ -47,7 +47,7 @@ if args.pipeline not in model_defs:
     raise Exception('Pipeline is not defined in ./utils/model_library.py')
 
 
-def validate_model(model, dest_folder, val_dir, out_file, pipeline, batch_size=8, input_size=299, num_workers=1):
+def validate_model(model, dest_folder, val_dir, out_file, pipeline, batch_size=2, input_size=299, num_workers=1):
     """
     Generates a confusion matrix from a PyTorch model and validation images
 
