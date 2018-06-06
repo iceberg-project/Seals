@@ -62,7 +62,7 @@ class ModelCountception(nn.Module):
         else:
             self.conv6 = ConvBlock(64, self.outplanes, ksize=1, activation=self.final_activation)
         self.max_pool = nn.MaxPool2d([15, 15])
-        self.fc = nn.Linear(1024, 1)
+        self.fc = nn.Linear(64, 1)
 
 
         # Weight initialization

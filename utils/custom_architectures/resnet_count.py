@@ -105,7 +105,7 @@ class ResNet(nn.Module):
         self.layer3 = self._make_layer(block, 256, layers[2], stride=2)
         self.maxpool2 = nn.MaxPool2d(kernel_size=3, stride=2)
 
-        self.fc = nn.Linear(169 * block.expansion, 1)
+        self.fc = nn.Linear(169, 1)
         self.final_conv = nn.Conv2d(in_channels=128 * block.expansion, out_channels=1, kernel_size=1)
 
         for m in self.modules():
