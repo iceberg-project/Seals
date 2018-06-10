@@ -26,7 +26,7 @@ def find_classes(dir):
     return classes, class_to_idx
 
 
-def make_dataset(dir, class_to_idx, extensions):
+def make_dataset(dir, extensions):
     images = []
     file_names = []
     dir = os.path.expanduser(dir)
@@ -39,8 +39,7 @@ def make_dataset(dir, class_to_idx, extensions):
             for fname in sorted(fnames):
                 if has_file_allowed_extension(fname, extensions):
                     path = os.path.join(root, fname)
-                    item = (path, class_to_idx[target])
-                    images.append(item)
+                    images.append(path)
                     file_names.append(fname)
 
     return [images, file_names]
@@ -70,8 +69,7 @@ class DatasetFolder(data.Dataset):
     """
 
     def __init__(self, root, loader, extensions, transform=None, target_transform=None):
-        classes, class_to_idx = find_classes(root)
-        samples, file_names = make_dataset(root, class_to_idx, extensions)
+        samples, file_names = make_dataset(root, extensions)
         if len(samples) == 0:
             raise(RuntimeError("Found 0 files in subfolders of: " + root + "\n"
                                "Supported extensions are: " + ",".join(extensions)))
@@ -80,13 +78,10 @@ class DatasetFolder(data.Dataset):
         self.loader = loader
         self.extensions = extensions
 
-        self.classes = classes
-        self.class_to_idx = class_to_idx
         self.samples = samples
         self.file_names = file_names
 
         self.transform = transform
-        self.target_transform = target_transform
 
     def __getitem__(self, index):
         """
@@ -95,15 +90,13 @@ class DatasetFolder(data.Dataset):
         Returns:
             tuple: (sample, target) where target is class_index of the target class.
         """
-        path, target = self.samples[index]
+        path = self.samples[index]
         file_name = self.file_names[index]
         sample = self.loader(path)
         if self.transform is not None:
             sample = self.transform(sample)
-        if self.target_transform is not None:
-            target = self.target_transform(target)
 
-        return sample, target, file_name
+        return sample, file_name
 
     def __len__(self):
         return len(self.samples)
@@ -114,8 +107,6 @@ class DatasetFolder(data.Dataset):
         fmt_str += '    Root Location: {}\n'.format(self.root)
         tmp = '    Transforms (if any): '
         fmt_str += '{0}{1}\n'.format(tmp, self.transform.__repr__().replace('\n', '\n' + ' ' * len(tmp)))
-        tmp = '    Target Transforms (if any): '
-        fmt_str += '{0}{1}'.format(tmp, self.target_transform.__repr__().replace('\n', '\n' + ' ' * len(tmp)))
         return fmt_str
 
 
@@ -166,9 +157,7 @@ class ImageFolderTest(DatasetFolder):
         class_to_idx (dict): Dict with items (class_name, class_index).
         imgs (list): List of (image path, class_index) tuples
     """
-    def __init__(self, root, transform=None, target_transform=None,
-                 loader=default_loader):
+    def __init__(self, root, transform=None, loader=default_loader):
         super(ImageFolderTest, self).__init__(root, loader, IMG_EXTENSIONS,
-                                              transform=transform,
-                                              target_transform=target_transform)
+                                              transform=transform)
         self.imgs = self.samples
