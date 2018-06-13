@@ -63,8 +63,6 @@ class DatasetFolder(data.Dataset):
         target_transform (callable, optional): A function/transform that takes
             in the target and transforms it.
      Attributes:
-        classes (list): List of the class names.
-        class_to_idx (dict): Dict with items (class_name, class_index).
         samples (list): List of (sample path, class_index) tuples
     """
 

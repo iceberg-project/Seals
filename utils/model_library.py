@@ -75,7 +75,7 @@ hyperparameters = {'A': {'learning_rate': 1E-3, 'batch_size_train': 64, 'batch_s
                          'step_size': 1, 'gamma': 0.95, 'epochs': 30, 'num_workers_train': 16, 'num_workers_val': 8},
                    'D': {'learning_rate': 1E-3, 'batch_size_train': 16, 'batch_size_val': 8, 'batch_size_test': 32,
                          'step_size': 1, 'gamma': 0.95, 'epochs': 5, 'num_workers_train': 8, 'num_workers_val': 8},
-                   'E': {'learning_rate': 1E-3, 'batch_size_train': 16, 'batch_size_val': 1, 'batch_size_test': 8,
+                   'E': {'learning_rate': 1E-3, 'batch_size_train': 16, 'batch_size_val': 1, 'batch_size_test': 4,
                          'step_size': 1, 'gamma': 0.95, 'epochs': 10, 'num_workers_train': 4, 'num_workers_val': 1}
                    }
 

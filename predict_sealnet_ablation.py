@@ -48,7 +48,6 @@ pos_classes = args.positive_classes.split('_')
 # normalize input images
 arch_input_size = model_archs[args.model_architecture]['input_size']
 data_transforms = transforms.Compose([
-        transforms.CenterCrop(arch_input_size),
         transforms.ToTensor(),
         transforms.Normalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225])
 ])
@@ -94,7 +93,7 @@ def main():
     # classify images in dataloader
     for data in dataloader:
         # get the inputs
-        inputs, _, file_names = data
+        inputs, file_names = data
 
         # wrap them in Variable
         if use_gpu:
