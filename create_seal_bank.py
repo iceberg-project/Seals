@@ -39,7 +39,7 @@ def dist2d(point1, point2):
 
 
 # function to create seal bank
-def create_seal_bank(seal_points, detections, label, out, seal_radius=4):
+def create_seal_bank(seal_points, detections, label, out, seal_radius=5):
     """
     Loops through a training set cropping individual seals and saving minimum distance to the next seal if there are
     two or more seals in the haul out
@@ -72,7 +72,7 @@ def create_seal_bank(seal_points, detections, label, out, seal_radius=4):
 
         # do histogram equalization
         img = cv2.cvtColor(img, cv2.COLOR_RGB2YUV)
-        #img[0] = cv2.equalizeHist(img[0])
+        img[:, :, 0] = cv2.equalizeHist(img[:, :, 0])
         img = cv2.cvtColor(img, cv2.COLOR_YUV2RGB)
 
         # crop image
