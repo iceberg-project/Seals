@@ -15,36 +15,26 @@ ImageFile.LOAD_TRUNCATED_IMAGES = True
 
 warnings.filterwarnings('ignore', module='PIL')
 
-parser = argparse.ArgumentParser(description='validates a CNN at the haul out level')
-parser.add_argument('--test_dir', type=str, help='base directory to recursively search for validation images in')
-parser.add_argument('--model_architecture', type=str, help='model architecture, must be a member of models '
-                                                           'dictionary')
-parser.add_argument('--hyperparameter_set', type=str, help='combination of hyperparameters used, must be a member of '
-                                                           'hyperparameters dictionary')
-parser.add_argument('--model_name', type=str, help='name of input model file from training, this name will also be used'
-                                                   'in subsequent steps of the pipeline')
-parser.add_argument('--pipeline', type=str, help='name of the detection pipeline where the model is loaded from')
-parser.add_argument('--ablation', type=int, default=0, help='boolean for whether or not this validation run will work '
-                                                            'on the ablation dataset. runs on regular training sets'
-                                                            'by default')
-parser.add_argument('--dest_folder', type=str, default='saved_models', help='folder where the model will be saved')
 
-# load arguments
-args = parser.parse_args()
-
-# check for invalid inputs
-if args.model_architecture not in model_archs:
-    raise Exception("Invalid architecture -- see supported architectures:  {}".format(list(model_archs.keys())))
-
-if args.hyperparameter_set not in hyperparameters:
-    raise Exception("Hyperparameter combination is not defined in ./utils/model_library.py")
-
-if args.pipeline not in model_defs:
-    raise Exception('Pipeline is not defined in ./utils/model_library.py')
+def parse_args():
+    parser = argparse.ArgumentParser(description='validates a CNN at the haul out level')
+    parser.add_argument('--test_dir', type=str, help='base directory to recursively search for validation images in')
+    parser.add_argument('--model_architecture', type=str, help='model architecture, must be a member of models '
+                                                               'dictionary')
+    parser.add_argument('--hyperparameter_set', type=str, help='combination of hyperparameters used, must be a member of '
+                                                               'hyperparameters dictionary')
+    parser.add_argument('--model_name', type=str, help='name of input model file from training, this name will also be used'
+                                                       'in subsequent steps of the pipeline')
+    parser.add_argument('--pipeline', type=str, help='name of the detection pipeline where the model is loaded from')
+    parser.add_argument('--ablation', type=int, default=0, help='boolean for whether or not this validation run will work '
+                                                                'on the ablation dataset. runs on regular training sets'
+                                                                'by default')
+    parser.add_argument('--dest_folder', type=str, default='saved_models', help='folder where the model will be saved')
+    return parser.parse_args()
 
 
-def predict_patch(model, dest_folder, test_dir, out_file, pipeline, batch_size=2, input_size=299, class_names=[''],
-                  num_workers=1):
+def predict_patch(model, dest_folder, test_dir, out_file, pipeline, batch_size=2, input_size=299,
+                  class_names='', num_workers=1):
     """
     Predicts class or number of seals in an image
 
@@ -94,14 +84,14 @@ def predict_patch(model, dest_folder, test_dir, out_file, pipeline, batch_size=2
         # do a forward pass to get predictions
         outputs = model(inputs)
 
-        if args.pipeline == "Pipeline1":
+        if pipeline == "Pipeline1":
             _, preds = torch.max(outputs.data, 1)
 
             # keep track of correct answers to get accuracy
-            preds_batch = [class_names[int(ele)] for ele in outputs.data]
+            preds_batch = [class_names[int(ele)] for ele in preds]
 
         else:
-            preds_batch = [round(float(ele)) for ele in outputs]
+            preds_batch = [max(0, round(float(ele))) for ele in outputs]
 
         # add current predictions
         fnames.extend(filenames)
@@ -116,10 +106,23 @@ def predict_patch(model, dest_folder, test_dir, out_file, pipeline, batch_size=2
     # save output to .csv
     predictions = pd.DataFrame({'predictions': [ele for ele in predictions],
                                 'filenames': [ele for ele in fnames]})
-    predictions.to_csv('./{}/{}/{}/{}_predictions.csv'.format(dest_folder, pipeline, out_file, out_file), index=False)
+    predictions.to_csv('./{}/{}_predictions.csv'.format(dest_folder, out_file), index=False)
+    return predictions
 
 
 def main():
+    # load arguments
+    args = parse_args()
+
+    # check for invalid inputs
+    if args.model_architecture not in model_archs:
+        raise Exception("Invalid architecture -- see supported architectures:  {}".format(list(model_archs.keys())))
+
+    if args.hyperparameter_set not in hyperparameters:
+        raise Exception("Hyperparameter combination is not defined in ./utils/model_library.py")
+
+    if args.pipeline not in model_defs:
+        raise Exception('Pipeline is not defined in ./utils/model_library.py')
     # create model instance
     if args.pipeline == 'Pipeline1':
         num_classes = training_sets[args.training_dir]['num_classes']
