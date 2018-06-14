@@ -1,0 +1,2 @@
+"","n_parameters","running_time","MSE","model_name","precision","recall","total_predicted","total_ground_truth"
+"1",8174827,7.17007248802523,4.82261793271011,"Resnet34count",0.749826609401907,0.873401962261681,2539.27541895211,2180
