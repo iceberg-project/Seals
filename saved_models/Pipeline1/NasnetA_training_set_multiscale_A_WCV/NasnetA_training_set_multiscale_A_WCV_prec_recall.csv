@@ -1,0 +1,5 @@
+"","precision","recall","label","balanced_accuracy","model_name","n_parameters","running_time"
+"1",0.692585895117541,0.821888412017167,"crabeater",0.856851997505398,"NasnetA_training_set_multiscale_A_WCV",12740771,36.0214857218537
+"2",0.262872628726287,0.950980392156863,"weddell",0.856851997505398,"NasnetA_training_set_multiscale_A_WCV",12740771,36.0214857218537
+"3",0.945864661654135,0.893465909090909,"emperor",0.856851997505398,"NasnetA_training_set_multiscale_A_WCV",12740771,36.0214857218537
+"4",0.433333333333333,0.629032258064516,"marching-emperor",0.856851997505398,"NasnetA_training_set_multiscale_A_WCV",12740771,36.0214857218537

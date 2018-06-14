@@ -63,7 +63,7 @@ loss_functions = {'Pipeline1': lambda weight: nn.CrossEntropyLoss(weight=torch.F
 
 # training sets with number of classes and size of scale bands
 training_sets = {'training_set_vanilla': {'num_classes': 11, 'scale_bands': [450, 450, 450]},
-                 'training_set_multiscale_A': {'num_classes': 11, 'scale_bands': [450, 1350, 4000]},
+                 'training_set_multiscale_A': {'num_classes': 11, 'scale_bands': [450, 1350, 4000]}
                  }
 
 # hyperparameter sets
@@ -75,7 +75,7 @@ hyperparameters = {'A': {'learning_rate': 1E-3, 'batch_size_train': 64, 'batch_s
                          'step_size': 1, 'gamma': 0.95, 'epochs': 30, 'num_workers_train': 16, 'num_workers_val': 8},
                    'D': {'learning_rate': 1E-3, 'batch_size_train': 16, 'batch_size_val': 8, 'batch_size_test': 32,
                          'step_size': 1, 'gamma': 0.95, 'epochs': 5, 'num_workers_train': 8, 'num_workers_val': 8},
-                   'E': {'learning_rate': 1E-3, 'batch_size_train': 16, 'batch_size_val': 1, 'batch_size_test': 8,
+                   'E': {'learning_rate': 1E-3, 'batch_size_train': 16, 'batch_size_val': 1, 'batch_size_test': 4,
                          'step_size': 1, 'gamma': 0.95, 'epochs': 10, 'num_workers_train': 4, 'num_workers_val': 1}
                    }
 

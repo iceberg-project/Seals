@@ -1,0 +1,5 @@
+"","precision","recall","label","balanced_accuracy","model_name","n_parameters","running_time"
+"1",NA,0,"crabeater",0.0909090909090909,"VGG16",134305611,21.3499003683973
+"2",NA,0,"weddell",0.0909090909090909,"VGG16",134305611,21.3499003683973
+"3",NA,0,"emperor",0.0909090909090909,"VGG16",134305611,21.3499003683973
+"4",NA,0,"marching-emperor",0.0909090909090909,"VGG16",134305611,21.3499003683973
