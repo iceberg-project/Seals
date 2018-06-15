@@ -1,8 +1,10 @@
 /training_sets
 /classified_images
 /to_classify
+*.tif
 /tiled_images
-/saved_models
+/saved_models/*/*/*tar
+/saved_models_stable/*/*/*tar
 __pycache__
 .DS_Store
 .ipynb_checkpoints/

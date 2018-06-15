@@ -17,10 +17,11 @@ parser.add_argument('--model_architecture', type=str, help='model architecture, 
 parser.add_argument('--hyperparameter_set', type=str, help='combination of hyperparameters used, must be a member of '
                                                            'hyperparameters dictionary')
 parser.add_argument('--model_name', type=str, help='name of output file from training, this name will also be used in '
-                                                    'subsequent steps of the pipeline')
+                                                   'subsequent steps of the pipeline')
 parser.add_argument('--pipeline', type=str, help='name of the detection pipeline where the model will be saved')
 parser.add_argument('--positive_classes', type=str, help='name of classes that that should be kept with _ in between'
                                                          'class labels')
+parser.add_argument('--dest_folder', type=str, default='saved_models', help='folder where the model will be saved')
 
 
 args = parser.parse_args()
@@ -47,7 +48,6 @@ pos_classes = args.positive_classes.split('_')
 # normalize input images
 arch_input_size = model_archs[args.model_architecture]['input_size']
 data_transforms = transforms.Compose([
-        transforms.CenterCrop(arch_input_size),
         transforms.ToTensor(),
         transforms.Normalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225])
 ])
@@ -84,8 +84,8 @@ def main():
         model_ft.cuda()
 
     # load features
-    model_ft.load_state_dict(torch.load("./saved_models/{}/{}/{}.tar".format(args.pipeline, args.model_name,
-                                                                             args.model_name)))
+    model_ft.load_state_dict(torch.load("./{}/{}/{}/{}.tar".format(args.dest_folder, args.pipeline, args.model_name,
+                                                                   args.model_name)))
 
     # change to evaluation mode
     model_ft.eval()
@@ -93,7 +93,7 @@ def main():
     # classify images in dataloader
     for data in dataloader:
         # get the inputs
-        inputs, _, file_names = data
+        inputs, file_names = data
 
         # wrap them in Variable
         if use_gpu:
@@ -110,7 +110,7 @@ def main():
 
     # save output to .csv file
 
-    classified.to_csv('./saved_models/{}/classified_patches.csv'.format(args.pipeline))
+    classified.to_csv('./{}/{}/classified_patches.csv'.format(args.dest_folder, args.pipeline))
 
 
 if __name__ == '__main__':

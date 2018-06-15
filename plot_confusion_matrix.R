@@ -11,6 +11,7 @@ library(argparse)
 parser = ArgumentParser(description="R script to get validation stats and plot a confusion matrix")
 parser$add_argument("--input_file", type="character", help="model name generated during training")
 parser$add_argument("--pipeline", type="character", help='model pipeline')
+parser$add_argument("--dest_folder", type="character", default="saved_models", help="folder where pipeline is located")
 args = parser$parse_args()
 
 
@@ -86,12 +87,12 @@ get_confusion_matrix = function(csv_file, labels, pos_classes){
         theme(legend.position="none")
     
     # save confusion_matrix as a png figure
-    png(glue("./saved_models/{pipeline}/{model_name}/{model_name}_conf_matrix.png"))
+    png(glue("./{dest_folder}/{pipeline}/{model_name}/{model_name}_conf_matrix.png"))
     print(plot)
     dev.off()
     
     # write performance metrics to csv
-    write.csv(pos_classes_stats, glue("./saved_models/{pipeline}/{model_name}/{model_name}_prec_recall.csv"))
+    write.csv(pos_classes_stats, glue("./{dest_folder}/{pipeline}/{model_name}/{model_name}_prec_recall.csv"))
 }
 
 # define labels
@@ -104,7 +105,8 @@ pos_classes = c('crabeater', 'weddell', 'emperor', 'marching-emperor')
 # run for validation data
 model_name = args$input_file
 pipeline = args$pipeline
-get_confusion_matrix(csv_file=glue('./saved_models/{pipeline}/{model_name}/{model_name}_validation.csv'), labels=labels,
+dest_folder = args$dest_folder
+get_confusion_matrix(csv_file=glue('./{dest_folder}/{pipeline}/{model_name}/{model_name}_validation.csv'), labels=labels,
                      pos_classes=pos_classes)
 
 
