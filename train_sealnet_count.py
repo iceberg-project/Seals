@@ -26,6 +26,7 @@ parser.add_argument('--cv_weights', nargs='?', type=str, default='NO', help='wei
 parser.add_argument('--output_name', type=str, help='name of output file from training, this name will also be used in '
                                                     'subsequent steps of the pipeline')
 parser.add_argument('--pipeline', type=str, help='name of the detection pipeline where the model will be saved')
+parser.add_argument('--dest_folder', type=str, default='saved_models', help='folder where the model will be saved')
 
 args = parser.parse_args()
 
@@ -147,7 +148,7 @@ def train_model(model, criterion, optimizer, scheduler, num_epochs=25):
                 inputs, _, counts = data
 
                 # create tensorboard variables
-                counts.type(torch.FloatTensor)
+                counts.type(torch.int)
 
                 # wrap them in Variable
                 if use_gpu:
@@ -160,10 +161,9 @@ def train_model(model, criterion, optimizer, scheduler, num_epochs=25):
                 optimizer.zero_grad()
 
                 # forward
-                outputs = torch.Tensor([ele for ele in model(inputs)])
-                outputs = Variable(outputs, requires_grad=True)
+                outputs = model(inputs)
                 outputs = outputs.cuda()
-                loss = criterion(outputs, counts)
+                loss = torch.sqrt(criterion(outputs, counts))
 
                 # backward + optimize only if in training phase
                 if phase == 'training':
@@ -194,8 +194,8 @@ def train_model(model, criterion, optimizer, scheduler, num_epochs=25):
         time_elapsed // 3600, (time_elapsed % 3600) // 60, time_elapsed % 60))
 
     # save the model, keeping haulout and single seal models in separate folders
-    torch.save(model.state_dict(), 'saved_models/{}/{}/{}.tar'.format(args.pipeline, args.output_name,
-                                                                      args.output_name))
+    torch.save(model.state_dict(), './{}/{}/{}/{}.tar'.format(args.dest_folder, args.pipeline,
+                                                              args.output_name, args.output_name))
 
     return model
 
