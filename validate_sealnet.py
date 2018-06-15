@@ -28,6 +28,7 @@ parser.add_argument('--pipeline', type=str, help='name of the detection pipeline
 parser.add_argument('--ablation', type=int, default=0, help='boolean for whether or not this validation run will work '
                                                             'on the ablation dataset. runs on regular training sets'
                                                             'by default')
+parser.add_argument('--dest_folder', type=str, default='saved_models', help='folder where the model will be saved')
 
 # load arguments
 args = parser.parse_args()
@@ -46,7 +47,7 @@ if args.pipeline not in model_defs:
     raise Exception('Pipeline is not defined in ./utils/model_library.py')
 
 
-def validate_model(model, val_dir, out_file, pipeline, batch_size=8, input_size=299, num_workers=1):
+def validate_model(model, dest_folder, val_dir, out_file, pipeline, batch_size=2, input_size=299, num_workers=1):
     """
     Generates a confusion matrix from a PyTorch model and validation images
 
@@ -150,7 +151,7 @@ def validate_model(model, val_dir, out_file, pipeline, batch_size=8, input_size=
                                      ignore_index=True)
 
     # save output to .csv for plotting
-    conf_matrix.to_csv('./saved_models/{}/{}/{}_validation.csv'.format(pipeline, out_file, out_file), index=False)
+    conf_matrix.to_csv('./{}/{}/{}/{}_validation.csv'.format(dest_folder, pipeline, out_file, out_file), index=False)
 
 
 def main():
@@ -169,13 +170,13 @@ def main():
     model_ft.eval()
 
     # load saved model weights from pt_train.py
-    model_ft.load_state_dict(torch.load("./saved_models/{}/{}/{}.tar".format(args.pipeline, args.model_name,
-                                                                             args.model_name)))
+    model_ft.load_state_dict(torch.load("./{}/{}/{}/{}.tar".format(args.dest_folder, args.pipeline, args.model_name,
+                                                                   args.model_name)))
 
     # run validation to get confusion matrix
     validate_model(model=model_ft, input_size=model_archs[args.model_architecture]['input_size'],
                    pipeline=args.pipeline, batch_size=hyperparameters[args.hyperparameter_set]['batch_size_test'],
-                   val_dir=args.training_dir, out_file=args.model_name,
+                   val_dir=args.training_dir, out_file=args.model_name, dest_folder=args.dest_folder,
                    num_workers=hyperparameters[args.hyperparameter_set]['num_workers_train'])
 
 

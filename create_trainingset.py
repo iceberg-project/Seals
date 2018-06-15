@@ -187,8 +187,9 @@ def get_patches(out_folder: str, raster_dir: str, shape_file: str, lon: str, lat
                         else:
                             inside = False
                 # add detections
-                detections = detections.append({'file_name': os.path.basename(filename),
-                                                'locations': locs}, ignore_index=True)
+                new_row = pd.Series({'file_name': os.path.basename(filename), 'locations': locs})
+                new_row.name = p[1]['shapeid']
+                detections = detections.append(new_row)
                 num_imgs += 1
 
         del band
@@ -196,7 +197,8 @@ def get_patches(out_folder: str, raster_dir: str, shape_file: str, lon: str, lat
 
     time_elapsed = time.time() - since
     print("\n\n{} training images created in {:.0f}m {:.0f}s".format(num_imgs, time_elapsed // 60, time_elapsed % 60))
-    detections.to_csv('./training_sets/{}/detections.csv'.format(out_folder), index=False)
+    detections = detections.sort_index()
+    detections.to_csv('./training_sets/{}/detections.csv'.format(out_folder))
 
 
 def main():
