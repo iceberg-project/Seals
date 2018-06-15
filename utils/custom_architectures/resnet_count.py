@@ -1,5 +1,6 @@
 import torch.nn as nn
 import torch.utils.model_zoo as model_zoo
+import torch
 
 
 __all__ = ['ResNet', 'resnet18_count', 'resnet34_count', 'resnet50_count']
@@ -94,7 +95,7 @@ class ResNet(nn.Module):
     def __init__(self, block, layers, num_classes=1000):
         self.inplanes = 64
         super(ResNet, self).__init__()
-        self.conv1 = nn.Conv2d(3, 64, kernel_size=7, stride=2, padding=3,
+        self.conv1 = nn.Conv2d(3, 64, kernel_size=7, stride=1, padding=3,
                                bias=False)
         self.bn1 = nn.BatchNorm2d(64)
         self.relu = nn.ReLU(inplace=True)
@@ -102,8 +103,10 @@ class ResNet(nn.Module):
         self.layer1 = self._make_layer(block, 64, layers[0], stride=2)
         self.layer2 = self._make_layer(block, 128, layers[1], stride=2)
         self.layer3 = self._make_layer(block, 256, layers[2], stride=2)
-        self.avgpool = nn.AvgPool2d(11, stride=2)
-        self.fc = nn.Linear(512 * block.expansion, 1)
+        self.maxpool2 = nn.MaxPool2d(kernel_size=3, stride=2)
+
+        self.fc = nn.Linear(169, 1)
+        self.final_conv = nn.Conv2d(in_channels=128 * block.expansion, out_channels=1, kernel_size=1)
 
         for m in self.modules():
             if isinstance(m, nn.Conv2d):
@@ -137,11 +140,12 @@ class ResNet(nn.Module):
 
         x = self.layer1(x)
         x = self.layer2(x)
+        x = self.final_conv(x)
 
-        x = self.avgpool(x)
+        x = self.maxpool2(x)
         x = x.view(x.size(0), -1)
         x = self.fc(x)
-
+        x = torch.squeeze(x)
         return x
 
 

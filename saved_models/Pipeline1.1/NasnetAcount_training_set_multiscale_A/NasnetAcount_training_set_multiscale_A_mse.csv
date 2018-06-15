@@ -1,0 +1,2 @@
+"","n_parameters","running_time","MSE","model_name","precision","recall","total_predicted","total_ground_truth"
+"1",858003,9.2982529399789,9.20708048637085,"NasnetAcount_training_set_multiscale_A",0.733589006925682,0.65746362706728,2003.96769341361,2236
