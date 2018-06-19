@@ -1,6 +1,8 @@
-from radical.entk import Pipeline, Stage, Task, AppManager, ResourceManager
+from radical.entk import Pipeline,Stage,Task,ResourceManager,AppManager
+import argparse
 
-def generate_pipeline(name, stages):  #generate the pipeline of prediction and blob detection
+def generate_pipeline(name,stages,image,tile_size,
+                      pipeline,model_arch,model_name,hyperparam_set):  #generate the pipeline of prediction and blob detection
 
     # Create a Pipeline object
     p = Pipeline()
@@ -14,37 +16,56 @@ def generate_pipeline(name, stages):  #generate the pipeline of prediction and b
             s0 = Stage()
             s0.name = 'Stage %s'%s_cnt
             # Create Task 1, training
+            t0 = Task()
+            t0.name = 'Tiling'
+            t0.pre_exec = ['module load psc_path/1.1',
+                           'module load slurm/default',
+                           'module load intel/17.4',
+                           'module load python3',
+                           'source $SCRATCH/pytorchCuda/bin/activate'
+                          ]
+            t0.executable = 'python3'   # Assign executable to the task   
+            # Assign arguments for the task executable
+            t0.arguments = ['tile_raster.py','--scale_bands=%s'%tile_size,'--input_image=%s'%image.split('/')[-1]]
+            t0.link_input_data = [image]
+            t0.upload_input_data = ['tile_raster.py']
+            t0.cpu_reqs = {'processes': 1,'threads_per_process': 1, 'thread_type': 'OpenMP'}
+        
+            s0.add_tasks(t0)
+            # Add Stage to the Pipeline
+            p.add_stages(s0)
+        elif (s_cnt==1):
+             # Create a Stage object
+            s1 = Stage()
+            s1.name = 'Stage %s'%s_cnt
+            # Create Task 1, training
             t1 = Task()
-            t1.name = 'Predictor'
+            t1.name = 'PredictingCounting'
             t1.pre_exec = ['module load psc_path/1.1',
                            'module load slurm/default',
                            'module load intel/17.4',
                            'module load python3',
                            'module load cuda',
-                           'mkdir -p classified_images/crabeater',
-                           'mkdir -p classified_images/weddel',
-                           'mkdir -p classified_images/pack-ice',
-                           'mkdir -p classified_images/other',
-                           'source /pylon5/mc3bggp/paraskev/pytorchCuda/bin/activate'
+                           'source $SCRATCH/pytorchCuda/bin/activate'
                           ]
             t1.executable = 'python3'   # Assign executable to the task   
             # Assign arguments for the task executable
-            t1.arguments = ['pt_predict.py','-class_names','crabeater','weddel','pack-ice','other']
-            t1.link_input_data = ['/pylon5/mc3bggp/paraskev/seal_test/nn_model.pth.tar',
-                                  '/pylon5/mc3bggp/paraskev/nn_images',
-                                  '/pylon5/mc3bggp/paraskev/seal_test/test_images'
-                                  ]
-            t1.upload_input_data = ['pt_predict.py','sealnet_nas_scalable.py']
+            t1.arguments = ['predict_sealnet.py','--pipeline',pipeline,
+                            '--dest_folder','./','--test_dir','./','--model_architecture',model_arch,
+                           '--hyperparameter_set',hyperparam_set,'--model_name',model_name]
+            t1.link_input_data = ['$Pipeline_%s_Stage_%s_Task_%s/tiles'%(p.uid, s0.uid, t0.uid),
+                                  'models/%s.tar' % model_name]
+            t1.upload_input_data = ['predict_sealnet.py','utils/']
             t1.cpu_reqs = {'processes': 1,'threads_per_process': 1, 'thread_type': 'OpenMP'}
             t1.gpu_reqs = {'processes': 1,'threads_per_process': 1, 'thread_type': 'OpenMP'}
         
-            s0.add_tasks(t1)    
+            s1.add_tasks(t1)    
             # Add Stage to the Pipeline
-            p.add_stages(s0)
+            p.add_stages(s1)
         else:
             # Create a Stage object
-            s1 = Stage()
-            s1.name = 'Stage %s'%s_cnt
+            s2 = Stage()
+            s2.name = 'Stage %s'%s_cnt
             # Create Task 2,
             t2 = Task()
             t2.pre_exec = ['module load psc_path/1.1',
@@ -52,37 +73,43 @@ def generate_pipeline(name, stages):  #generate the pipeline of prediction and b
                            'module load intel/17.4',
                            'module load python3',
                            'module load cuda',
-                           'module load opencv',
-                           'source /pylon5/mc3bggp/paraskev/pytorchCuda/bin/activate',
-                           'mkdir -p blob_detected'
-                         ]
-            t2.name = 'Blob_detector'         
-            t2.executable = ['python3']   # Assign executable to the task   
+                           'source $SCRATCH/pytorchCuda/bin/activate'
+                          ]
+            t2.name = 'AggregateResults'         
+            t2.executable = ['python']   # Assign executable to the task   
             # Assign arguments for the task executable
-            t2.arguments = ['blob_detector.py']
-            t2.upload_input_data = ['blob_detector.py']
-            t2.link_input_data = ['$Pipeline_%s_Stage_%s_Task_%s/classified_images'%(p.uid, s0.uid, t1.uid)]
-            t2.download_output_data = ['blob_detected/'] #Download resuting images 
+            t2.arguments = ['aggregate_predictions.py','%s_predictions.csv'%model_name]
+            t2.upload_input_data = ['aggregate_predictions.py']
+            for t in s1.tasks:
+                t2.link_input_data = ['$Pipeline_%s_Stage_%s_Task_%s/%s_predictions.csv>%s_predictions.csv'%(p.uid, s1.uid, t.uid,model_name,t.uid)]
+            t2.download_output_data = ['%s/%s_predictions.csv'%(p.uid,model_name)] #Download resuting images 
             t2.cpu_reqs = {'processes': 1,'threads_per_process': 1, 'thread_type': 'OpenMP'}
-            t2.gpu_reqs = {'processes': 1, 'threads_per_process': 1, 'thread_type': 'OpenMP'}
-            s1.add_tasks(t2)
+            s2.add_tasks(t2)
             # Add Stage to the Pipeline
-            p.add_stages(s1)
+            p.add_stages(s2)
 
     return p
 
 
 if __name__=='__main__':
-    p1 = generate_pipeline(name='Pipeline 1', stages=2)
+    
+    
+    parser = argparse.ArgumentParser(description='Scaling inputs')
+    parser.add_argument('cores', type=int, help='Number of Cores')
+    parser.add_argument('gpus', type=int, help='Number of GPUs')
+    parser.add_argument('queue',type=str, help='Queue to submit to')
+    args = parser.parse_args()
+    
+    images = [] # a list with images paths on bridges
     
     res_dict = {'resource': 'xsede.bridges',
-             'walltime': 30,
-             'cpus': 12,
-             'gpus': 2,
-             'schema' : 'gsisshh',
-             'project': 'mc3bggp',
-             'queue' : 'GPU-small'
-    }
+                'walltime': 60,
+                'cpus': 12,
+                'gpus': 2,
+                'schema' : 'gsissh',
+                'project': '',
+                'queue' : 'GPU-small'
+               }
     
     
     # Create Resource Manager
@@ -93,9 +120,20 @@ if __name__=='__main__':
     
     # Assign resource manager to the Application Manager
     appman.resource_manager = rman
-    
-    # Assign the workflow as a set of Pipelines to the Application Manager
-    appman.assign_workflow(set([p1]))
+    pipelines = list()
+    for cnt in range(len(images)):
+        p1 = generate_pipeline(name = 'Pipeline%s'%cnt,
+                             stages = 3,
+                             image = images[cnt],
+                             tile_size = 299,
+                             pipeline = 'Pipeline1.1',
+                             model_arch = 'WideResnetCount',
+                             model_name = 'WideResnetCount',
+                             hyperparam_set = 'A'
+                             )
+        pipelines.append(p1)
+      # Assign the workflow as a set of Pipelines to the Application Manager
+    appman.assign_workflow(set(pipelines))
 
     # Run the Application Manager
     appman.run()
