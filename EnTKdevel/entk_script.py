@@ -2,12 +2,11 @@ from radical.entk import Pipeline,Stage,Task,ResourceManager,AppManager
 import argparse
 
 def generate_pipeline(name,stages,image,tile_size,
-                      pipeline,model_arch,model_name,hyperparam_set):  #generate the pipeline of prediction and blob detection
+                      pipeline,model_arch,model_name,hyperparam_set,dev):  #generate the pipeline of prediction and blob detection
 
     # Create a Pipeline object
     p = Pipeline()
     p.name = name
-
     for s_cnt in range(stages):
 
 
@@ -22,7 +21,8 @@ def generate_pipeline(name,stages,image,tile_size,
                            'module load slurm/default',
                            'module load intel/17.4',
                            'module load python3',
-                           'source $SCRATCH/pytorchCuda/bin/activate'
+                           'source $SCRATCH/pytorchCuda/bin/activate',
+                           'hostname'
                           ]
             t0.executable = 'python3'   # Assign executable to the task   
             # Assign arguments for the task executable
@@ -46,7 +46,9 @@ def generate_pipeline(name,stages,image,tile_size,
                            'module load intel/17.4',
                            'module load python3',
                            'module load cuda',
-                           'source $SCRATCH/pytorchCuda/bin/activate'
+                           'source $SCRATCH/pytorchCuda/bin/activate',
+                           'hostname',
+                           'export CUDA_VISIBLE_DEVICES=%d' % dev
                           ]
             t1.executable = 'python3'   # Assign executable to the task   
             # Assign arguments for the task executable
@@ -54,7 +56,7 @@ def generate_pipeline(name,stages,image,tile_size,
                             '--dest_folder','./','--test_dir','./','--model_architecture',model_arch,
                            '--hyperparameter_set',hyperparam_set,'--model_name',model_name]
             t1.link_input_data = ['$Pipeline_%s_Stage_%s_Task_%s/tiles'%(p.uid, s0.uid, t0.uid),
-                                  'models/%s.tar' % model_name]
+                                  '/pylon5/mc3bggp/paraskev/models/%s.tar' % model_name]
             t1.upload_input_data = ['predict_sealnet.py','utils/']
             t1.cpu_reqs = {'processes': 1,'threads_per_process': 1, 'thread_type': 'OpenMP'}
             t1.gpu_reqs = {'processes': 1,'threads_per_process': 1, 'thread_type': 'OpenMP'}
@@ -82,7 +84,7 @@ def generate_pipeline(name,stages,image,tile_size,
             t2.upload_input_data = ['aggregate_predictions.py']
             for t in s1.tasks:
                 t2.link_input_data = ['$Pipeline_%s_Stage_%s_Task_%s/%s_predictions.csv>%s_predictions.csv'%(p.uid, s1.uid, t.uid,model_name,t.uid)]
-            t2.download_output_data = ['%s/%s_predictions.csv'%(p.uid,model_name)] #Download resuting images 
+            t2.download_output_data = ['%s_predictions.csv> %s_%s_predictions.csv'%(model_name,p.uid,model_name)] #Download resuting images 
             t2.cpu_reqs = {'processes': 1,'threads_per_process': 1, 'thread_type': 'OpenMP'}
             s2.add_tasks(t2)
             # Add Stage to the Pipeline
@@ -98,17 +100,18 @@ if __name__=='__main__':
     parser.add_argument('cores', type=int, help='Number of Cores')
     parser.add_argument('gpus', type=int, help='Number of GPUs')
     parser.add_argument('queue',type=str, help='Queue to submit to')
+    parser.add_argument('images',type=int, help='Number of images to use')
     args = parser.parse_args()
     
     images = [] # a list with images paths on bridges
     
     res_dict = {'resource': 'xsede.bridges',
-                'walltime': 60,
-                'cpus': 12,
-                'gpus': 2,
+                'walltime': 30,
+                'cpus': args.cores,
+                'gpus': args.gpus,
                 'schema' : 'gsissh',
                 'project': '',
-                'queue' : 'GPU-small'
+                'queue' : args.queue
                }
     
     
@@ -121,16 +124,19 @@ if __name__=='__main__':
     # Assign resource manager to the Application Manager
     appman.resource_manager = rman
     pipelines = list()
-    for cnt in range(len(images)):
+    dev = 0
+    for cnt in range(args.images):
         p1 = generate_pipeline(name = 'Pipeline%s'%cnt,
-                             stages = 3,
-                             image = images[cnt],
-                             tile_size = 299,
-                             pipeline = 'Pipeline1.1',
-                             model_arch = 'WideResnetCount',
-                             model_name = 'WideResnetCount',
-                             hyperparam_set = 'A'
-                             )
+                               stages = 3,
+                               image = images[cnt],
+                               tile_size = 299,
+                               pipeline = 'Pipeline1.1',
+                               model_arch = 'WideResnetCount',
+                               model_name = 'WideResnetCount',
+                               hyperparam_set = 'A',
+                               dev = dev
+                               )
+        dev = dev ^ 1
         pipelines.append(p1)
       # Assign the workflow as a set of Pipelines to the Application Manager
     appman.assign_workflow(set(pipelines))
