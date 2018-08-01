@@ -139,7 +139,7 @@ if __name__=='__main__':
     for cnt in range(args.images):
         p1 = generate_pipeline(name = 'P%s'%cnt,
                                stages = 3,
-                               image = images[0],
+                               image = images[cnt],
                                tile_size = 299,
                                pipeline = 'Pipeline1.1',
                                model_arch = 'WideResnetCount',
