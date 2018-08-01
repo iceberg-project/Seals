@@ -13,10 +13,10 @@ def generate_pipeline(name,stages,image,tile_size,
         if(s_cnt==0):
             # Create a Stage object
             s0 = Stage()
-            s0.name = 'Stage %s'%s_cnt
+            s0.name = '%s-S%s' % (name,s_cnt)
             # Create Task 1, training
             t0 = Task()
-            t0.name = 'Tiling'
+            t0.name = '%s-T0' % s0.name
             t0.pre_exec = ['module load psc_path/1.1',
                            'module load slurm/default',
                            'module load intel/17.4',
@@ -37,10 +37,10 @@ def generate_pipeline(name,stages,image,tile_size,
         elif (s_cnt==1):
              # Create a Stage object
             s1 = Stage()
-            s1.name = 'Stage %s'%s_cnt
+            s1.name = '%s-S%s' % (name,s_cnt)
             # Create Task 1, training
             t1 = Task()
-            t1.name = 'PredictingCounting'
+            t1.name = '%s-T1' % s1.name
             t1.pre_exec = ['module load psc_path/1.1',
                            'module load slurm/default',
                            'module load intel/17.4',
@@ -55,7 +55,7 @@ def generate_pipeline(name,stages,image,tile_size,
             t1.arguments = ['predict_sealnet.py','--pipeline',pipeline,
                             '--dest_folder','./','--test_dir','./','--model_architecture',model_arch,
                            '--hyperparameter_set',hyperparam_set,'--model_name',model_name]
-            t1.link_input_data = ['$Pipeline_%s_Stage_%s_Task_%s/tiles'%(p.uid, s0.uid, t0.uid),
+            t1.link_input_data = ['$Pipeline_%s_Stage_%s_Task_%s/tiles'%(p.name, s0.name, t0.name),
                                   '/pylon5/mc3bggp/paraskev/models/%s.tar' % model_name]
             t1.upload_input_data = ['predict_sealnet.py','utils/']
             t1.cpu_reqs = {'processes': 1,'threads_per_process': 1, 'thread_type': 'OpenMP'}
@@ -67,7 +67,7 @@ def generate_pipeline(name,stages,image,tile_size,
         else:
             # Create a Stage object
             s2 = Stage()
-            s2.name = 'Stage %s'%s_cnt
+            s2.name = '%s-S%s' % (name,s_cnt)
             # Create Task 2,
             t2 = Task()
             t2.pre_exec = ['module load psc_path/1.1',
@@ -77,14 +77,14 @@ def generate_pipeline(name,stages,image,tile_size,
                            'module load cuda',
                            'source $SCRATCH/pytorchCuda/bin/activate'
                           ]
-            t2.name = 'AggregateResults'         
+            t2.name = '%s-T2' % s2.name         
             t2.executable = ['python']   # Assign executable to the task   
             # Assign arguments for the task executable
             t2.arguments = ['aggregate_predictions.py','%s_predictions.csv'%model_name]
             t2.upload_input_data = ['aggregate_predictions.py']
             for t in s1.tasks:
-                t2.link_input_data = ['$Pipeline_%s_Stage_%s_Task_%s/%s_predictions.csv>%s_predictions.csv'%(p.uid, s1.uid, t.uid,model_name,t.uid)]
-            t2.download_output_data = ['%s_predictions.csv> %s_%s_predictions.csv'%(model_name,p.uid,model_name)] #Download resuting images 
+                t2.link_input_data = ['$Pipeline_%s_Stage_%s_Task_%s/%s_predictions.csv>%s_predictions.csv'%(p.name, s1.name, t1.name,model_name,t1.name)]
+            t2.download_output_data = ['%s_predictions.csv> %s_%s_predictions.csv'%(model_name,p.name,model_name)] #Download resuting images 
             t2.cpu_reqs = {'processes': 1,'threads_per_process': 1, 'thread_type': 'OpenMP'}
             s2.add_tasks(t2)
             # Add Stage to the Pipeline
@@ -125,7 +125,7 @@ if __name__=='__main__':
                 'cpus': args.cpus,
                 'gpus': args.gpus,
                 'schema' : 'gsissh',
-                'project': 'mc3bggp',
+                'project': '',
                 'queue' : args.queue
                }
 
@@ -137,7 +137,7 @@ if __name__=='__main__':
     pipelines = list()
     dev = 0
     for cnt in range(args.images):
-        p1 = generate_pipeline(name = 'Pipeline%s'%cnt,
+        p1 = generate_pipeline(name = 'P%s'%cnt,
                                stages = 3,
                                image = images[0],
                                tile_size = 299,
