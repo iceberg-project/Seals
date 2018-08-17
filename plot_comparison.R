@@ -37,11 +37,12 @@ y_lim = c(0, max(pooled_data['y']))
 label_plot = ggplot(data=pooled_data, 
                     mapping=aes(x=x, y=y, color=model_name)) +
     theme_minimal(base_size=15) +
-    geom_point(size=4, alpha=0.8) +
+    geom_point(size=11, alpha=0.5) +
+    geom_point(size=12, shape=21, color='black') +
     labs(x=x_label, y=y_label) +
     xlim(x_lim) +
     ylim(y_lim) +
-    theme(axis.title = element_text(face="bold", size=18),
+    theme(axis.title = element_text(face="bold", size=22),
           strip.text.x = element_text(size=18, face="italic"))+
     scale_colour_brewer(palette="Set1") 
 
