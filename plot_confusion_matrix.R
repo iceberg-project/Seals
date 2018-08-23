@@ -95,9 +95,6 @@ get_confusion_matrix = function(csv_file, labels, pos_classes){
     write.csv(pos_classes_stats, glue("./{dest_folder}/{pipeline}/{model_name}/{model_name}_prec_recall.csv"))
 }
 
-# define labels
-labels = c('crabeater', 'weddell', 'pack-ice', 'other', 'emperor', 'open-water', 'ice-sheet',
-           'marching-emperor', 'crack', 'glacier', 'rock')
 
 
 # unroll inputs
@@ -108,8 +105,15 @@ dest_folder = args$dest_folder
 # define positive class labels, checking for binary
 if(grepl('binary', model_name) == TRUE){
     pos_classes = c('seal', 'non-seal')
+    # define labels
+    labels = c('seal', 'non-seal')
+    
 } else{
     pos_classes = c('crabeater', 'weddell', 'emperor', 'marching-emperor')
+    # define labels
+    labels = c('crabeater', 'weddell', 'pack-ice', 'other', 'emperor', 'open-water', 'ice-sheet',
+               'marching-emperor', 'crack', 'glacier', 'rock')
+    
 }
 
 # run validation
