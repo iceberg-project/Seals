@@ -63,7 +63,8 @@ loss_functions = {'Pipeline1': lambda weight: nn.CrossEntropyLoss(weight=torch.F
 
 # training sets with number of classes and size of scale bands
 training_sets = {'training_set_vanilla': {'num_classes': 11, 'scale_bands': [450, 450, 450]},
-                 'training_set_multiscale_A': {'num_classes': 11, 'scale_bands': [450, 1350, 4000]}
+                 'training_set_multiscale_A': {'num_classes': 11, 'scale_bands': [450, 1350, 4000]},
+                 'training_set_binary': {'num_classes': 2, 'scale_bands': [450, 450, 450]}
                  }
 
 # hyperparameter sets
