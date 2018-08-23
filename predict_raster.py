@@ -166,46 +166,49 @@ def main():
         positive_classes = args.pos_classes.split('_')
         pos_patches = predictions.loc[predictions['predictions'].isin(positive_classes), 'filenames']
 
-    if not os.path.exists('./{}/sub-tiles/images'.format(args.dest_folder)):
-        os.makedirs('./{}/sub-tiles/images'.format(args.dest_folder))
+    # check if there are positive patches
+    if len(pos_patches) > 0:
 
-    # loop over positive patches creating subpatches
-    for fname in pos_patches:
-        subpatches = get_subpatches(patch=np.array(Image.open('./{}/tiles/images/{}'.format(args.dest_folder, fname))),
-                                    count_size=model_archs[args.count_architecture]['input_size'])
-        for idx, patch in enumerate(subpatches):
-            if np.min(patch) > 200 or np.max(patch) < 55:
-                continue
-            cv2.imwrite('./{}/sub-tiles/images/{}-{}'.format(args.dest_folder, idx, fname), patch)
+        if not os.path.exists('./{}/sub-tiles/images'.format(args.dest_folder)):
+            os.makedirs('./{}/sub-tiles/images'.format(args.dest_folder))
 
-    # remove tiles to count only sub-tiles
-    shutil.rmtree('./{}/tiles'.format(args.dest_folder))
+        # loop over positive patches creating subpatches
+        for fname in pos_patches:
+            subpatches = get_subpatches(patch=np.array(Image.open('./{}/tiles/images/{}'.format(args.dest_folder, fname))),
+                                        count_size=model_archs[args.count_architecture]['input_size'])
+            for idx, patch in enumerate(subpatches):
+                if np.min(patch) > 200 or np.max(patch) < 55:
+                    continue
+                cv2.imwrite('./{}/sub-tiles/images/{}-{}'.format(args.dest_folder, idx, fname), patch)
 
-    # count inside subpatches with counting CNN
-    model = model_defs['Pipeline1.1'][args.count_architecture]
+        # remove tiles to count only sub-tiles
+        shutil.rmtree('./{}/tiles'.format(args.dest_folder))
 
-    use_gpu = torch.cuda.is_available()
-    if use_gpu:
-        model.cuda()
-    model.eval()
+        # count inside subpatches with counting CNN
+        model = model_defs['Pipeline1.1'][args.count_architecture]
 
-    # load saved model weights from pt_train.py
-    model.load_state_dict(torch.load("./saved_models_stable/Pipeline1.1/{}/{}.tar".format(args.count_architecture,
-                                                                                          args.count_architecture)))
+        use_gpu = torch.cuda.is_available()
+        if use_gpu:
+            model.cuda()
+        model.eval()
 
-    counts = predict_patch(model=model, input_size=model_archs[args.count_architecture]['input_size'],
-                           pipeline='Pipeline1.1',
-                           batch_size=hyperparameters[args.hyperparameter_set_count]['batch_size_test'],
-                           test_dir='./' + args.dest_folder,
-                           out_file='{}_count'.format(os.path.basename(input_image)[:-4]),
-                           dest_folder='./' + args.dest_folder,
-                           num_workers=hyperparameters[args.hyperparameter_set_count]['num_workers_train'],
-                           class_names=class_names)
-    print('    Total predicted in {}: '.format(os.path.basename(input_image)), sum(counts['predictions']))
+        # load saved model weights from pt_train.py
+        model.load_state_dict(torch.load("./saved_models_stable/Pipeline1.1/{}/{}.tar".format(args.count_architecture,
+                                                                                              args.count_architecture)))
 
-    for row in counts.iterrows():
-        fname = row[1]['filenames'].split('-')[1]
-        output_shpfile.loc[fname, 'count'] += row[1]['predictions']
+        counts = predict_patch(model=model, input_size=model_archs[args.count_architecture]['input_size'],
+                               pipeline='Pipeline1.1',
+                               batch_size=hyperparameters[args.hyperparameter_set_count]['batch_size_test'],
+                               test_dir='./' + args.dest_folder,
+                               out_file='{}_count'.format(os.path.basename(input_image)[:-4]),
+                               dest_folder='./' + args.dest_folder,
+                               num_workers=hyperparameters[args.hyperparameter_set_count]['num_workers_train'],
+                               class_names=class_names)
+        print('    Total predicted in {}: '.format(os.path.basename(input_image)), sum(counts['predictions']))
+
+        for row in counts.iterrows():
+            fname = row[1]['filenames'].split('-')[1]
+            output_shpfile.loc[fname, 'count'] += row[1]['predictions']
 
     # save shapefile
     shapefile_path = './{}/predicted_shapefiles/{}/'.format(args.dest_folder, os.path.basename(input_image)[:-4])
