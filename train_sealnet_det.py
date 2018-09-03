@@ -1,6 +1,7 @@
 import torch
 import torch.nn as nn
 import torch.optim as optim
+import torch.nn.functional as F
 from torch.optim import lr_scheduler
 import numpy as np
 from torchvision import transforms
@@ -10,7 +11,7 @@ import argparse
 from tensorboardX import SummaryWriter
 import time
 from utils.model_library import *
-from utils.dataloaders.data_loader_train_count import ImageFolderTrainCount
+from utils.dataloaders.data_loader_train_det import ImageFolderTrainDet
 from utils.dataloaders.transforms_det import ShapeTransform
 from PIL import ImageFile
 import warnings
@@ -76,10 +77,41 @@ img_size = training_sets[args.training_dir]['scale_bands'][0]
 
 
 # save image datasets
-image_datasets = {x: ImageFolderTrainCount(root=os.path.join(data_dir, x),
-                                           shape_transform=data_transforms[x]['shape_transform'],
-                                           int_transform=data_transforms[x]['int_transform'])
+image_datasets = {x: ImageFolderTrainDet(root=os.path.join(data_dir, x),
+                                         shape_transform=data_transforms[x]['shape_transform'],
+                                         int_transform=data_transforms[x]['int_transform'])
                   for x in ['training', 'validation']}
+
+
+# helper function to get the (x,y) of max values
+def get_xy_locs(array, count):
+    if count == 0:
+        return np.array([])
+    cols = array.shape[1]
+    flat = array.flatten()
+    return np.array([[x // cols, x % cols] for x in flat.argsort()[-count:]])
+
+
+# helper function to get a loss based on the square mean euclidean distance between predicted seal centroids and
+# ground-truth seal centroids
+def get_euc_loss(pred_locs, gt_locs):
+    loss = 0
+    num_pairs = min(len(pred_locs), len(gt_locs))
+    n = num_pairs
+    pairs = []
+
+    for i in range(len(pred_locs)):
+        for j in range(len(gt_locs)):
+            pairs.append([i, j, np.linalg.norm(pred_locs[i] - gt_locs[j])])
+
+    pairs = sorted(pairs, key=lambda x: x[2])
+    while num_pairs > 0:
+        i, j = pairs[0][:2]
+        loss += pairs[0][2]
+        pairs = [pair for pair in pairs if pair[0] != i and pair[1] != j]
+        num_pairs -= 1
+
+    return np.sqrt(loss / max(1, n))
 
 
 # Force minibatches to have an equal representation amongst classes during training with a weighted sampler
@@ -120,7 +152,7 @@ dataset_sizes = {x: len(image_datasets[x]) for x in ['training', 'validation']}
 use_gpu = torch.cuda.is_available()
 
 
-def train_model(model, criterion, optimizer, scheduler, num_epochs=25):
+def train_model(model, criterion1, criterion2, optimizer, scheduler, num_epochs=25):
     since = time.time()
 
     # create summary writer for tensorboardX
@@ -143,36 +175,62 @@ def train_model(model, criterion, optimizer, scheduler, num_epochs=25):
             running_loss = 0.0
 
             # Iterate over data.
-            for data in dataloaders[phase]:
+            for iter, data in enumerate(dataloaders[phase]):
                 # get the inputs
-                inputs, _, counts = data
-
-                # create tensorboard variables
+                inputs, _, counts, locations = data
                 counts.type(torch.int)
+
+                # get location indices
+                locs = [get_xy_locs(loc, int(counts[idx])) for idx, loc in enumerate(locations.numpy())]
 
                 # wrap them in Variable
                 if use_gpu:
                     inputs = Variable(inputs.cuda())
                     counts = Variable(counts.cuda())
+                    locations = Variable(locations.cuda())
                 else:
-                    inputs, counts = Variable(inputs), Variable(counts)
+                    inputs, counts, locations = Variable(inputs), Variable(counts), Variable(locations)
 
                 # zero the parameter gradients
                 optimizer.zero_grad()
 
                 # forward
-                outputs = model(inputs)
-                outputs = outputs.cuda()
-                loss = torch.sqrt(criterion(outputs, counts))
+                pred_cnt, pred_loc = model(inputs)
+
+                # flatten locations and predicted locations
+                locations = locations.view(-1)
+                pred_loc_flat = F.sigmoid(pred_loc).view(-1)
+
+                # get euclidean loss
+                pred_loc = pred_loc.cpu().detach()
+
+                # find predicted location
+                pred_loc = [get_xy_locs(loc, max(0, int(pred_cnt[idx]))) for idx, loc in enumerate(pred_loc.numpy())]
+
+                # get euclidean loss
+                euc_loss = sum([get_euc_loss(pred_loc[idx], locs[idx]) for idx in range(len(locs))]) / 25
+
+                # get counting loss
+                pred_cnt = pred_cnt.cuda()
+
+                cnt_loss = criterion1(pred_cnt, counts)
+                hm_loss = criterion2(pred_loc_flat, locations) * max(1, euc_loss)
+                if iter % 200 == 0:
+                    print('\n {} training iterations'.format(iter))
+                    print('   Hubber loss: {}'.format(cnt_loss.item()))
+                    print('   Euclidean loss: {}'.format(euc_loss))
+                    print('   BCE loss: {}'.format(hm_loss.item()))
+                    print('   total loss: {}'.format(hm_loss.item() + cnt_loss.item()))
 
                 # backward + optimize only if in training phase
                 if phase == 'training':
-                    loss.backward()
+                    cnt_loss.backward(retain_graph=True)
+                    hm_loss.backward()
                     optimizer.step()
                     global_step += 1
 
                 # statistics
-                running_loss += loss.item() * inputs.size(1)
+                running_loss += (hm_loss.item() + cnt_loss.item()) * inputs.size(1)
 
             epoch_loss = running_loss / dataset_sizes[phase]
             if phase == 'validation':
@@ -208,6 +266,7 @@ def main():
 
     # define criterion
     criterion = loss_functions[args.pipeline](cv_weight)
+    criterion2 = nn.BCELoss()
 
     if use_gpu:
         # i think we can set parallel GPU usage here. will test
@@ -228,7 +287,7 @@ def main():
                                            , gamma=hyperparameters[args.hyperparameter_set]['gamma'])
 
     # start training
-    train_model(model_ft, criterion, optimizer_ft, exp_lr_scheduler,
+    train_model(model_ft, criterion, criterion2, optimizer_ft, exp_lr_scheduler,
                 num_epochs=hyperparameters[args.hyperparameter_set]['epochs'])
 
 

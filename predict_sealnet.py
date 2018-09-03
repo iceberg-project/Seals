@@ -1,7 +1,7 @@
 import torch
 import pandas as pd
 from torchvision import datasets, transforms, models
-from torch.autograd import Variable
+import numpy as np
 from utils.dataloaders.data_loader_test import ImageFolderTest
 import time
 import warnings
@@ -21,16 +21,25 @@ def parse_args():
     parser.add_argument('--test_dir', type=str, help='base directory to recursively search for validation images in')
     parser.add_argument('--model_architecture', type=str, help='model architecture, must be a member of models '
                                                                'dictionary')
-    parser.add_argument('--hyperparameter_set', type=str, help='combination of hyperparameters used, must be a member of '
-                                                               'hyperparameters dictionary')
-    parser.add_argument('--model_name', type=str, help='name of input model file from training, this name will also be used'
-                                                       'in subsequent steps of the pipeline')
+    parser.add_argument('--hyperparameter_set', type=str, help='combination of hyperparameters used, must be a member '
+                                                               'of hyperparameters dictionary')
+    parser.add_argument('--model_name', type=str, help='name of input model file from training, this name will also be '
+                                                       'used in subsequent steps of the pipeline')
     parser.add_argument('--pipeline', type=str, help='name of the detection pipeline where the model is loaded from')
-    parser.add_argument('--ablation', type=int, default=0, help='boolean for whether or not this validation run will work '
-                                                                'on the ablation dataset. runs on regular training sets'
-                                                                'by default')
+    parser.add_argument('--ablation', type=int, default=0, help='boolean for whether or not this validation run will'
+                                                                'work on the ablation dataset. runs on regular training'
+                                                                'sets by default')
     parser.add_argument('--dest_folder', type=str, default='saved_models', help='folder where the model will be saved')
     return parser.parse_args()
+
+
+# helper function to get the (x,y) of max values
+def get_xy_locs(array, count):
+    if count == 0:
+        return np.array([])
+    cols = array.shape[1]
+    flat = array.flatten()
+    return np.array([[x // cols, x % cols] for x in flat.argsort()[-count:]])
 
 
 def predict_patch(model, dest_folder, test_dir, out_file, pipeline, batch_size=2, input_size=299,
@@ -63,6 +72,8 @@ def predict_patch(model, dest_folder, test_dir, out_file, pipeline, batch_size=2
     use_gpu = torch.cuda.is_available()
 
     # store predictions and filenames
+    predicted_cnts = []
+    predicted_locs = []
     predictions = []
     fnames = []
 
@@ -82,21 +93,33 @@ def predict_patch(model, dest_folder, test_dir, out_file, pipeline, batch_size=2
             inputs = inputs.cuda()
 
         # do a forward pass to get predictions
-        outputs = model(inputs)
-
-        if pipeline == "Pipeline1":
-            _, preds = torch.max(outputs.data, 1)
-
-            # keep track of correct answers to get accuracy
-            preds_batch = [class_names[int(ele)] for ele in preds]
-
+        # detection models
+        if pipeline == 'Pipeline1.2':
+            cnts, locs = model(inputs)
+            pred_cnt_batch = [max(0, round(float(ele))) for ele in cnts]
+            locs = locs.cpu().detach()
+            # find predicted location
+            locs = [get_xy_locs(loc, max(0, int(cnts[idx]))) for idx, loc in enumerate(locs.numpy())]
+            # save batch predictions
+            predicted_cnts.extend(pred_cnt_batch)
+            predicted_locs.extend(locs)
+        # counting and classification models
         else:
-            preds_batch = [max(0, round(float(ele))) for ele in outputs]
+            outputs = model(inputs)
 
-        # add current predictions
+            # save batch predictions
+            if pipeline == "Pipeline1":
+                _, preds = torch.max(outputs.data, 1)
+                # predicted classes
+                preds_batch = [class_names[int(ele)] for ele in preds]
+
+            else:
+                # predicted counts
+                preds_batch = [max(0, round(float(ele))) for ele in outputs]
+            # add batch predictions
+            predictions.extend(preds_batch)
+        # add filename
         fnames.extend(filenames)
-        predictions.extend(preds_batch)
-
     time_elapsed = time.time() - since
 
     # print output
@@ -104,10 +127,29 @@ def predict_patch(model, dest_folder, test_dir, out_file, pipeline, batch_size=2
         time_elapsed // 3600, time_elapsed // 60, time_elapsed % 60))
 
     # save output to .csv
-    predictions = pd.DataFrame({'predictions': [ele for ele in predictions],
-                                'filenames': [ele for ele in fnames]})
-    predictions.to_csv('./{}/{}_predictions.csv'.format(dest_folder, out_file), index=False)
-    return predictions
+    # detection output
+    if pipeline == 'Pipeline1.2':
+        # locations
+        pred_locations = {'x': [],
+                          'y': [],
+                          'filenames': []}
+        for idx, batch in enumerate(predicted_locs):
+            for pnt in batch:
+                pred_locations['x'].append(pnt[0])
+                pred_locations['y'].append(pnt[1])
+                pred_locations['filenames'].append(fnames[idx])
+        pred_locations = pd.DataFrame(pred_locations)
+        # counts
+        predictions = pd.DataFrame({'predictions': [ele for ele in predicted_cnts],
+                                    'filenames': [ele for ele in fnames]})
+        return predictions, pred_locations
+
+    # classification and counting output
+    else:
+        predictions = pd.DataFrame({'predictions': [ele for ele in predictions],
+                                    'filenames': [ele for ele in fnames]})
+        predictions.to_csv('./{}/{}_predictions.csv'.format(dest_folder, out_file), index=False)
+        return predictions
 
 
 def main():
