@@ -3,7 +3,7 @@ import pandas as pd
 import geopandas as gpd
 import warnings
 import argparse
-from shapely.geometry.geo import box
+from shapely.geometry.geo import box, Point
 import affine
 from fiona.crs import from_epsg
 import cv2
@@ -25,8 +25,10 @@ parser = argparse.ArgumentParser(description='validates a CNN at the haul out le
 parser.add_argument('--input_image', type=str, help='base directory to recursively search for validation images in')
 parser.add_argument('--class_architecture', type=str, help='model architecture for classification, must be a member of '
                                                            'models dictionary')
-parser.add_argument('--count_architecture', type=str, help='model architecture for counting, must be a member of '
-                                                           'models dictionary')
+parser.add_argument('--count_architecture', type=str, nargs='?',  help='model architecture for counting, must be a '
+                                                                       'member of models dictionary')
+parser.add_argument('--det_architecture', type=str, nargs='?', help='model architecture for detecting, must be a '
+                                                                    'member of models dictionary')
 parser.add_argument('--hyperparameter_set_class', type=str, help='combination of hyperparameters used for the '
                                                                  'classification model, must be a member of '
                                                                  'hyperparameters dictionary')
@@ -36,7 +38,7 @@ parser.add_argument('--hyperparameter_set_count', type=str, help='combination of
 parser.add_argument('--training_dir', type=str, help='directory where models were trained')
 parser.add_argument('--dest_folder', type=str, default='to_classify', help='folder where the model will be saved')
 parser.add_argument('--pos_classes', type=str, default='crabeater_weddell', help='classes that we wish to count')
-parser.add_argument('--skip_to_count', type=str, default=False, help='option to skip classifying and just count')
+parser.add_argument('--skip_class', type=str, default=False, help='option to skip classifying step')
 
 
 # helper function to divide patch into sub-patches for counting
@@ -57,7 +59,7 @@ def get_subpatches(patch, count_size, pad_int=255):
 
     # check if dimensions are the same
     if patch_size == count_size:
-        return patch
+        return [patch]
 
     # find minimum amount of padding required and pad image if necessary
     if (patch_size / count_size) % 1 != 0:
@@ -66,7 +68,7 @@ def get_subpatches(patch, count_size, pad_int=255):
         patch = np.dstack([np.pad(patch[:, :, i], pad_width=pad, mode='constant', constant_values=pad_int)
                            for i in range(patch.shape[2])])
         # update patch size
-        patch_size += pad * 2
+        patch_size = patch.shape[0] + 1
 
     # extract subpatches
     sub_patches = [patch[i:i+count_size, j:j+count_size, :] for i in range(0, patch_size - count_size, count_size)
@@ -83,7 +85,7 @@ def main():
     scales = [model_archs[args.class_architecture]['input_size']] * 3
     output_folder = './{}/tiles/images/'.format(output_folder)
 
-    # check for pre-existing tiles and subties
+    # check for pre-existing tiles and subtiles
     if os.path.exists('./{}/tiles'.format(args.dest_folder)):
         shutil.rmtree('./{}/tiles'.format(args.dest_folder))
 
@@ -95,14 +97,15 @@ def main():
 
     print('\nPredicting with {}:'.format(os.path.basename(args.dest_folder)))
 
-    # create geopandas DataFrame for storing output
+    # create geopandas DataFrame to store classes and counts per patch
     output_shpfile = gpd.GeoDataFrame()
+
     # setup projection for output
     output_shpfile.crs = from_epsg(3031)
 
     # get affine matrix for raster file
     with rasterio.open(input_image) as src:
-        affine_matrix = affine.Affine.from_gdal(*src.transform)
+        affine_matrix = src.transform
 
     # generate empty rows
     fnames = [ele for ele in os.listdir('./{}/tiles/images/'.format(args.dest_folder))]
@@ -120,7 +123,7 @@ def main():
     class_names = sorted([subdir for subdir in os.listdir('./training_sets/{}/training'.format(args.training_dir))])
 
     # treat all patches as positive if skipping classification
-    if args.skip_to_count == '1':
+    if args.skip_class == '1':
         pos_patches = fnames
 
     else:
@@ -142,8 +145,9 @@ def main():
             model.eval()
 
             # load saved model weights from pt_train.py
-            model.load_state_dict(torch.load("./saved_models_stable/Pipeline1/{}/{}.tar".format(args.class_architecture,
-                                                                                                args.class_architecture)))
+            model_name = args.class_architecture + '_ts-' + args.training_dir.split('_')[-1]
+            model.load_state_dict(torch.load("./saved_models_stable/Pipeline1/{}/{}.tar".format(model_name,
+                                                                                                model_name)))
             # classify patches
             predictions = predict_patch(model=model, input_size=model_archs[args.class_architecture]['input_size'],
                                         pipeline='Pipeline1',
@@ -169,51 +173,107 @@ def main():
     # check if there are positive patches
     if len(pos_patches) > 0:
 
-        if not os.path.exists('./{}/sub-tiles/images'.format(args.dest_folder)):
-            os.makedirs('./{}/sub-tiles/images'.format(args.dest_folder))
+        if args.count_architecture is not None:
+            count_size = model_archs[args.count_architecture]['input_size']
+        else:
+            count_size = model_archs[args.det_architecture]['input_size']
+
+        os.makedirs('./{}/sub-tiles/images'.format(args.dest_folder))
 
         # loop over positive patches creating subpatches
         for fname in pos_patches:
-            subpatches = get_subpatches(patch=np.array(Image.open('./{}/tiles/images/{}'.format(args.dest_folder, fname))),
-                                        count_size=model_archs[args.count_architecture]['input_size'])
+            subpatches = get_subpatches(patch=np.array(Image.open('./{}/tiles/images/{}'.format(args.dest_folder,
+                                                                                                fname))),
+                                        count_size=count_size)
             for idx, patch in enumerate(subpatches):
-                if np.min(patch) > 200 or np.max(patch) < 55:
+                if np.min(patch) > 250:
                     continue
                 cv2.imwrite('./{}/sub-tiles/images/{}-{}'.format(args.dest_folder, idx, fname), patch)
 
         # remove tiles to count only sub-tiles
         shutil.rmtree('./{}/tiles'.format(args.dest_folder))
 
-        # count inside subpatches with counting CNN
-        model = model_defs['Pipeline1.1'][args.count_architecture]
+        # count inside subpatches with counting CNN or detection CNN
+        if args.count_architecture is not None:
+            model = model_defs['Pipeline1.1'][args.count_architecture]
+
+        else:
+            model = model_defs['Pipeline1.2'][args.det_architecture]
 
         use_gpu = torch.cuda.is_available()
         if use_gpu:
             model.cuda()
         model.eval()
 
-        # load saved model weights from pt_train.py
-        model.load_state_dict(torch.load("./saved_models_stable/Pipeline1.1/{}/{}.tar".format(args.count_architecture,
-                                                                                              args.count_architecture)))
+        # load saved model weights from training
+        if args.count_architecture is not None:
+            model_name = args.count_architecture + '_ts-' + args.training_dir.split('_')[-1]
+            model.load_state_dict(
+                torch.load("./saved_models_stable/Pipeline1.1/{}/{}.tar".format(model_name, model_name)))
 
-        counts = predict_patch(model=model, input_size=model_archs[args.count_architecture]['input_size'],
-                               pipeline='Pipeline1.1',
-                               batch_size=hyperparameters[args.hyperparameter_set_count]['batch_size_test'],
-                               test_dir='./' + args.dest_folder,
-                               out_file='{}_count'.format(os.path.basename(input_image)[:-4]),
-                               dest_folder='./' + args.dest_folder,
-                               num_workers=hyperparameters[args.hyperparameter_set_count]['num_workers_train'],
-                               class_names=class_names)
+            counts = predict_patch(model=model, input_size=model_archs[args.count_architecture]['input_size'],
+                                   pipeline='Pipeline1.1',
+                                   batch_size=hyperparameters[args.hyperparameter_set_count]['batch_size_test'],
+                                   test_dir='./' + args.dest_folder,
+                                   out_file='{}_count'.format(os.path.basename(input_image)[:-4]),
+                                   dest_folder='./' + args.dest_folder,
+                                   num_workers=hyperparameters[args.hyperparameter_set_count]['num_workers_train'],
+                                   class_names=class_names)
+        else:
+            model_name = args.det_architecture + '_ts-' + args.training_dir.split('_')[-1]
+            model.load_state_dict(
+                torch.load("./saved_models_stable/Pipeline1.2/{}/{}.tar".format(model_name, model_name)))
+
+            counts, locations = predict_patch(model=model, input_size=model_archs[args.det_architecture]['input_size'],
+                                              pipeline='Pipeline1.2',
+                                              batch_size=
+                                              hyperparameters[args.hyperparameter_set_count]['batch_size_test'],
+                                              test_dir='./' + args.dest_folder,
+                                              out_file='{}_count'.format(os.path.basename(input_image)[:-4]),
+                                              dest_folder='./' + args.dest_folder,
+                                              num_workers=
+                                              hyperparameters[args.hyperparameter_set_count]['num_workers_train'],
+                                              class_names=class_names)
+            locations.to_csv('locations.csv')
+
         print('    Total predicted in {}: '.format(os.path.basename(input_image)), sum(counts['predictions']))
 
         for row in counts.iterrows():
             fname = row[1]['filenames'].split('-')[1]
             output_shpfile.loc[fname, 'count'] += row[1]['predictions']
 
-    # save shapefile
-    shapefile_path = './{}/predicted_shapefiles/{}/'.format(args.dest_folder, os.path.basename(input_image)[:-4])
-    os.makedirs(shapefile_path)
-    output_shpfile.to_file(shapefile_path + '{}_prediction.shp'.format(os.path.basename(args.dest_folder)))
+        # save shapefile for counts / classes
+        shapefile_path = './{}/predicted_shapefiles/{}/'.format(args.dest_folder,
+        os.path.basename(input_image)[:-4])
+        os.makedirs(shapefile_path)
+        output_shpfile.to_file(shapefile_path + '{}_prediction.shp'.format(os.path.basename(args.dest_folder)))
+
+        # save shapefile for individual seal locations
+        if args.det_architecture is not None:
+            # create geopandas DataFrame to store classes and counts per patch
+            output_shpfile_locs = gpd.GeoDataFrame()
+
+            # setup projection for output
+            output_shpfile_locs.crs = from_epsg(3031)
+
+            # add locations
+            for row in locations.iterrows():
+                fname = row[1]['filenames'].split('-')[1]
+                up, left, down, right = [int(ele) for ele in fname.split('_')[-5: -1]]
+                x, y = [up + row[1]['y'], left + row[1]['x']] * affine_matrix
+                output_shpfile_locs = output_shpfile_locs.append(pd.Series({'geometry': Point(x, y)}),
+                                                                 ignore_index=True)
+
+            # save shapefile
+            output_shpfile_locs.to_file(shapefile_path + '{}_locations.shp'.format(
+                os.path.basename(args.dest_folder)))
+
+    # clean up tiles and sub-tiles
+    if os.path.exists('./{}/tiles'.format(args.dest_folder)):
+        shutil.rmtree('./{}/tiles'.format(args.dest_folder))
+
+    if os.path.exists('./{}/sub-tiles'.format(args.dest_folder)):
+        shutil.rmtree('./{}/sub-tiles'.format(args.dest_folder))
 
 
 if __name__ == "__main__":
