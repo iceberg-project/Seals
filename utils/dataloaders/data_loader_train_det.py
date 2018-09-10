@@ -122,7 +122,7 @@ class DatasetFolder(data.Dataset):
         if self.int_transform is not None:
             sample = self.int_transform(sample)
 
-        return sample, target, count
+        return sample, target, count, locations
 
     def __len__(self):
         return len(self.samples)
