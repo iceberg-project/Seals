@@ -4,7 +4,6 @@ import geopandas as gpd
 import warnings
 import argparse
 from shapely.geometry.geo import box, Point
-import affine
 from fiona.crs import from_epsg
 import cv2
 import os
@@ -249,7 +248,7 @@ def main():
         output_shpfile.to_file(shapefile_path + '{}_prediction.shp'.format(os.path.basename(args.dest_folder)))
 
         # save shapefile for individual seal locations
-        if args.det_architecture is not None:
+        if args.det_architecture is not None and len(locations) > 0:
             # create geopandas DataFrame to store classes and counts per patch
             output_shpfile_locs = gpd.GeoDataFrame()
 

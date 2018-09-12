@@ -2,7 +2,7 @@ import torch
 import pandas as pd
 from torchvision import datasets, transforms, models
 from torch.autograd import Variable
-from utils.dataloaders.data_loader_train_det import ImageFolderTrainDet
+from utils.dataloaders.data_loader_train_count import ImageFolderTrainCount
 from utils.dataloaders.transforms_det import ShapeTransform
 import time
 import warnings
@@ -79,7 +79,7 @@ def validate_model(model, dest_folder, val_dir, out_file, pipeline, batch_size=2
         class_names = dataset.classes
 
     else:
-        dataset = ImageFolderTrainDet('./training_sets/{}/validation'.format(val_dir + '_ablation' * args.ablation),
+        dataset = ImageFolderTrainCount('./training_sets/{}/validation'.format(val_dir + '_ablation' * args.ablation),
                                       shape_transform, int_transform)
 
     # separate into batches with dataloader
