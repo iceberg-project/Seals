@@ -96,12 +96,14 @@ def predict_patch(model, dest_folder, test_dir, out_file, pipeline, batch_size=2
         # detection models
         if pipeline == 'Pipeline1.2':
             cnts, locs = model(inputs)
-            pred_cnt_batch = [max(0, round(float(ele))) for ele in cnts]
-            locs = locs.cpu().detach()
-            # find predicted location
-            locs = [get_xy_locs(loc, max(0, int(cnts[idx]))) for idx, loc in enumerate(locs.numpy())]
-            # save batch predictions
-            predicted_cnts.extend(pred_cnt_batch)
+            # if statement prevents iterations over 0-d tensors
+            if cnts.size() != torch.Size([0]):
+                pred_cnt_batch = [max(0, round(float(ele))) for ele in cnts]
+                locs = locs.cpu().detach()
+                # find predicted location
+                locs = [get_xy_locs(loc, max(0, int(cnts[idx]))) for idx, loc in enumerate(locs.numpy())]
+                # save batch predictions
+                predicted_cnts.extend(pred_cnt_batch)
             predicted_locs.extend(locs)
         # counting and classification models
         else:
