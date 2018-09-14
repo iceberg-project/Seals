@@ -57,6 +57,19 @@ source activate entk_env
 pip install radical.entk
 ```
 
+After the installation has finished, please run the following:
+```
+  python               : 2.7.15
+  pythonpath           :
+  virtualenv           : entk_env
+
+  radical.entk         : 0.7.6
+  radical.pilot        : 0.50.8
+  radical.utils        : 0.50.2
+  saga                 : 0.50.0
+```
+The version numbers may be different, but the overall style should not.
+
 ## Execution
 Initially export the following
 
