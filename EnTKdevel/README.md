@@ -32,7 +32,12 @@ can be found [here](https://github.com/vivek-bala/docs/blob/master/misc/gsissh_s
 Please change xenial with your Ubuntu codename (to find out run: `lsb_release -a`).
 
 In addition, you need a MongoDB either installed in your Virtual Machine ([instructions through Docker](https://codehangar.io/mongodb-image-instance-with-docker-toolbox-tutorial/)) 
-or you can use a Mongo as a Service via [MLab.com](https://mlab.com/)
+or you can use a Mongo as a Service via [MLab.com](https://mlab.com/). 
+
+If you installed your own MongoDB, note somewhere the followin URL:
+`mongodb://<ip_to _VM>:<mongodb_port>/entk_db`
+
+Mlad provides you with a similat URL. Make sure your DB is password protected.
 
 Now we are ready to install Ensemble Toolkit. The instructions will be based on installation from PyPi and Conda
 
@@ -56,13 +61,25 @@ pip install radical.entk
 Initially export the following
 
 ```
-export RADICAL_PILOT_DBURL=<mongodburl>
+export RADICAL_PILOT_DBURL=mongodb://<dbuser>:<dbpassword>@ds125872.mlab.com:25872/re_rp_devel
 ```
 
 Create a proxy with XSEDE for 72 hours
 
 ```
- myproxy-logon -s myproxy.xsede.org -l <username> -t 72
+ myproxy-logon -s myproxy.xsede.org -l <xsede_username> -t 72
+```
+
+You will get a prompt asking: `Enter MyProxy pass phrase`. This would be the password 
+you have at the XSEDE portal. Success will provide you with a credentials file under
+`/tmp`.
+
+For example:
+```
+iparask@DESKTOP-R64I4QR:~$ myproxy-logon -l iparask -s myproxy.xsede.org -t 72
+Enter MyProxy pass phrase:
+A credential has been received for user iparask in /tmp/x509up_u1000.
+iparask@DESKTOP-R64I4QR:~$
 ```
 
 And now do
