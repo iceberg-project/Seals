@@ -92,16 +92,25 @@ def generate_pipeline(name,stages,image,tile_size,
 
     return p
 
+def args_parser():
+    parser = argparse.ArgumentParser(description='Executes the Seals pipeline for a set of images')
+    
+    parser.add_argument('-c', '--cpus', type=int, default=1, help='The number of CPUs required for execution')
+    parser.add_argument('-g', '--gpus', type=int, default=1, help='The number of GPUs required for execution')
+    parser.add_argument('-ip','--input_dir', type=str,help='Images inpuit directory on the selected resource')
+    parser.add_argument('-m', '--model', type=str,help='Which model will be used')
+    parser.add_argument('-op','--output_dir', type=str,help='Path to folder that the output will be stored')
+    parser.add_argument('-p', '--project',type=str,help='The project that will be charged')
+    parser.add_argument('-q', '--queue',type=str,help='The queue from which we request resources.')
+    parser.add_argument('-r', '--resource', type=str,help='HPC resource whit script will run.')
+    parser.add_argument('-u', '--username', type=str, help='Username to the requested resources')
+    parser.add_argument('-w', '--walltime', type=int, help='The amount of time resources are requested')
+
+    return parser.parse_args()
 
 if __name__=='__main__':
     
-    
-    parser = argparse.ArgumentParser(description='Scaling inputs')
-    parser.add_argument('cpus', type=int, help='Number of CPU cores')
-    parser.add_argument('gpus', type=int, help='Number of GPUs')
-    parser.add_argument('queue',type=str, help='Queue to submit to')
-    parser.add_argument('images',type=int, help='Number of images to use')
-    args = parser.parse_args()
+    args = args_parser()
     
     images = ['/pylon5/mc3bggp/bspitz/WV03_20141107053034_1040010004196C00_14NOV07053034-P1BS-500248187200_01_P005_u08rf3031.tif',
               '/pylon5/mc3bggp/bspitz/WV03_20141110205238_1040010004751700_14NOV10205238-P1BS-500231412090_01_P003_u08rf3031.tif',
@@ -120,12 +129,12 @@ if __name__=='__main__':
               '/pylon5/mc3bggp/bspitz/WV03_20180110171949_1040010038474200_18JAN10171949-P1BS-501954064050_01_P001_u08rf3031.tif',
               '/pylon5/mc3bggp/bspitz/WV03_20180110221102_10400100363FB000_18JAN10221102-P1BS-501954007020_01_P010_u08rf3031.tif'] # a list with images paths on bridges
     
-    res_dict = {'resource': 'xsede.bridges',
-                'walltime': 30,
+    res_dict = {'resource': args.resource,
+                'walltime': args.walltime,
                 'cpus': args.cpus,
                 'gpus': args.gpus,
                 'schema' : 'gsissh',
-                'project': '',
+                'project': args.project,
                 'queue' : args.queue
                }
 
