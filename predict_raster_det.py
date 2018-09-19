@@ -41,7 +41,7 @@ parser.add_argument('--skip_class', type=str, default=False, help='option to ski
 
 
 # helper function to divide patch into sub-patches for counting
-def get_subpatches(patch, count_size, pad_int=255):
+def get_subpatches(patch, count_size, pad_int=0):
     """
     Subdivides a patch into sub-patches and counts within sub-patches, padding it to match counting CNN dimensions.
     Returns a total count of seals inside that patch
@@ -52,7 +52,10 @@ def get_subpatches(patch, count_size, pad_int=255):
     :param count_args: argparse object with model arguments to define count_cnn
     :return:  total count of seals in patch
     """
-    
+
+    # create padding
+    pad = 0
+
     # extract patch_size
     patch_size = patch.shape[0]
 
@@ -62,7 +65,7 @@ def get_subpatches(patch, count_size, pad_int=255):
 
     # find minimum amount of padding required and pad image if necessary
     if (patch_size / count_size) % 1 != 0:
-        pad = int(np.ceil((np.ceil(patch_size / count_size) * count_size - patch_size) / 2))
+        pad = int(np.ceil((np.ceil(patch_size / count_size) * count_size - patch_size)))
         # pad image
         patch = np.dstack([np.pad(patch[:, :, i], pad_width=pad, mode='constant', constant_values=pad_int)
                            for i in range(patch.shape[2])])
@@ -70,8 +73,8 @@ def get_subpatches(patch, count_size, pad_int=255):
         patch_size = patch.shape[0] + 1
 
     # extract subpatches
-    sub_patches = [patch[i:i+count_size, j:j+count_size, :] for i in range(0, patch_size - count_size, count_size)
-                   for j in range(0, patch_size - count_size, count_size)]
+    sub_patches = [patch[i:i+count_size, j:j+count_size, :] for i in range(pad, patch_size - count_size, count_size)
+                   for j in range(pad, patch_size - count_size, count_size)]
 
     return sub_patches
 
@@ -177,22 +180,33 @@ def main():
         else:
             count_size = model_archs[args.det_architecture]['input_size']
 
-        os.makedirs('./{}/sub-tiles/images'.format(args.dest_folder))
+        os.makedirs('./{}/subtiles/images'.format(args.dest_folder))
 
+        # find number of subpatches in patch
+        n_sub = int(np.ceil(scales[0] / count_size))
         # loop over positive patches creating subpatches
         for fname in pos_patches:
+            # get polygon for tiles
+            up, left, down, right = [int(ele) for ele in fname.split('_')[-5: -1]]
+            # extract subpatches
             subpatches = get_subpatches(patch=np.array(Image.open('./{}/tiles/images/{}'.format(args.dest_folder,
                                                                                                 fname))),
                                         count_size=count_size)
             for idx, patch in enumerate(subpatches):
-                if np.min(patch) > 250:
-                    continue
-                cv2.imwrite('./{}/sub-tiles/images/{}-{}'.format(args.dest_folder, idx, fname), patch)
+                # get polygon for subtile
+                sub_up = up + ((idx % n_sub) * count_size)
+                sub_down = sub_up - count_size
+                sub_left = left + ((idx // n_sub) * count_size)
+                sub_right = sub_left + count_size
+                cv2.imwrite('./{}/subtiles/images/{}-{}-sub_{}_{}_{}_{}_.jpg'.format(args.dest_folder, idx,
+                                                                                   fname.split('.')[0], sub_up,
+                                                                                   sub_left, sub_down, sub_right),
+                            patch)
 
-        # remove tiles to count only sub-tiles
+        # remove tiles to count only subtiles
         shutil.rmtree('./{}/tiles'.format(args.dest_folder))
 
-        # count inside subpatches with counting CNN or detection CNN
+        # count inside subpatches with counting CNN or detection CNN,
         if args.count_architecture is not None:
             model = model_defs['Pipeline1.1'][args.count_architecture]
 
@@ -238,7 +252,7 @@ def main():
         print('    Total predicted in {}: '.format(os.path.basename(input_image)), sum(counts['predictions']))
 
         for row in counts.iterrows():
-            fname = row[1]['filenames'].split('-')[1]
+            fname = row[1]['filenames'].split('-')[1] + '.jpg'
             output_shpfile.loc[fname, 'count'] += row[1]['predictions']
 
         # save shapefile for counts / classes
@@ -257,7 +271,7 @@ def main():
 
             # add locations
             for row in locations.iterrows():
-                fname = row[1]['filenames'].split('-')[1]
+                fname = row[1]['filenames']
                 up, left, down, right = [int(ele) for ele in fname.split('_')[-5: -1]]
                 x, y = [up + row[1]['y'], left + row[1]['x']] * affine_matrix
                 output_shpfile_locs = output_shpfile_locs.append(pd.Series({'geometry': Point(x, y)}),
@@ -271,8 +285,8 @@ def main():
     if os.path.exists('./{}/tiles'.format(args.dest_folder)):
         shutil.rmtree('./{}/tiles'.format(args.dest_folder))
 
-    if os.path.exists('./{}/sub-tiles'.format(args.dest_folder)):
-        shutil.rmtree('./{}/sub-tiles'.format(args.dest_folder))
+    if os.path.exists('./{}/subtiles'.format(args.dest_folder)):
+        shutil.rmtree('./{}/subtiles'.format(args.dest_folder))
 
 
 if __name__ == "__main__":
