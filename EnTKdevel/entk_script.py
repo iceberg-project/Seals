@@ -32,8 +32,8 @@ def generate_discover_pipeline(path):
 
     return p
 
-def generate_pipeline(name,image,tile_size,
-                      pipeline,model_arch,model_name,hyperparam_set,dev):  #generate the pipeline of prediction and blob detection
+def generate_pipeline(name,image,tile_size,pipeline,model_path,model_arch,
+                      model_name,hyperparam_set,dev,output_dir):  #generate the pipeline of prediction and blob detection
 
     '''
     This function creates a pipeline for an image that will be analyzed.
@@ -43,6 +43,7 @@ def generate_pipeline(name,image,tile_size,
         :image: image path, str
         :tile_size: The size of each tile, int
         :pipeline: Prediction Pipeline, str
+        :model_path: Path to the model file, str
         :model_arch: Prediction Model Architecture, str
         :model_name: Prediction Model Name, str
         :hyperparam_set: Which hyperparameter set to use, str
@@ -61,8 +62,7 @@ def generate_pipeline(name,image,tile_size,
                    'module load slurm/default',
                    'module load intel/17.4',
                    'module load python3',
-                   'source $SCRATCH/pytorchCuda/bin/activate',
-                   'hostname'
+                   'source $SCRATCH/pytorchCuda/bin/activate'
                   ]
     t0.executable = 'python3'   # Assign executable to the task   
     # Assign arguments for the task executable
@@ -86,8 +86,7 @@ def generate_pipeline(name,image,tile_size,
                    'module load intel/17.4',
                    'module load python3',
                    'module load cuda',
-                   'source $SCRATCH/pytorchCuda/bin/activate',
-                   'hostname',
+                   'source $SCRATCH/pytorchCuda/bin/activate'
                    'export CUDA_VISIBLE_DEVICES=%d' % dev
                   ]
     t1.executable = 'python3'   # Assign executable to the task   
@@ -108,7 +107,7 @@ def generate_pipeline(name,image,tile_size,
         
     return p
 
-def create_aggregated_output(images):
+def create_aggregated_output(images,path):
     
     '''
     This function takes a list of images and aggregates the results into a single CSV file
@@ -116,10 +115,10 @@ def create_aggregated_output(images):
 
     aggregated_results = pd.DataFrame(Columns=['Image','Seals'])
     for image in images:
-        image_pred = pd.read_csv(image.split('/')[-1]+'_predictions.csv')
+        image_pred = pd.read_csv(path+image.split('/')[-1]+'_predictions.csv')
         aggregated_results.loc[len(aggregated_results)] = [image.split('/')[-1],image_pred['predictions'].sum()]
 
-    aggregated_results.to_csv('seal_predictions.csv',index=False)
+    aggregated_results.to_csv(path+'seal_predictions.csv',index=False)
 
 
 def args_parser():
@@ -133,7 +132,6 @@ def args_parser():
     parser.add_argument('-p', '--project',type=str,help='The project that will be charged')
     parser.add_argument('-q', '--queue',type=str,help='The queue from which we request resources.')
     parser.add_argument('-r', '--resource', type=str,help='HPC resource whit script will run.')
-    parser.add_argument('-u', '--username', type=str, help='Username to the requested resources')
     parser.add_argument('-w', '--walltime', type=int, help='The amount of time resources are requested')
 
     return parser.parse_args()
@@ -174,10 +172,12 @@ if __name__=='__main__':
                                image = image,
                                tile_size = 299,
                                pipeline = 'Pipeline1.1',
+                               model_path = args.model,
                                model_arch = 'WideResnetCount',
                                model_name = 'WideResnetCount',
                                hyperparam_set = 'A',
-                               dev = dev
+                               dev = dev,
+                               output_path = args.output_dir
                                )
         dev = dev ^ 1
         pipelines.append(p1)
@@ -190,5 +190,5 @@ if __name__=='__main__':
     # Now that all images have been analyzed, release the resources.
     appman.resource_terminate()
 
-    create_aggregated_output(images)
+    create_aggregated_output(images,args.output_dir)
 
