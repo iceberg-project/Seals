@@ -1,9 +1,13 @@
+from glob import glob
 from radical.entk import Pipeline,Stage,Task,AppManager
 import argparse
 import pandas as pd
 
 def generate_discover_pipeline(path):
-    
+    '''
+    This function takes as an input a path on Bridges and returns a pipeline that
+    will provide a file for all the images that exist in that path.
+    '''
     p = Pipeline()
     p.name = name
     s = Stage()
@@ -28,72 +32,95 @@ def generate_discover_pipeline(path):
 
     return p
 
-def generate_pipeline(name,stages,image,tile_size,
+def generate_pipeline(name,image,tile_size,
                       pipeline,model_arch,model_name,hyperparam_set,dev):  #generate the pipeline of prediction and blob detection
 
+    '''
+    This function creates a pipeline for an image that will be analyzed.
+
+    :Arguments:
+        :name: Pipeline name, str
+        :image: image path, str
+        :tile_size: The size of each tile, int
+        :pipeline: Prediction Pipeline, str
+        :model_arch: Prediction Model Architecture, str
+        :model_name: Prediction Model Name, str
+        :hyperparam_set: Which hyperparameter set to use, str
+        :dev: Which GPU device will be used by this pipeline, int
+    '''
     # Create a Pipeline object
     p = Pipeline()
     p.name = name
-    for s_cnt in range(stages):
+    # Create a Stage object
+    s0 = Stage()
+    s0.name = '%s-S0' % (name)
+    # Create Task 1, training
+    t0 = Task()
+    t0.name = '%s-T0' % s0.name
+    t0.pre_exec = ['module load psc_path/1.1',
+                   'module load slurm/default',
+                   'module load intel/17.4',
+                   'module load python3',
+                   'source $SCRATCH/pytorchCuda/bin/activate',
+                   'hostname'
+                  ]
+    t0.executable = 'python3'   # Assign executable to the task   
+    # Assign arguments for the task executable
+    t0.arguments = ['tile_raster.py','--scale_bands=%s'%tile_size,'--input_image=%s'%image.split('/')[-1]]
+    t0.link_input_data = [image]
+    t0.upload_input_data = ['tile_raster.py']
+    t0.cpu_reqs = {'processes': 1,'threads_per_process': 1, 'thread_type': 'OpenMP'}
 
+    s0.add_tasks(t0)
+    # Add Stage to the Pipeline
+    p.add_stages(s0)
+    
+    # Create a Stage object
+    s1 = Stage()
+    s1.name = '%s-S1' % (name)
+    # Create Task 1, training
+    t1 = Task()
+    t1.name = '%s-T1' % s1.name
+    t1.pre_exec = ['module load psc_path/1.1',
+                   'module load slurm/default',
+                   'module load intel/17.4',
+                   'module load python3',
+                   'module load cuda',
+                   'source $SCRATCH/pytorchCuda/bin/activate',
+                   'hostname',
+                   'export CUDA_VISIBLE_DEVICES=%d' % dev
+                  ]
+    t1.executable = 'python3'   # Assign executable to the task   
+    # Assign arguments for the task executable
+    t1.arguments = ['predict_sealnet.py','--pipeline',pipeline,
+                    '--dest_folder','./','--test_dir','./','--model_architecture',model_arch,
+                   '--hyperparameter_set',hyperparam_set,'--model_name',model_name]
+    t1.link_input_data = ['$Pipeline_%s_Stage_%s_Task_%s/tiles'%(p.name, s0.name, t0.name),
+                          '/pylon5/mc3bggp/paraskev/models/%s.tar' % model_name]
+    t1.upload_input_data = ['predict_sealnet.py','utils/']
+    t1.cpu_reqs = {'processes': 1,'threads_per_process': 1, 'thread_type': 'OpenMP'}
+    t1.gpu_reqs = {'processes': 1,'threads_per_process': 1, 'thread_type': 'OpenMP'}
+    12.download_output_data = ['%s_predictions.csv> %s_predictions.csv'%(model_name,image.split('/')[-1])] #Download resuting images 
 
-        if(s_cnt==0):
-            # Create a Stage object
-            s0 = Stage()
-            s0.name = '%s-S%s' % (name,s_cnt)
-            # Create Task 1, training
-            t0 = Task()
-            t0.name = '%s-T0' % s0.name
-            t0.pre_exec = ['module load psc_path/1.1',
-                           'module load slurm/default',
-                           'module load intel/17.4',
-                           'module load python3',
-                           'source $SCRATCH/pytorchCuda/bin/activate',
-                           'hostname'
-                          ]
-            t0.executable = 'python3'   # Assign executable to the task   
-            # Assign arguments for the task executable
-            t0.arguments = ['tile_raster.py','--scale_bands=%s'%tile_size,'--input_image=%s'%image.split('/')[-1]]
-            t0.link_input_data = [image]
-            t0.upload_input_data = ['tile_raster.py']
-            t0.cpu_reqs = {'processes': 1,'threads_per_process': 1, 'thread_type': 'OpenMP'}
-        
-            s0.add_tasks(t0)
-            # Add Stage to the Pipeline
-            p.add_stages(s0)
-        elif (s_cnt==1):
-             # Create a Stage object
-            s1 = Stage()
-            s1.name = '%s-S%s' % (name,s_cnt)
-            # Create Task 1, training
-            t1 = Task()
-            t1.name = '%s-T1' % s1.name
-            t1.pre_exec = ['module load psc_path/1.1',
-                           'module load slurm/default',
-                           'module load intel/17.4',
-                           'module load python3',
-                           'module load cuda',
-                           'source $SCRATCH/pytorchCuda/bin/activate',
-                           'hostname',
-                           'export CUDA_VISIBLE_DEVICES=%d' % dev
-                          ]
-            t1.executable = 'python3'   # Assign executable to the task   
-            # Assign arguments for the task executable
-            t1.arguments = ['predict_sealnet.py','--pipeline',pipeline,
-                            '--dest_folder','./','--test_dir','./','--model_architecture',model_arch,
-                           '--hyperparameter_set',hyperparam_set,'--model_name',model_name]
-            t1.link_input_data = ['$Pipeline_%s_Stage_%s_Task_%s/tiles'%(p.name, s0.name, t0.name),
-                                  '/pylon5/mc3bggp/paraskev/models/%s.tar' % model_name]
-            t1.upload_input_data = ['predict_sealnet.py','utils/']
-            t1.cpu_reqs = {'processes': 1,'threads_per_process': 1, 'thread_type': 'OpenMP'}
-            t1.gpu_reqs = {'processes': 1,'threads_per_process': 1, 'thread_type': 'OpenMP'}
-            12.download_output_data = ['%s_predictions.csv> %s_%s_predictions.csv'%(model_name,p.name,model_name)] #Download resuting images 
-        
-            s1.add_tasks(t1)    
-            # Add Stage to the Pipeline
-            p.add_stages(s1)
+    s1.add_tasks(t1)    
+    # Add Stage to the Pipeline
+    p.add_stages(s1)
         
     return p
+
+def create_aggregated_output(images):
+    
+    '''
+    This function takes a list of images and aggregates the results into a single CSV file
+    '''
+
+    aggregated_results = pd.DataFrame(Columns=['Image','Seals'])
+    for image in images:
+        image_pred = pd.read_csv(image.split('/')[-1]+'_predictions.csv')
+        aggregated_results.loc[len(aggregated_results)] = [image.split('/')[-1],image_pred['predictions'].sum()]
+
+    aggregated_results.to_csv('seal_predictions.csv',index=False)
+
 
 def args_parser():
     parser = argparse.ArgumentParser(description='Executes the Seals pipeline for a set of images')
@@ -160,5 +187,8 @@ if __name__=='__main__':
     # Run the Application Manager
     appman.run()
 
+    # Now that all images have been analyzed, release the resources.
     appman.resource_terminate()
+
+    create_aggregated_output(images)
 
