@@ -5,15 +5,15 @@ import pandas as pd
 
 def image_discovery(path,filename='list.csv',filesize=False):
 
-    filepaths = glob(path+'*')
+    filepaths = glob(path+'/*.tif')
     if filesize:
         dataset_df = pd.DataFrame(columns=['Filename','Size'])
         for filepath in filepaths:
-            dataset_df.loc[len(dataset_df)] = [filepath.split('/')[-1],os.path.getsize(filepath)]
+            dataset_df.loc[len(dataset_df)] = [filepath,os.path.getsize(filepath)]
     else:
         dataset_df = pd.DataFrame(columns=['Filename'])
         for filepath in filepaths:
-            dataset_df.loc[len(dataset_df)] = [filepath.split('/')[-1]]
+            dataset_df.loc[len(dataset_df)] = [filepath]
 
     dataset_df.to_csv(filename,index=False)
 
