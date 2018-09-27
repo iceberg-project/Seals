@@ -9,9 +9,9 @@ def generate_discover_pipeline(path):
     will provide a file for all the images that exist in that path.
     '''
     p = Pipeline()
-    p.name = name
+    p.name = 'Disc'
     s = Stage()
-    s0.name = '%s-S%s' % (name,s_cnt)
+    s.name = 'Disc-S0'
     # Create Task 1, training
     t0 = Task()
     t0.name = 'Disc-T0'
@@ -26,9 +26,9 @@ def generate_discover_pipeline(path):
     t0.download_output_data = ['images.csv']
     t0.upload_input_data = ['image_disc.py']
     t0.cpu_reqs = {'processes': 1,'threads_per_process': 1, 'thread_type': 'OpenMP'}
-    s0.add_tasks(t0)
+    s.add_tasks(t0)
     # Add Stage to the Pipeline
-    p.add_stages(s0)
+    p.add_stages(s)
 
     return p
 
@@ -86,7 +86,7 @@ def generate_pipeline(name,image,tile_size,pipeline,model_path,model_arch,
                    'module load intel/17.4',
                    'module load python3',
                    'module load cuda',
-                   'source $SCRATCH/pytorchCuda/bin/activate'
+                   'source $SCRATCH/pytorchCuda/bin/activate',
                    'export CUDA_VISIBLE_DEVICES=%d' % dev
                   ]
     t1.executable = 'python3'   # Assign executable to the task   
@@ -99,7 +99,7 @@ def generate_pipeline(name,image,tile_size,pipeline,model_path,model_arch,
     t1.upload_input_data = ['predict_sealnet.py','utils/']
     t1.cpu_reqs = {'processes': 1,'threads_per_process': 1, 'thread_type': 'OpenMP'}
     t1.gpu_reqs = {'processes': 1,'threads_per_process': 1, 'thread_type': 'OpenMP'}
-    12.download_output_data = ['%s_predictions.csv> %s_predictions.csv'%(model_name,image.split('/')[-1])] #Download resuting images 
+    t1.download_output_data = ['%s_predictions.csv> %s/%s_predictions.csv'%(model_name,output_dir,image.split('/')[-1])] #Download resuting images 
 
     s1.add_tasks(t1)    
     # Add Stage to the Pipeline
@@ -113,12 +113,12 @@ def create_aggregated_output(images,path):
     This function takes a list of images and aggregates the results into a single CSV file
     '''
 
-    aggregated_results = pd.DataFrame(Columns=['Image','Seals'])
+    aggregated_results = pd.DataFrame(columns=['Image','Seals'])
     for image in images:
         image_pred = pd.read_csv(path+image.split('/')[-1]+'_predictions.csv')
         aggregated_results.loc[len(aggregated_results)] = [image.split('/')[-1],image_pred['predictions'].sum()]
 
-    aggregated_results.to_csv(path+'seal_predictions.csv',index=False)
+    aggregated_results.to_csv(path+'/seal_predictions.csv',index=False)
 
 
 def args_parser():
@@ -149,27 +149,29 @@ if __name__=='__main__':
                 'project': args.project,
                 'queue' : args.queue
                }
+    try:
 
-    # Create Application Manager
-    appman = AppManager(port=32773,hostname='localhost',autoterminate=False)
+        # Create Application Manager
+        appman = AppManager(port=32773,hostname='localhost',autoterminate=False)
     
-    # Assign resource manager to the Application Manager
-    appman.resource_desc = res_dict
+        # Assign resource manager to the Application Manager
+        appman.resource_desc = res_dict
 
-    disc_pipeline = generate_discover_pipeline(args.input_dir)
-    appman.workflow = set(disc_pipeline)
+        #Create a task that discovers the dataset
+        disc_pipeline = generate_discover_pipeline(args.input_dir)
+        appman.workflow = set([disc_pipeline])
         
-    # Run the Application Manager
-    appman.run()
+        # Run
+        appman.run()
 
-    images = pd.read_csv('images.csv')['Filename'].tolist()
-
-    pipelines = list()
-    dev = 0
-    for image in images:
-        p1 = generate_pipeline(name = 'P%s'%cnt,
-                               stages = 3,
-                               image = image,
+        images = pd.read_csv('images.csv')['Filename'].tolist()
+        
+        # Create a single pipeline per image
+        pipelines = list()
+        dev = 0
+        for cnt in range(len(images)):
+            p1 = generate_pipeline(name = 'P%s'%cnt,
+                               image = images[cnt],
                                tile_size = 299,
                                pipeline = 'Pipeline1.1',
                                model_path = args.model,
@@ -177,18 +179,21 @@ if __name__=='__main__':
                                model_name = 'WideResnetCount',
                                hyperparam_set = 'A',
                                dev = dev,
-                               output_path = args.output_dir
+                               output_dir = args.output_dir
                                )
-        dev = dev ^ 1
-        pipelines.append(p1)
-      # Assign the workflow as a set of Pipelines to the Application Manager
-    appman.workflow = set(pipelines)
+            dev = dev ^ 1
+            pipelines.append(p1)
+        # Assign the workflow as a set of Pipelines to the Application Manager
+        appman.workflow = set(pipelines)
 
-    # Run the Application Manager
-    appman.run()
+        # Run the Application Manager
+        appman.run()
+        
+        # Get all results and produce a single one.
+        create_aggregated_output(images,args.output_dir)
 
-    # Now that all images have been analyzed, release the resources.
-    appman.resource_terminate()
+    finally:
+        # Now that all images have been analyzed, release the resources.
+        appman.resource_terminate()
 
-    create_aggregated_output(images,args.output_dir)
-
+    
