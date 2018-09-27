@@ -77,10 +77,10 @@ Initially export the following
 export RADICAL_PILOT_DBURL=mongodb://<dbuser>:<dbpassword>@ds125872.mlab.com:25872/re_rp_devel
 ```
 
-Create a proxy with XSEDE for 72 hours
+Create a proxy with XSEDE for 11 days
 
 ```
- myproxy-logon -s myproxy.xsede.org -l <xsede_username> -t 72
+ myproxy-logon -s myproxy.xsede.org -l <xsede_username> -t 10000
 ```
 
 You will get a prompt asking: `Enter MyProxy pass phrase`. This would be the password 
@@ -93,6 +93,18 @@ iparask@DESKTOP-R64I4QR:~$ myproxy-logon -l iparask -s myproxy.xsede.org -t 72
 Enter MyProxy pass phrase:
 A credential has been received for user iparask in /tmp/x509up_u1000.
 iparask@DESKTOP-R64I4QR:~$
+```
+
+To verify that your certificate is valid, as well as, its remaining time do:
+```
+iparask@DESKTOP-R64I4QR:~$ grid-proxy-info
+subject  : /C=US/O=National Center for Supercomputing Applications/CN=Ioannis Paraskevakos
+issuer   : /C=US/O=National Center for Supercomputing Applications/OU=Certificate Authorities/CN=MyProxy CA 2013
+identity : /C=US/O=National Center for Supercomputing Applications/CN=Ioannis Paraskevakos
+type     : end entity credential
+strength : 2048 bits
+path     : /tmp/x509up_u1000
+timeleft : 263:59:22  (11.0 days)
 ```
 
 And now do
