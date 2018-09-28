@@ -27,7 +27,7 @@ def tile_raster(input_image, output_folder, scales, pad_img=False):
 
     # read image
     with rasterio.open(input_image) as src:
-        band = src.read()[0, :, :]
+        band = np.array(src.read()[0, :, :], dtype=np.uint8)
 
     # pad image
     pad = 0
@@ -55,8 +55,8 @@ def tile_raster(input_image, output_folder, scales, pad_img=False):
                 curr_scale = band[x - scale // 2: x + scale // 2,  y - scale // 2: y + scale // 2]
                 curr_scale = cv2.resize(curr_scale, (scales[0], scales[0]))
                 scale_bands.append(curr_scale)
-            # remove intractable tiles (too dark, too bright)
-            if np.max(scale_bands[0]) < 50 or np.min(scale_bands[0] > 200):
+            # remove black corners
+            if np.max(scale_bands[0]) == 0:
                 continue
             # combine scales and save tile
             scale_bands = np.dstack(scale_bands)

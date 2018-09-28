@@ -10,7 +10,7 @@ import argparse
 from tensorboardX import SummaryWriter
 import time
 from utils.model_library import *
-from utils.dataloaders.data_loader_train_det import ImageFolderTrainDet
+from utils.dataloaders.data_loader_train_count import ImageFolderTrainCount
 from utils.dataloaders.transforms_det import ShapeTransform
 from PIL import ImageFile
 import warnings
@@ -76,9 +76,9 @@ img_size = training_sets[args.training_dir]['scale_bands'][0]
 
 
 # save image datasets
-image_datasets = {x: ImageFolderTrainDet(root=os.path.join(data_dir, x),
-                                         shape_transform=data_transforms[x]['shape_transform'],
-                                         int_transform=data_transforms[x]['int_transform'])
+image_datasets = {x: ImageFolderTrainCount(root=os.path.join(data_dir, x),
+                                           shape_transform=data_transforms[x]['shape_transform'],
+                                           int_transform=data_transforms[x]['int_transform'])
                   for x in ['training', 'validation']}
 
 
