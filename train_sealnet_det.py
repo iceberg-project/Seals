@@ -1,9 +1,10 @@
 import torch
 import torch.nn as nn
 import torch.optim as optim
+import torch.nn.functional as F
 from torch.optim import lr_scheduler
 import numpy as np
-from torchvision import datasets, models, transforms
+from torchvision import transforms
 from torch.autograd import Variable
 import os
 import argparse
@@ -12,9 +13,6 @@ import time
 from utils.model_library import *
 from utils.dataloaders.data_loader_train_det import ImageFolderTrainDet
 from utils.dataloaders.transforms_det import ShapeTransform
-from utils.custom_architectures.count_ception import ModelCountception
-from utils.custom_architectures.nasnet_scalable_count import NASNetALarge
-from utils.custom_architectures.nasnet_scalable_e2e import NASNetAe2e
 from PIL import ImageFile
 import warnings
 
@@ -24,24 +22,30 @@ parser.add_argument('--model_architecture', type=str, help='model architecture, 
                                                            'dictionary')
 parser.add_argument('--hyperparameter_set', type=str, help='combination of hyperparameters used, must be a member of '
                                                            'hyperparameters dictionary')
-parser.add_argument('--cv_weights', type=str, help='weights for weighted-cross validation, must be a member of '
-                                                   'cv_weights dictionary')
+parser.add_argument('--cv_weights', nargs='?', type=str, default='NO', help='weights for weighted-cross validation, '
+                                                                            'must be a member of cv_weights dictionary')
 parser.add_argument('--output_name', type=str, help='name of output file from training, this name will also be used in '
                                                     'subsequent steps of the pipeline')
+parser.add_argument('--pipeline', type=str, help='name of the detection pipeline where the model will be saved')
+parser.add_argument('--dest_folder', type=str, default='saved_models', help='folder where the model will be saved')
+
 args = parser.parse_args()
 
 # check for invalid inputs
 if args.model_architecture not in model_archs:
-    raise Exception("Unsupported architecture")
+    raise Exception("Invalid architecture -- see supported architectures:  {}".format(list(model_archs.keys())))
 
 if args.training_dir not in training_sets:
-    raise Exception("Invalid training set")
-
-if args.cv_weights not in cv_weights:
-    raise Exception("Invalid cross-validation weights")
+    raise Exception("Training set is not defined in ./utils/model_library.py")
 
 if args.hyperparameter_set not in hyperparameters:
-    raise Exception("Invalid hyperparameter combination")
+    raise Exception("Hyperparameter combination is not defined in ./utils/model_library.py")
+
+if args.pipeline not in model_defs:
+    raise Exception('Pipeline is not defined in ./utils/model_library.py')
+
+if args.cv_weights not in cv_weights:
+    raise Exception("Cross-validation are not defined in ./utils/model_library.py")
 
 # image transforms seem to cause truncated images, so we need this
 ImageFile.LOAD_TRUNCATED_IMAGES = True
@@ -77,6 +81,37 @@ image_datasets = {x: ImageFolderTrainDet(root=os.path.join(data_dir, x),
                                          shape_transform=data_transforms[x]['shape_transform'],
                                          int_transform=data_transforms[x]['int_transform'])
                   for x in ['training', 'validation']}
+
+
+# helper function to get the (x,y) of max values
+def get_xy_locs(array, count):
+    if count == 0:
+        return np.array([])
+    cols = array.shape[1]
+    flat = array.flatten()
+    return np.array([[x // cols, x % cols] for x in flat.argsort()[-count:]])
+
+
+# helper function to get a loss based on the square mean euclidean distance between predicted seal centroids and
+# ground-truth seal centroids
+def get_euc_loss(pred_locs, gt_locs):
+    loss = 0
+    num_pairs = min(len(pred_locs), len(gt_locs))
+    n = num_pairs
+    pairs = []
+
+    for i in range(len(pred_locs)):
+        for j in range(len(gt_locs)):
+            pairs.append([i, j, np.linalg.norm(pred_locs[i] - gt_locs[j])])
+
+    pairs = sorted(pairs, key=lambda x: x[2])
+    while num_pairs > 0:
+        i, j = pairs[0][:2]
+        loss += pairs[0][2]
+        pairs = [pair for pair in pairs if pair[0] != i and pair[1] != j]
+        num_pairs -= 1
+
+    return np.sqrt(loss / max(1, n))
 
 
 # Force minibatches to have an equal representation amongst classes during training with a weighted sampler
@@ -117,7 +152,7 @@ dataset_sizes = {x: len(image_datasets[x]) for x in ['training', 'validation']}
 use_gpu = torch.cuda.is_available()
 
 
-def train_model(model,  optimizer, scheduler, criterion_class, num_epochs=2, criterion_count=None):
+def train_model(model, criterion1, criterion2, optimizer, scheduler, num_epochs=25):
     since = time.time()
 
     # create summary writer for tensorboardX
@@ -138,64 +173,74 @@ def train_model(model,  optimizer, scheduler, criterion_class, num_epochs=2, cri
                 model.train(False)  # Set model to evaluate mode
 
             running_loss = 0.0
-            running_corrects = 0
 
             # Iterate over data.
-            for data in dataloaders[phase]:
+            for iter, data in enumerate(dataloaders[phase]):
                 # get the inputs
-                inputs, labels, counts = data
+                inputs, _, counts, locations = data
+                counts.type(torch.int)
 
-                # create tensorboard variables
-                counts.type(torch.FloatTensor)
+                # get location indices
+                locs = [get_xy_locs(loc, int(counts[idx])) for idx, loc in enumerate(locations.numpy())]
 
                 # wrap them in Variable
                 if use_gpu:
                     inputs = Variable(inputs.cuda())
                     counts = Variable(counts.cuda())
-                    labels = Variable(labels.cuda())
+                    locations = Variable(locations.cuda())
                 else:
-                    inputs, labels, counts = Variable(inputs), Variable(labels), Variable(counts)
+                    inputs, counts, locations = Variable(inputs), Variable(counts), Variable(locations)
 
                 # zero the parameter gradients
                 optimizer.zero_grad()
 
                 # forward
-                out_class, out_count = model(inputs)
-                preds = torch.max(out_class.data, 1)[1]
-                out_count = torch.Tensor([ele for ele in out_count])
-                out_count = Variable(out_count, requires_grad=True)
-                if use_gpu:
-                    out_count = out_count.cuda()
-                    out_class = out_class.cuda()
+                pred_cnt, pred_loc = model(inputs)
 
-                class_loss = criterion_class(out_class, labels)
-                count_loss = criterion_count(out_count, counts)
+                # flatten locations and predicted locations
+                locations = locations.view(-1)
+                pred_loc_flat = F.sigmoid(pred_loc).view(-1)
 
-                loss = class_loss + count_loss
+                # get euclidean loss
+                pred_loc = pred_loc.cpu().detach()
+
+                # find predicted location
+                pred_loc = [get_xy_locs(loc, max(0, int(pred_cnt[idx]))) for idx, loc in enumerate(pred_loc.numpy())]
+
+                # get euclidean loss
+                euc_loss = sum([get_euc_loss(pred_loc[idx], locs[idx]) for idx in range(len(locs))]) / 25
+
+                # get counting loss
+                pred_cnt = pred_cnt.cuda()
+
+                cnt_loss = criterion1(pred_cnt, counts)
+                hm_loss = criterion2(pred_loc_flat, locations) * max(1, euc_loss)
+                if iter % 200 == 0:
+                    print('\n {} training iterations'.format(iter))
+                    print('   Hubber loss: {}'.format(cnt_loss.item()))
+                    print('   Euclidean loss: {}'.format(euc_loss))
+                    print('   BCE loss: {}'.format(hm_loss.item()))
+                    print('   total loss: {}'.format(hm_loss.item() + cnt_loss.item()))
 
                 # backward + optimize only if in training phase
                 if phase == 'training':
-                    loss.backward()
+                    cnt_loss.backward(retain_graph=True)
+                    hm_loss.backward()
                     optimizer.step()
                     global_step += 1
 
                 # statistics
-                running_loss += loss.item() * inputs.size(1)
-                running_corrects += torch.sum(preds == labels.data).item()
+                running_loss += (hm_loss.item() + cnt_loss.item()) * inputs.size(1)
 
             epoch_loss = running_loss / dataset_sizes[phase]
-            epoch_acc = running_corrects / dataset_sizes[phase]
             if phase == 'validation':
                 writer.add_scalar('validation_loss', epoch_loss, global_step=global_step)
-                writer.add_scalar('validation_accuracy', epoch_acc, global_step=global_step)
 
             else:
                 writer.add_scalar('training_loss', epoch_loss, global_step=global_step)
-                writer.add_scalar('training_accuracy', epoch_acc, global_step=global_step)
                 writer.add_scalar('learning_rate', optimizer.param_groups[-1]['lr'], global_step=global_step)
 
-            print('{} Loss: {:.4f} Acc: {:.4f}'.format(
-                phase, epoch_loss, epoch_acc))
+            print('{} Loss: {:.4f}'.format(phase, epoch_loss))
 
             if phase == 'validation':
                 time_elapsed = time.time() - since
@@ -207,35 +252,21 @@ def train_model(model,  optimizer, scheduler, criterion_class, num_epochs=2, cri
         time_elapsed // 3600, (time_elapsed % 3600) // 60, time_elapsed % 60))
 
     # save the model, keeping haulout and single seal models in separate folders
-    if model_archs[args.model_architecture]['haulout']:
-        torch.save(model.state_dict(), 'saved_models/haulout/{}/{}.tar'.format(args.output_name, args.output_name))
-    else:
-        torch.save(model.state_dict(), 'saved_models/single_seal/{}/{}.tar'.format(args.output_name, args.output_name))
+    torch.save(model.state_dict(), './{}/{}/{}/{}.tar'.format(args.dest_folder, args.pipeline,
+                                                              args.output_name, args.output_name))
 
     return model
 
 
 def main():
+    model_ft = model_defs[args.pipeline][args.model_architecture]
 
-    if args.model_architecture == 'CountCeption':
-        model = ModelCountception()
+    # get weight
+    cv_weight = cv_weights[args.cv_weights](1)
 
-    elif args.model_architecture == 'NasnetACount':
-        model = NASNetALarge(in_channels_0=48, out_channels_0=24, out_channels_1=32, out_channels_2=64,
-                             out_channels_3=128, num_classes=11)
-        # load weights from classification
-        model.load_state_dict(
-            torch.load("./saved_models/haulout/model5/model5.tar"))
-        # replace last linear
-        model.last_linear = nn.Linear(128*12, 1)
-
-    elif args.model_architecture == 'NasnetAe2e':
-        model = NASNetAe2e(in_channels_0=48, out_channels_0=24, out_channels_1=32, out_channels_2=64,
-                           out_channels_3=128, num_classes=9)
-
-    # define criterion for counting
-    criterion_class = nn.CrossEntropyLoss(weight=torch.FloatTensor(cv_weights[args.cv_weights]))
-    criterion_count = nn.MSELoss()
+    # define criterion
+    criterion = loss_functions[args.pipeline](cv_weight)
+    criterion2 = nn.BCELoss()
 
     if use_gpu:
         # i think we can set parallel GPU usage here. will test
@@ -245,20 +276,18 @@ def main():
         # It should also be an integer multiple of the number of GPUs so that
         # each chunk is the same size (so that each GPU processes the same number of samples).
         # model_ft = nn.DataParallel(model_ft).cuda()
-        model = model.cuda()
-        criterion_class = criterion_class.cuda()
-        criterion_count = criterion_count.cuda()
+        model_ft = model_ft.cuda()
+        criterion = criterion.cuda()
 
     # Observe that all parameters are being optimized
-    optimizer_ft = optim.Adam(model.parameters(), lr=hyperparameters[args.hyperparameter_set]['learning_rate'])
+    optimizer_ft = optim.Adam(model_ft.parameters(), lr=hyperparameters[args.hyperparameter_set]['learning_rate'])
 
     # Decay LR by a factor of 0.1 every 7 epochs
     exp_lr_scheduler = lr_scheduler.StepLR(optimizer_ft, step_size=hyperparameters[args.hyperparameter_set]['step_size']
                                            , gamma=hyperparameters[args.hyperparameter_set]['gamma'])
 
     # start training
-    train_model(model, optimizer_ft, exp_lr_scheduler, criterion_class=criterion_class,
-                criterion_count=criterion_count,
+    train_model(model_ft, criterion, criterion2, optimizer_ft, exp_lr_scheduler,
                 num_epochs=hyperparameters[args.hyperparameter_set]['epochs'])
 
 

@@ -122,7 +122,7 @@ class DatasetFolder(data.Dataset):
         if self.int_transform is not None:
             sample = self.int_transform(sample)
 
-        return sample, target, count, locations
+        return sample, target, count
 
     def __len__(self):
         return len(self.samples)
@@ -165,7 +165,7 @@ def default_loader(path):
         return pil_loader(path)
 
 
-class ImageFolderTrainDet(DatasetFolder):
+class ImageFolderTrainCount(DatasetFolder):
     """A generic data loader where the images are arranged in this way: ::
         root/dog/xxx.png
         root/dog/xxy.png
@@ -187,8 +187,8 @@ class ImageFolderTrainDet(DatasetFolder):
     """
     def __init__(self, root, shape_transform=None, int_transform=None,
                  loader=default_loader):
-        super(ImageFolderTrainDet, self).__init__(root, loader, IMG_EXTENSIONS,
-                                                  shape_transform=shape_transform,
-                                                  int_transform=int_transform)
+        super(ImageFolderTrainCount, self).__init__(root, loader, IMG_EXTENSIONS,
+                                                    shape_transform=shape_transform,
+                                                    int_transform=int_transform)
         self.imgs = self.samples
 
