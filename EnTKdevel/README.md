@@ -29,7 +29,9 @@ Verify that there is a port that looks like `0.0.0.0:32772->25672/tcp`. The seco
 
 After RabbitMQ is installed, we need to install gsissh and my-proxy. Instructions
 can be found [here](https://github.com/vivek-bala/docs/blob/master/misc/gsissh_setup_stampede_ubuntu_xenial.sh)
-Please change xenial with your Ubuntu codename (to find out run: `lsb_release -a`).
+Please change xenial with your Ubuntu codename (to find out run: `lsb_release -a`). 
+
+__Note: GSISSH and My-Proxy installation is mainly tested for Ubuntu 16.04. In case you have some other distribution please try to use the commented instructions.__
 
 In addition, you need a MongoDB either installed in your Virtual Machine ([instructions through Docker](https://codehangar.io/mongodb-image-instance-with-docker-toolbox-tutorial/)) 
 or you can use a Mongo as a Service via [MLab.com](https://mlab.com/). 
@@ -54,7 +56,7 @@ pip install radical.entk
 ```
 conda create -y -p entk_env python=2.7 radical.pilot -c conda-forge
 source activate entk_env
-pip install radical.entk
+conda install radical.entk
 ```
 
 After the installation has finished, please run the following:
