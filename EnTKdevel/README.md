@@ -39,14 +39,14 @@ or you can use a Mongo as a Service via [MLab.com](https://mlab.com/).
 If you installed your own MongoDB, note somewhere the followin URL:
 `mongodb://<ip_to _VM>:<mongodb_port>/entk_db`
 
-Mlad provides you with a similat URL. Make sure your DB is password protected.
+Mlad provides you with a similar URL. Make sure your DB is password protected.
 
 Now we are ready to install Ensemble Toolkit. The instructions will be based on installation from PyPi and Conda
 
 ### PyPi installation:
 
 ```
-vitrualenv rp
+virtualenv rp
 source rp/bin/activate
 pip install radical.entk
 ```
