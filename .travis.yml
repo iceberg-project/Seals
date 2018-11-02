@@ -6,6 +6,9 @@ sudo: disabled
 python:
   - "2.7"
 
+git:
+  depth: 3
+
 before_install:
   - pwd
   - ls -a
@@ -17,4 +20,4 @@ before_install:
   - pip install pylint
 
 script:
-  - pylint 
+  - pylint src
