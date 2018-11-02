@@ -1,2 +1,20 @@
+# After changing this file, check it on:
+#   http://lint.travis-ci.org/
 language: python
 sudo: disabled
+
+python:
+  - "2.7"
+
+before_install:
+  - pwd
+  - ls -a
+  - uname -a
+  - free -m
+  - df -h
+  - ulimit -a
+  - python -V
+  - pip install pylint
+
+script:
+  - pylint 
