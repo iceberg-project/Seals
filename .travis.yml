@@ -18,6 +18,8 @@ before_install:
   - ulimit -a
   - python -V
   - pip install pylint
+  - pip install flake8
 
-script:
-  - pylint src
+matrix:
+  - flake8 *
+  - pylint src/entk_script/*.py
