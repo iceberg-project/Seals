@@ -15,5 +15,4 @@ before_install:
   - pip install flake8
 
 script:
-  - flake8 *
-  - pylint src/entk_script/*.py
+  - flake8 src/entk_script/*.py
