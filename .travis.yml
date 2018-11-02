@@ -10,16 +10,10 @@ git:
   depth: 3
 
 before_install:
-  - pwd
-  - ls -a
-  - uname -a
-  - free -m
-  - df -h
-  - ulimit -a
   - python -V
   - pip install pylint
   - pip install flake8
 
-matrix:
+script:
   - flake8 *
   - pylint src/entk_script/*.py
