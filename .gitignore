@@ -8,3 +8,5 @@
 __pycache__
 .DS_Store
 .ipynb_checkpoints/
+"model_search_stable.ipynb" 
+"model_search_experimental.ipynb" 
