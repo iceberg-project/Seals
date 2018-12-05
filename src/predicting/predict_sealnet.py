@@ -6,6 +6,7 @@ from utils.dataloaders.data_loader_test import ImageFolderTest
 import time
 import warnings
 import argparse
+import cv2
 from utils.model_library import *
 
 # image transforms seem to cause truncated images, so we need this
@@ -34,12 +35,32 @@ def parse_args():
 
 
 # helper function to get the (x,y) of max values
-def get_xy_locs(array, count):
+def get_xy_locs(array, count, min_dist=3):
     if count == 0:
         return np.array([])
     cols = array.shape[1]
+    # dilate (2 dilations are more robust than one)
+    dil_array = cv2.dilate(array, np.ones([3, 3], dtype=np.uint8))
+    dil_array2 = cv2.dilate(array, np.ones([5, 5], dtype=np.uint8))
+    # check indices that do not change with dilations
+    array = array * (cv2.compare(array, dil_array, 2) == 255) * (cv2.compare(array, dil_array2, 2) == 255)
+    # flatten array, get rid of zeros and sort it
     flat = array.flatten()
-    return np.array([[x // cols, x % cols] for x in flat.argsort()[-count:]])
+    flat_order = (-flat).argsort()
+    # find first zero and remove tail
+    flat_order = flat_order[:next((idx for idx, ele in enumerate(flat_order) if not flat[ele]), None)]
+    # check if detections are too close
+    to_remove = []
+    for idx, ele in enumerate(flat_order):
+        if idx in to_remove:
+            continue
+        for idx2 in range(idx + 1, len(flat_order)):
+            if np.linalg.norm(np.array([flat_order[idx] // cols, flat_order[idx] % cols]) -
+                              np.array([flat_order[idx2] // cols, flat_order[idx2] % cols])) < min_dist:
+                to_remove.append(idx2)
+    flat_order = np.delete(flat_order, to_remove)
+    # return x peaks
+    return np.array([[x // cols, x % cols] for x in flat_order[:count]])
 
 
 def predict_patch(model, dest_folder, test_dir, out_file, pipeline, batch_size=2, input_size=299,
@@ -82,46 +103,51 @@ def predict_patch(model, dest_folder, test_dir, out_file, pipeline, batch_size=2
 
     # keep track of running time
     since = time.time()
+    sigmoid = torch.nn.Sigmoid()
 
-    for data in dataloader:
+    with torch.no_grad():
 
-        # get the inputs
-        inputs, filenames = data
+        for data in dataloader:
 
-        # gpu support
-        if use_gpu:
-            inputs = inputs.cuda()
+            # get the inputs
+            inputs, filenames = data
 
-        # do a forward pass to get predictions
-        # detection models
-        if pipeline == 'Pipeline1.2':
-            cnts, locs = model(inputs)
-            # if statement prevents iterations over 0-d tensors
-            if cnts.size() != torch.Size([0]):
-                pred_cnt_batch = [max(0, round(float(ele))) for ele in cnts]
-                locs = locs.cpu().detach()
-                # find predicted location
-                locs = [get_xy_locs(loc, max(0, int(cnts[idx]))) for idx, loc in enumerate(locs.numpy())]
-                # save batch predictions
-                predicted_cnts.extend(pred_cnt_batch)
-            predicted_locs.extend(locs)
-        # counting and classification models
-        else:
-            outputs = model(inputs)
+            # gpu support
+            if use_gpu:
+                inputs = inputs.cuda()
 
-            # save batch predictions
-            if pipeline == "Pipeline1":
-                _, preds = torch.max(outputs.data, 1)
-                # predicted classes
-                preds_batch = [class_names[int(ele)] for ele in preds]
-
+            # do a forward pass to get predictions
+            # detection models
+            if pipeline == 'Pipeline1.2':
+                cnts, occ, locs = model(inputs)
+                # if statement prevents iterations over 0-d tensors
+                if cnts.size() != torch.Size([0]):
+                    locs = locs.cpu().detach()
+                    #print(occ)
+                    fixed_cnt = cnts * torch.Tensor([ele > 0 for ele in occ]).cuda()
+                    pred_cnt_batch = [round(float(count.item())) for count in cnts]
+                    # find predicted location
+                    locs = [get_xy_locs(loc, max(0, int(pred_cnt_batch[idx]))) for idx, loc in enumerate(locs.numpy())]
+                    # save batch predictions
+                    predicted_cnts.extend(pred_cnt_batch)
+                    predicted_locs.extend(locs)
+            # counting and classification models
             else:
-                # predicted counts
-                preds_batch = [max(0, round(float(ele))) for ele in outputs]
-            # add batch predictions
-            predictions.extend(preds_batch)
-        # add filename
-        fnames.extend(filenames)
+                outputs = model(inputs)
+
+                # save batch predictions
+                if pipeline == "Pipeline1":
+                    _, preds = torch.max(outputs.data, 1)
+                    # predicted classes
+                    preds_batch = [class_names[int(ele)] for ele in preds]
+
+                else:
+                    # predicted counts
+                    preds_batch = [max(0, round(float(ele))) for ele in outputs]
+                # add batch predictions
+                predictions.extend(preds_batch)
+            # add filename
+            fnames.extend(filenames)
     time_elapsed = time.time() - since
 
     # print output
@@ -187,10 +213,11 @@ def main():
     # extract class_names
 
     # run validation to get confusion matrix
-    predict_patch(model=model_ft, input_size=model_archs[args.model_architecture]['input_size'],
-                  pipeline=args.pipeline, batch_size=hyperparameters[args.hyperparameter_set]['batch_size_test'],
-                  test_dir=args.test_dir, out_file=args.model_name, dest_folder=args.dest_folder,
-                  num_workers=hyperparameters[args.hyperparameter_set]['num_workers_train'])
+    with torch.no_grad():
+        predict_patch(model=model_ft, input_size=model_archs[args.model_architecture]['input_size'],
+                      pipeline=args.pipeline, batch_size=hyperparameters[args.hyperparameter_set]['batch_size_test'],
+                      test_dir=args.test_dir, out_file=args.model_name, dest_folder=args.dest_folder,
+                      num_workers=hyperparameters[args.hyperparameter_set]['num_workers_train'])
 
 
 if __name__ == '__main__':
