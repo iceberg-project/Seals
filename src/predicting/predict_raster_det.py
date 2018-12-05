@@ -12,7 +12,6 @@ import numpy as np
 from utils.model_library import *
 import rasterio
 from predict_sealnet import predict_patch
-from tile_raster import tile_raster
 
 # image transforms seem to cause truncated images, so we need this
 from PIL import Image
@@ -46,9 +45,6 @@ def main():
 
     if os.path.exists('./{}/sub-tiles'.format(args.dest_folder)):
         shutil.rmtree('./{}/sub-tiles'.format(args.dest_folder))
-
-    # tile raster into patches
-    tile_raster(input_image, output_folder, scales)
 
     print('\nPredicting with {}:'.format(os.path.basename(args.dest_folder)))
 
