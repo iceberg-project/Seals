@@ -208,8 +208,7 @@ def main():
     model_ft.eval()
 
     # load saved model weights from pt_train.py
-    model_ft.load_state_dict(torch.load("./{}/{}/{}/{}.tar".format(args.dest_folder, args.pipeline, args.model_name,
-                                                                   args.model_name)))
+    model_ft.load_state_dict(torch.load("{}.tar".format(args.model_name)))
     # extract class_names
 
     # run validation to get confusion matrix
