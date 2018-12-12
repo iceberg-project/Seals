@@ -89,7 +89,7 @@ def get_xy_locs(array, count, min_dist=3):
     return np.array([(x // cols, x % cols) for x in flat_order[:count]])
 
 
-def predict_patch(model, output_dir, test_dir, batch_size=2, input_size=299, threshold=0.5, num_workers=1):
+def predict_patch(model, output_dir, test_dir, batch_size=2, input_size=299, threshold=0.5, num_workers=1, remove_tiles=False):
     """
     Patch prediction function. Outputs shapefiles for counts and locations.
 
@@ -100,6 +100,7 @@ def predict_patch(model, output_dir, test_dir, batch_size=2, input_size=299, thr
     :param input_size: size of input images
     :param threshold: threshold for occupancy
     :param num_workers: number of workers on dataloader
+    :param remove_tiles: Remove the tiles folder from the filesystem.
     :return:
     """
 
@@ -236,7 +237,8 @@ def predict_patch(model, output_dir, test_dir, batch_size=2, input_size=299, thr
             os.path.basename(output_dir)))
 
         # remove tiles
-        # shutil.rmtree('{}/tiles'.format(test_dir))
+        if remove_tiles:
+            shutil.rmtree('{}/tiles'.format(test_dir))
 
         print('Total predicted in %s: '% os.path.basename(test_dir), sum(pred_counts['predictions']))
 
@@ -272,7 +274,8 @@ def main():
     predict_patch(model=model, input_size=model_archs[args.model_architecture]['input_size'],
                   test_dir=args.test_dir, output_dir=args.output_dir,
                   batch_size=hyperparameters[args.hyperparameter_set]['batch_size_test'],
-                  num_workers=hyperparameters[args.hyperparameter_set]['num_workers_train'])
+                  num_workers=hyperparameters[args.hyperparameter_set]['num_workers_train'],
+                  remove_tiles=True)
 
 
 if __name__ == '__main__':
