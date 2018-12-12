@@ -219,8 +219,8 @@ if __name__ == '__main__':
         dev = 0
         for idx in range(len(images)):
             p1 = generate_pipeline(name='P%s' % idx,
-                                   image = images['Filename'][cnt],
-                                   image_size = images['Size'][cnt],
+                                   image=images['Filename'][idx],
+                                   image_size=images['Size'][idx],
                                    tile_size=299,
                                    pipeline='Pipeline1.1',
                                    model_path=args.model,
