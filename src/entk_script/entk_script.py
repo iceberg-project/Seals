@@ -46,8 +46,8 @@ def generate_discover_pipeline(path):
 
 
 def generate_pipeline(name, image, image_size, scale_bands,
-                      model_arch, training_set, model_name, hyperparam_set, device,
-                      output_dir):
+                      model_arch, training_set, model_name,
+                      hyperparam_set, device, output_dir):
 
     '''
     This function creates a pipeline for an image that will be analyzed.
@@ -125,9 +125,9 @@ def generate_pipeline(name, image, image_size, scale_bands,
     task1.gpu_reqs = {'processes': 1, 'threads_per_process': 1,
                       'thread_type': 'OpenMP'}
     # Download resuting images
-    # task1.download_output_data = ['%s_predictions.csv> %s/%s_predictions.csv' %
-    #                              (model_name, output_dir,
-    #                               image.split('/')[-1])]
+    # task1.download_output_data = ['%s_predictions.csv> %s/%s_predictions.csv'
+    #                                % (model_name, output_dir,
+    #                                image.split('/')[-1])]
     task1.tag = task0.name
 
     stage1.add_tasks(task1)
@@ -180,8 +180,9 @@ def args_parser():
                         which the script will run.')
     parser.add_argument('-w', '--walltime', type=int, help='The amount of \
                         time resources are requested')
-    parser.add_argument('--scale_bands',type=str, help='for multi-scale models,\
-                         string with size of scale bands separated by spaces')
+    parser.add_argument('--scale_bands', type=str, help='for multi-scale \
+                         models, string with size of scale bands separated by\
+                         spaces')
 
     return parser.parse_args()
 
@@ -206,7 +207,8 @@ if __name__ == '__main__':
 
         # Assign resource manager to the Application Manager
         appman.resource_desc = res_dict
-        appman.shared_data = ['../models/Heatmap-Cnt/UnetCntWRN/UnetCntWRN_ts-vanilla.tar']
+        appman.shared_data = ['../models/Heatmap-Cnt/UnetCntWRN/\
+                               UnetCntWRN_ts-vanilla.tar']
         # Create a task that discovers the dataset
         disc_pipeline = generate_discover_pipeline(args.input_dir)
         appman.workflow = set([disc_pipeline])
