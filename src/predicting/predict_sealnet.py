@@ -182,7 +182,7 @@ def predict_patch(model, output_dir, test_dir, batch_size=2, input_size=299, thr
                                                time_elapsed % 60))
 
     # save shapefile for counts / classes
-    shapefile_path = '%s/predicted_shapefiles/' % output_dir)
+    shapefile_path = '%s/predicted_shapefiles/' % output_dir
     os.makedirs(shapefile_path)
 
     # load affine matrix
@@ -240,7 +240,7 @@ def predict_patch(model, output_dir, test_dir, batch_size=2, input_size=299, thr
         if remove_tiles:
             shutil.rmtree('{}/tiles'.format(test_dir))
 
-        print('Total predicted in %s: '% os.path.basename(test_dir), sum(pred_counts['predictions']))
+    print('Total predicted in %s: '% os.path.basename(test_dir), sum(pred_counts['predictions']))
 
 
 def main():
