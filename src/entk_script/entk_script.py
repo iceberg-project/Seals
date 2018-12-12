@@ -45,8 +45,9 @@ def generate_discover_pipeline(path):
     return pipeline
 
 
-def generate_pipeline(name, image, tile_size, pipeline, model_path, model_arch,
-                      model_name, hyperparam_set, device, output_dir):
+def generate_pipeline(name, image, image_size, tile_size, pipeline, model_path,
+                      model_arch, model_name, hyperparam_set, device,
+                      output_dir):
 
     '''
     This function creates a pipeline for an image that will be analyzed.
@@ -54,6 +55,7 @@ def generate_pipeline(name, image, tile_size, pipeline, model_path, model_arch,
     :Arguments:
         :name: Pipeline name, str
         :image: image path, str
+        :image_size: image size in MBs, int
         :tile_size: The size of each tile, int
         :pipeline: Prediction Pipeline, str
         :model_path: Path to the model file, str
@@ -80,11 +82,15 @@ def generate_pipeline(name, image, tile_size, pipeline, model_path, model_arch,
     task0.executable = 'python3'   # Assign executable to the task
     # Assign arguments for the task executable
     task0.arguments = ['tile_raster.py', '--scale_bands=%s' % tile_size,
-                       '--input_image=%s' % image.split('/')[-1]]
+                       '--input_image=%s' % image.split('/')[-1],
+                       # This line points to the local filesystem of the node
+                       # that the tiling of the image happened.
+                       '--output_folder=$NODE_LFS_PATH/%s' % task0.name]
     task0.link_input_data = [image]
-    task0.upload_input_data = ['tile_raster.py']
+    task0.upload_input_data = ['../tiling/tile_raster.py']
     task0.cpu_reqs = {'processes': 1, 'threads_per_process': 1,
                       'thread_type': 'OpenMP'}
+    task0.lfs_per_process = image_size
 
     stage0.add_tasks(task0)
     # Add Stage to the Pipeline
@@ -106,15 +112,14 @@ def generate_pipeline(name, image, tile_size, pipeline, model_path, model_arch,
     task1.executable = 'python3'   # Assign executable to the task
 
     # Assign arguments for the task executable
-    task1.arguments = ['predict_sealnet.py', '--pipeline', pipeline,
-                       '--dest_folder', './', '--test_dir', './',
+    task1.arguments = ['predict_raster_det.py', '--pipeline', pipeline,
+                       '--dest_folder', './',
+                       '--input_image', '$NODE_LFS_PATH/%s' % task0.name,
                        '--model_architecture', model_arch,
-                       '--hyperparameter_set', hyperparam_set, '--model_name',
-                       model_name]
-    task1.link_input_data = ['$Pipeline_%s_Stage_%s_Task_%s/tiles' %
-                             (entk_pipeline.name, stage0.name, task0.name),
-                             model_path + '/%s.tar' % model_name]
-    task1.upload_input_data = ['predict_sealnet.py', 'utils/']
+                       '--hyperparameter_set', hyperparam_set,
+                       '--model_name', model_name]
+    task1.link_input_data = [model_path + '/%s.tar' % model_name]
+    task1.upload_input_data = ['../predict/predict_raster_det.py', '../utils/']
     task1.cpu_reqs = {'processes': 1, 'threads_per_process': 1,
                       'thread_type': 'OpenMP'}
     task1.gpu_reqs = {'processes': 1, 'threads_per_process': 1,
@@ -123,6 +128,7 @@ def generate_pipeline(name, image, tile_size, pipeline, model_path, model_arch,
     task1.download_output_data = ['%s_predictions.csv> %s/%s_predictions.csv' %
                                   (model_name, output_dir,
                                    image.split('/')[-1])]
+    task1.tag = task0.name
 
     stage1.add_tasks(task1)
     # Add Stage to the Pipeline
@@ -194,7 +200,7 @@ if __name__ == '__main__':
 
         # Create Application Manager
         appman = AppManager(port=32773, hostname='localhost',
-                            autoterminate=False)
+                            autoterminate=False, write_workflow=True)
 
         # Assign resource manager to the Application Manager
         appman.resource_desc = res_dict
@@ -206,14 +212,15 @@ if __name__ == '__main__':
         # Run
         appman.run()
 
-        images = pd.read_csv('images.csv')['Filename'].tolist()
+        images = pd.read_csv('images.csv')
 
         # Create a single pipeline per image
         pipelines = list()
         dev = 0
-        for idx, image_path in enumerate(images):
+        for idx in range(len(images)):
             p1 = generate_pipeline(name='P%s' % idx,
-                                   image=image_path,
+                                   image = images['Filename'][cnt],
+                                   image_size = images['Size'][cnt],
                                    tile_size=299,
                                    pipeline='Pipeline1.1',
                                    model_path=args.model,
