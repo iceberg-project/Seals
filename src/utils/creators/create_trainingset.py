@@ -6,7 +6,6 @@ import time
 import random
 import argparse
 import rasterio
-import matplotlib.pyplot as plt
 from sklearn.utils import shuffle
 
 parser = argparse.ArgumentParser(description='creates training sets to train and validate sealnet instances')
@@ -18,12 +17,15 @@ parser.add_argument('--labels', type=str, help='class names, separated by unders
 parser.add_argument('--det_classes', type=str, help='classes that will be targeted at detection, '
                                                     'separated by underscores')
 parser.add_argument('--shape_file', type=str, help='path to shape file with seal points')
+parser.add_argument('--georef', type=str, default='1', help="whether or not the raster is georeferenced")
+parser.add_argument('--remap', type=str, nargs='?', help='label remapping')
+parser.add_argument('--rgb', type=str, default=False, help='whether or not training set is RGB (vs. grayscale)')
 
 args = parser.parse_args()
 
 
 def get_patches(out_folder: str, raster_dir: str, shape_file: str, lon: str, lat: str, patch_sizes: list,
-                labels: list) -> object:
+                remap: dict, rgb: bool) -> object:
     """
     Generates multi-band patches at different scales around vector points to use as a training set.
 
@@ -64,7 +66,7 @@ def get_patches(out_folder: str, raster_dir: str, shape_file: str, lon: str, lat
     for folder in ['training', 'validation']:
         if not os.path.exists("./training_sets/{}/{}".format(out_folder, folder)):
             os.makedirs("./training_sets/{}/{}".format(out_folder, folder))
-        for lbl in labels:
+        for lbl in pd.unique([ele for ele in remap.values()]):
             subdir = "./training_sets/{}/{}/{}".format(out_folder, folder, lbl)
             if not os.path.exists(subdir):
                 os.makedirs(subdir)
@@ -90,22 +92,30 @@ def get_patches(out_folder: str, raster_dir: str, shape_file: str, lon: str, lat
     num_imgs = 0
     since = time.time()
     print("\nCreating dataset:\n")
-    for idx, rs in enumerate(rasters):
-        # extract image data and affine transforms
-        with rasterio.open(rs) as src:
-            band = src.read()[0, :, :].astype(np.uint8)
-            affine_transforms = [src.transform[1], src.transform[2], src.transform[0], src.transform[4],
-                                 src.transform[5], src.transform[3]]
-
-        # get coordinates from affine matrix
-        width, _, x0, _, height, y0 = affine_transforms
-
+    for cnt, rs in enumerate(rasters):
         # get distance to determine which points will fall inside the tile
         tile_center = patch_sizes[0] // 2
 
-        # pad image
+        # amount of padding
         pad = patch_sizes[-1] // 2
-        band = np.pad(band, pad_width=pad, mode='constant', constant_values=0)
+        # extract image data and affine transforms
+        with rasterio.open(rs) as src:
+            if rgb:
+                rgb_bands = src.read()[0:3, :, :].astype(np.uint8)
+                #rgb_bands = np.vstack([np.pad(band, pad_width=pad, mode='constant', constant_values=0) for band in
+                #                       bands])
+            else:
+                band = src.read()[0, :, :].astype(np.uint8)
+                #band = np.pad(band, pad_width=pad, mode='constant', constant_values=0)
+            affine_transforms = src.transform
+
+        # get coordinates from affine matrix
+        if args.georef == '1':
+            width, _, x0, _, height, y0 = affine_transforms[:6]
+
+        else:
+            width, height = 1, -1
+            x0, y0 = 0, 0
 
         # filter points to include points inside current raster, sort them based on coordinates and fix index range
         df_rs = df.loc[df['scene'] == os.path.basename(rs)]
@@ -114,16 +124,22 @@ def get_patches(out_folder: str, raster_dir: str, shape_file: str, lon: str, lat
 
         # iterate through the points
         for row, p in enumerate(df_rs.iterrows()):
-            x = int((p[1][lon] - x0) / width) + pad
-            y = int((p[1][lat] - y0) / height) + pad
+            x = int((p[1][lon] - x0) / width) #+ pad
+            y = int((p[1][lat] - y0) / height) #+ pad
             upper_left = [x - int(patch_sizes[0]/2), y - int(patch_sizes[0]/2)]
             bands = []
             # extract patches at different scales
-            for scale in patch_sizes:
+            for idx, scale in enumerate(patch_sizes):
                 try:
-                    patch = band[y - int(scale/2): y + int((scale+1)/2), x - int(scale/2): x + int((scale+1)/2)]
-                    patch = cv2.resize(patch, (patch_sizes[0], patch_sizes[0]))
-                    bands.append(patch)
+                    if rgb:
+                        patch = rgb_bands[idx, y - int(scale / 2): y + int((scale + 1) / 2),
+                                          x - int(scale / 2): x + int((scale + 1) / 2)]
+                        patch = cv2.resize(patch, (patch_sizes[0], patch_sizes[0]))
+                        bands.append(patch)
+                    else:
+                        patch = band[y - int(scale/2): y + int((scale+1)/2), x - int(scale/2): x + int((scale+1)/2)]
+                        patch = cv2.resize(patch, (patch_sizes[0], patch_sizes[0]))
+                        bands.append(patch)
                 except:
                     continue
 
@@ -131,14 +147,16 @@ def get_patches(out_folder: str, raster_dir: str, shape_file: str, lon: str, lat
             if len(bands) == len(patch_sizes):
                 # combine bands into an image
                 bands = np.dstack(bands)
+                # get remapped label
+                label = remap[p[1]['label']]
                 # save patch image to correct subfolder based on label
-                filename = "./training_sets/{}/{}/{}/{}.jpg".format(out_folder, p[1]['dataset'], p[1]['label'],
+                filename = "./training_sets/{}/{}/{}/{}.jpg".format(out_folder, p[1]['dataset'], label,
                                                                     p[1]['shapeid'])
                 cv2.imwrite(filename, bands)
                 # store counts and detections
                 locs = ""
                 # add a detection in the center of the tile if class is in det_classes
-                if p[1]['label'] in det_classes:
+                if label in det_classes:
                     locs += "{}_{}".format(tile_center, tile_center)
 
                     # look down the DataFrame for detections that also fall inside the tile
@@ -149,16 +167,17 @@ def get_patches(out_folder: str, raster_dir: str, shape_file: str, lon: str, lat
                         if search_idx > (len(df_rs) - 1):
                             break
                         # get det_x, det_y
-                        det_x = (int((df_rs.loc[search_idx, lon] - x0) / width) + pad) - upper_left[0]
-                        det_y = (int((df_rs.loc[search_idx, lat] - y0) / height) + pad) - upper_left[1]
+                        #det_x = (int((df_rs.loc[search_idx, lon] - x0) / width) + pad) - upper_left[0]
+                        #det_y = (int((df_rs.loc[search_idx, lat] - y0) / height) + pad) - upper_left[1]
+                        det_x = (int((df_rs.loc[search_idx, lon] - x0) / width)) - upper_left[0]
+                        det_y = (int((df_rs.loc[search_idx, lat] - y0) / height)) - upper_left[1]
 
                         # check if it falls inside patch
                         if 0 <= det_x < patch_sizes[0]:
                             # check label
                             if 0 <= det_y < patch_sizes[0]:
-                                if df_rs.loc[search_idx, 'label'] in det_classes:
+                                if remap[df_rs.loc[search_idx, 'label']] in det_classes:
                                     # search y direction
-                                    plt.imshow(band[det_y - 50: det_y + 50, det_x - 50: det_x + 50])
                                     locs += "_{}_{}".format(det_x, det_y)
                             search_idx += 1
                         else:
@@ -172,16 +191,17 @@ def get_patches(out_folder: str, raster_dir: str, shape_file: str, lon: str, lat
                         if search_idx < 0:
                             break
                         # get det_x, det_y
-                        det_x = (int((df_rs.loc[search_idx, lon] - x0) / width) + pad) - upper_left[0]
-                        det_y = (int((df_rs.loc[search_idx, lat] - y0) / height) + pad) - upper_left[1]
+                        #det_x = (int((df_rs.loc[search_idx, lon] - x0) / width) + pad) - upper_left[0]
+                        #det_y = (int((df_rs.loc[search_idx, lat] - y0) / height) + pad) - upper_left[1]
+                        det_x = (int((df_rs.loc[search_idx, lon] - x0) / width)) - upper_left[0]
+                        det_y = (int((df_rs.loc[search_idx, lat] - y0) / height)) - upper_left[1]
 
                         # check if it falls inside patch
                         if 0 <= det_x < patch_sizes[0]:
                             # check label
                             if 0 <= det_y < patch_sizes[0]:
-                                if df_rs.loc[search_idx, 'label'] in det_classes:
+                                if remap[df_rs.loc[search_idx, 'label']] in det_classes:
                                     # search y direction
-                                    plt.imshow(band[det_y - 50: det_y + 50, det_x - 50: det_x + 50])
                                     locs += "_{}_{}".format(det_x, det_y)
                             search_idx -= 1
                         else:
@@ -192,8 +212,11 @@ def get_patches(out_folder: str, raster_dir: str, shape_file: str, lon: str, lat
                 detections = detections.append(new_row)
                 num_imgs += 1
 
-        del band
-        print("\n  Processed {} out of {} rasters".format(idx + 1, len(rasters)))
+        if rgb:
+            del rgb_bands
+        else:
+            del band
+        print("\n  Processed {} out of {} rasters".format(cnt + 1, len(rasters)))
 
     time_elapsed = time.time() - since
     print("\n\n{} training images created in {:.0f}m {:.0f}s".format(num_imgs, time_elapsed // 60, time_elapsed % 60))
@@ -210,11 +233,17 @@ def main():
     out_folder = args.out_folder
     labels = args.labels.split('_')
     shape_file = args.shape_file
+    rgb = args.rgb == '1'
+
+    if args.remap is not None:
+        remap = {ele[0]: ele[1] for ele in [entry.split('->') for entry in args.remap.split('_')]}
+    else:
+        remap = {ele: ele for ele in labels}
 
     # create vanilla and multi-scale training sets
     print('\nCreating {}:\n'.format(out_folder))
     get_patches(out_folder=out_folder, raster_dir=raster_dir, shape_file=shape_file, lat='y', lon='x',
-                patch_sizes=patch_sizes, labels=labels)
+                patch_sizes=patch_sizes, remap=remap, rgb=rgb)
 
 
 if __name__ == '__main__':

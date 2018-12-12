@@ -28,11 +28,11 @@ def find_classes(dir):
     return classes, class_to_idx
 
 
-def make_dataset(dir, class_to_idx, extensions):
+def make_dataset(dir, class_to_idx, extensions, training_set):
     images = []
     locations = []
     dir = os.path.expanduser(dir)
-    det_df = pd.read_csv('./training_sets/training_set_vanilla/detections.csv', index_col=0)
+    det_df = pd.read_csv('./training_sets/{}/detections.csv'.format(training_set), index_col=0)
     for target in sorted(os.listdir(dir)):
         d = os.path.join(dir, target)
         if not os.path.isdir(d):
@@ -76,7 +76,7 @@ class DatasetFolder(data.Dataset):
         samples (list): List of (sample path, class_index) tuples
     """
 
-    def __init__(self, root, loader, extensions, shape_transform=None, int_transform=None, img_dim=450):
+    def __init__(self, root, loader, extensions, training_set, shape_transform=None, int_transform=None, img_dim=450):
         classes, class_to_idx = find_classes(root)
         samples, locations = make_dataset(root, class_to_idx, extensions)
         if len(samples) == 0:

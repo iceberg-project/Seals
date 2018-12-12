@@ -1,8 +1,4 @@
-from .nasnet_scalable import NASNetA
-from .wide_resnet import WideResNet
-from .wide_resnet_count import wrn_count
-from .resnet_count import resnet18_count, resnet34_count, resnet50_count
-from .nasnet_scalable_count import NASNetA_count
-from .count_ception import ModelCountception
-from .wide_resnet_det import wrn_det
-from .unet_det import UNetDet
+from .unet_count_WRN import UNetCntWRN
+from .unet import UNet
+from .unet_count_WRN_occ_Dense import UNetCntWRNOccDense
+from .unet_occ_Dense import UNetOccDense
