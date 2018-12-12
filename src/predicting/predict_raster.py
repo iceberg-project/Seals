@@ -67,7 +67,7 @@ def main():
     predict_patch(model=model, input_size=model_archs[args.model_architecture]['input_size'],
                   batch_size=hyperparameters[args.hyperparameter_set]['batch_size_test'],
                   test_dir=args.test_folder,
-                  output_dir='%s/%s' % (args.output_folder),
+                  output_dir='%s' % (args.output_folder),
                   num_workers=hyperparameters[args.hyperparameter_set]['num_workers_train'])
 
 
