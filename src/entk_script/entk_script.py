@@ -45,9 +45,9 @@ def generate_discover_pipeline(path):
     return pipeline
 
 
-def generate_pipeline(name, image, image_size, tile_size, pipeline, model_path,
-                      model_arch, model_name, hyperparam_set, device,
-                      output_dir):
+def generate_pipeline(name, image, image_size, scale_bands,
+                      model_arch, training_set, model_name,
+                      hyperparam_set, device, output_dir):
 
     '''
     This function creates a pipeline for an image that will be analyzed.
@@ -57,7 +57,6 @@ def generate_pipeline(name, image, image_size, tile_size, pipeline, model_path,
         :image: image path, str
         :image_size: image size in MBs, int
         :tile_size: The size of each tile, int
-        :pipeline: Prediction Pipeline, str
         :model_path: Path to the model file, str
         :model_arch: Prediction Model Architecture, str
         :model_name: Prediction Model Name, str
@@ -81,7 +80,7 @@ def generate_pipeline(name, image, image_size, tile_size, pipeline, model_path,
                       'source $SCRATCH/pytorchCuda/bin/activate']
     task0.executable = 'python3'   # Assign executable to the task
     # Assign arguments for the task executable
-    task0.arguments = ['tile_raster.py', '--scale_bands=%s' % tile_size,
+    task0.arguments = ['tile_raster.py', '--scale_bands=%s' % scale_bands,
                        '--input_image=%s' % image.split('/')[-1],
                        # This line points to the local filesystem of the node
                        # that the tiling of the image happened.
@@ -112,22 +111,23 @@ def generate_pipeline(name, image, image_size, tile_size, pipeline, model_path,
     task1.executable = 'python3'   # Assign executable to the task
 
     # Assign arguments for the task executable
-    task1.arguments = ['predict_raster_det.py', '--pipeline', pipeline,
-                       '--dest_folder', './',
-                       '--input_image', '$NODE_LFS_PATH/%s' % task0.name,
+    task1.arguments = ['predict_raster.py',
                        '--model_architecture', model_arch,
                        '--hyperparameter_set', hyperparam_set,
-                       '--model_name', model_name]
-    task1.link_input_data = [model_path + '/%s.tar' % model_name]
-    task1.upload_input_data = ['../predict/predict_raster_det.py', '../utils/']
+                       '--training_set', training_set,
+                       '--test_folder', '$NODE_LFS_PATH/%s' % task0.name,
+                       '--model_path', './',
+                       '--ouput_folder', './']
+    task1.link_input_data = ['$SHARED/%s.tar' % model_name]
+    task1.upload_input_data = ['../predict/predict_raster.py', '../utils/']
     task1.cpu_reqs = {'processes': 1, 'threads_per_process': 1,
                       'thread_type': 'OpenMP'}
     task1.gpu_reqs = {'processes': 1, 'threads_per_process': 1,
                       'thread_type': 'OpenMP'}
     # Download resuting images
-    task1.download_output_data = ['%s_predictions.csv> %s/%s_predictions.csv' %
-                                  (model_name, output_dir,
-                                   image.split('/')[-1])]
+    # task1.download_output_data = ['%s_predictions.csv> %s/%s_predictions.csv'
+    #                                % (model_name, output_dir,
+    #                                image.split('/')[-1])]
     task1.tag = task0.name
 
     stage1.add_tasks(task1)
@@ -180,6 +180,9 @@ def args_parser():
                         which the script will run.')
     parser.add_argument('-w', '--walltime', type=int, help='The amount of \
                         time resources are requested')
+    parser.add_argument('--scale_bands', type=str, help='for multi-scale \
+                         models, string with size of scale bands separated by\
+                         spaces')
 
     return parser.parse_args()
 
@@ -204,7 +207,8 @@ if __name__ == '__main__':
 
         # Assign resource manager to the Application Manager
         appman.resource_desc = res_dict
-
+        appman.shared_data = ['../models/Heatmap-Cnt/UnetCntWRN/\
+                               UnetCntWRN_ts-vanilla.tar']
         # Create a task that discovers the dataset
         disc_pipeline = generate_discover_pipeline(args.input_dir)
         appman.workflow = set([disc_pipeline])
@@ -219,16 +223,15 @@ if __name__ == '__main__':
         dev = 0
         for idx in range(len(images)):
             p1 = generate_pipeline(name='P%s' % idx,
-                                   image = images['Filename'][cnt],
-                                   image_size = images['Size'][cnt],
-                                   tile_size=299,
-                                   pipeline='Pipeline1.1',
-                                   model_path=args.model,
-                                   model_arch='WideResnetCount',
-                                   model_name='WideResnetCount',
+                                   image=images['Filename'][idx],
+                                   image_size=images['Size'][idx],
+                                   scale_bands=args.scale_bands,
+                                   model_arch=args.model,
+                                   training_set='test_vanilla',
+                                   model_name='UnetCntWRN_ts-vanilla',
                                    hyperparam_set='A',
                                    device=dev,
-                                   output_dir=args.output_dir)
+                                   output_dirr=args.output_dir)
             dev = dev ^ 1
             pipelines.append(p1)
         # Assign the workflow as a set of Pipelines to the Application Manager
