@@ -12,6 +12,7 @@ Copyright: 2018-2019
 from glob import glob
 import argparse
 import os
+import math
 import pandas as pd
 
 
@@ -32,7 +33,7 @@ def image_discovery(path, filename='list.csv', filesize=False):
         dataset_df = pd.DataFrame(columns=['Filename', 'Size'])
         for filepath in filepaths:
             dataset_df.loc[len(dataset_df)] = [filepath,
-                                               os.path.getsize(filepath)]
+                                               int(math.ceil(os.path.getsize(filepath)/1024/1024))]
     else:
         dataset_df = pd.DataFrame(columns=['Filename'])
         for filepath in filepaths:
