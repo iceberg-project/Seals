@@ -8,6 +8,7 @@ Author: Ioannis Paraskevakos
 License: MIT
 Copyright: 2018-2019
 """
+from __future__ import print
 import argparse
 import os
 import pandas as pd
@@ -48,7 +49,7 @@ def generate_discover_pipeline(path):
 
 def generate_pipeline(name, image, image_size, scale_bands,
                       model_arch, training_set, model_name,
-                      hyperparam_set, device, output_dir):
+                      hyperparam_set, device):
 
     '''
     This function creates a pipeline for an image that will be analyzed.
@@ -63,7 +64,6 @@ def generate_pipeline(name, image, image_size, scale_bands,
         :model_name: Prediction Model Name, str
         :hyperparam_set: Which hyperparameter set to use, str
         :device: Which GPU device will be used by this pipeline, int
-        :output_dir: The directory in which the output will be stored
     '''
     # Create a Pipeline object
     entk_pipeline = Pipeline()
@@ -120,8 +120,10 @@ def generate_pipeline(name, image, image_size, scale_bands,
                        '--model_path', './',
                        '--output_folder', './%s' % image.split('/')[-1]]
     task1.link_input_data = ['$SHARED/%s.tar' % model_name]
-    task1.upload_input_data = [os.path.abspath('../predicting/predict_raster.py'),
-                               os.path.abspath('../predicting/predict_sealnet.py'),
+    task1.upload_input_data = [os.path.abspath('../predicting/' +
+                                               'predict_raster.py'),
+                               os.path.abspath('../predicting/' +
+                                               'predict_sealnet.py'),
                                os.path.abspath('../utils/')]
     task1.cpu_reqs = {'processes': 1, 'threads_per_process': 1,
                       'thread_type': 'OpenMP'}
@@ -160,32 +162,32 @@ def args_parser():
     '''
     Argument Parsing Function for the script.
     '''
-    parser = argparse.ArgumentParser(description='Executes the Seals pipeline\
-                                                  for a set of images')
+    parser = argparse.ArgumentParser(description='Executes the Seals ' +
+                                     'pipeline for a set of images')
 
-    parser.add_argument('-c', '--cpus', type=int, default=1, help='The number \
-                        of CPUs required for execution')
-    parser.add_argument('-g', '--gpus', type=int, default=1, help='The number \
-                        of GPUs required for execution')
-    parser.add_argument('-ip', '--input_dir', type=str, help='Images input \
-                        directory on the selected resource')
-    parser.add_argument('-m', '--model', type=str, help='Which model will be \
-                        used')
-    parser.add_argument('-op', '--output_dir', type=str, help='Path to folder \
-                        that the output will be stored')
-    parser.add_argument('-p', '--project', type=str, help='The project that \
-                        will be charged')
-    parser.add_argument('-q', '--queue', type=str, help='The queue from which \
-                        resources are requested.')
-    parser.add_argument('-r', '--resource', type=str, help='HPC resource on \
-                        which the script will run.')
-    parser.add_argument('-w', '--walltime', type=int, help='The amount of \
-                        time resources are requested in minutes')
-    parser.add_argument('--scale_bands', type=str, help='for multi-scale \
-                         models, string with size of scale bands separated by\
-                         spaces')
-    parser.add_argument('--name', type=str, help='name of the execution. It has\
-                         to be a unique value')
+    parser.add_argument('-c', '--cpus', type=int, default=1,
+                        help='The number of CPUs required for execution')
+    parser.add_argument('-g', '--gpus', type=int, default=1,
+                        help='The number of GPUs required for execution')
+    parser.add_argument('-ip', '--input_dir', type=str,
+                        help='Images input directory on the selected resource')
+    parser.add_argument('-m', '--model', type=str,
+                        help='Which model will be used')
+    parser.add_argument('-p', '--project', type=str,
+                        help='The project that will be charged')
+    parser.add_argument('-q', '--queue', type=str,
+                        help='The queue from which resources are requested.')
+    parser.add_argument('-r', '--resource', type=str,
+                        help='HPC resource on which the script will run.')
+    parser.add_argument('-w', '--walltime', type=int,
+                        help='The amount of time resources are requested in' +
+                        ' minutes')
+    parser.add_argument('--scale_bands', type=str,
+                        help='for multi-scale models, string with size of' +
+                        ' scale bands separated by spaces')
+    parser.add_argument('--name', type=str,
+                        help='name of the execution. It has to be a unique' +
+                        ' value')
 
     return parser.parse_args()
 
@@ -211,7 +213,8 @@ if __name__ == '__main__':
         # Assign resource manager to the Application Manager
         appman.resource_desc = res_dict
         appman.shared_data = [os.path.abspath('../../models/Heatmap-Cnt/' +
-                                              'UnetCntWRN/UnetCntWRN_ts-vanilla.tar')]
+                                              'UnetCntWRN/' +
+                                              'UnetCntWRN_ts-vanilla.tar')]
         # Create a task that discovers the dataset
         disc_pipeline = generate_discover_pipeline(args.input_dir)
         appman.workflow = set([disc_pipeline])
@@ -233,8 +236,7 @@ if __name__ == '__main__':
                                    training_set='test_vanilla',
                                    model_name='UnetCntWRN_ts-vanilla',
                                    hyperparam_set='A',
-                                   device=dev,
-                                   output_dir=args.output_dir)
+                                   device=dev)
             dev = dev ^ 1
             pipelines.append(p1)
         # Assign the workflow as a set of Pipelines to the Application Manager
@@ -242,7 +244,7 @@ if __name__ == '__main__':
 
         # Run the Application Manager
         appman.run()
-        
+
         print('Done')
 
     finally:

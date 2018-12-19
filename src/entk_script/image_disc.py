@@ -32,8 +32,8 @@ def image_discovery(path, filename='list.csv', filesize=False):
     if filesize:
         dataset_df = pd.DataFrame(columns=['Filename', 'Size'])
         for filepath in filepaths:
-            dataset_df.loc[len(dataset_df)] = [filepath,
-                                               int(math.ceil(os.path.getsize(filepath)/1024/1024))]
+            filesize = int(math.ceil(os.path.getsize(filepath)/1024/1024))
+            dataset_df.loc[len(dataset_df)] = [filepath, filesize]
     else:
         dataset_df = pd.DataFrame(columns=['Filename'])
         for filepath in filepaths:
