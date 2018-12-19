@@ -8,7 +8,8 @@ Author: Ioannis Paraskevakos
 License: MIT
 Copyright: 2018-2019
 """
-from __future__ import print
+
+from __future__ import print_function
 import argparse
 import os
 import pandas as pd
