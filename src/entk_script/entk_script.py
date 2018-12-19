@@ -88,7 +88,7 @@ def generate_pipeline(name, image, image_size, scale_bands,
                        '--output_folder=$NODE_LFS_PATH/%s' % task0.name]
     task0.link_input_data = [image]
     task0.upload_input_data = [os.path.abspath('../tiling/tile_raster.py')]
-    task0.cpu_reqs = {'processes': 1, 'threads_per_process': 1,
+    task0.cpu_reqs = {'processes': 1, 'threads_per_process': 2,
                       'thread_type': 'OpenMP'}
     task0.lfs_per_process = image_size
 
@@ -210,7 +210,8 @@ if __name__ == '__main__':
 
         # Assign resource manager to the Application Manager
         appman.resource_desc = res_dict
-        appman.shared_data = [os.path.abspath('../../models/Heatmap-Cnt/UnetCntWRN/UnetCntWRN_ts-vanilla.tar')]
+        appman.shared_data = [os.path.abspath('../../models/Heatmap-Cnt/' +
+                                              'UnetCntWRN/UnetCntWRN_ts-vanilla.tar')]
         # Create a task that discovers the dataset
         disc_pipeline = generate_discover_pipeline(args.input_dir)
         appman.workflow = set([disc_pipeline])
