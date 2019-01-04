@@ -30,21 +30,40 @@ class ShapeTransform(object):
             locations = TF.rotate(locations, angle, expand=True)
 
             # center crop
-            center_crop = transforms.CenterCrop(self.output_size * 1.5)
+            center_crop = transforms.CenterCrop(int(self.output_size * 1.5))
             image = center_crop(image)
             locations = center_crop(locations)
 
-            # random crop
-            i, j, h, w = transforms.RandomCrop.get_params(image, output_size=(self.output_size, self.output_size))
-            image = TF.crop(image, i, j, h, w)
-            locations = TF.crop(locations, i, j, h, w)
+            if np.random.random() > 1:
+                # random crop
+                i, j, h, w = transforms.RandomResizedCrop.get_params(image, scale=(0.2, 0.9), ratio=(1, 1))
+                image = TF.resized_crop(image, i, j, h, w, size=int(self.output_size))
+                # get counts
+                counts = np.float32(np.sum(np.not_equal(TF.crop(locations, i, j, h, w), 0)))
+                locations = TF.resized_crop(locations, i, j, h, w, size=int(self.output_size))
+
+                #if counts > 0:
+                #    # update locations to have only maximum values
+                #    locs = get_xy_locs(locations, int(counts))
+                #    locations = np.zeros([self.output_size, self.output_size])
+                #    for point in locs:
+                #        locations[point[0], point[1]] = 1
+                #locations = Image.fromarray(locations)
+
+            else:
+                i, j, h, w = transforms.RandomCrop.get_params(image, output_size=(self.output_size, self.output_size))
+                image = TF.crop(image, i, j, h, w)
+                # get counts
+                counts = np.float32(np.sum(np.not_equal(np.array(TF.crop(locations, i, j, h, w)), 0)))
+                locations = TF.crop(locations, i, j, h, w)
 
         else:
             center_crop = transforms.CenterCrop(self.output_size)
             image = center_crop(image)
             locations = center_crop(locations)
+            counts = np.float32(np.sum(np.not_equal(np.array(locations), 0)))
 
         # change locations to tensor
-        locations = TF.to_tensor(locations)
+        locations = TF.to_tensor(locations) 
 
-        return image, locations
+        return image, locations, counts

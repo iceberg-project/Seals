@@ -1,5 +1,14 @@
-# compares results with
+"""
+Test sealnet
+==========================================================
 
+Testing script for ICEBERG seals use case. Compares merged predicted shapefile from 'merge_shapefiles.py' with
+ground-truth shapefile, retrieving test precision and recall for a given model.
+
+Author: Bento Goncalves
+License: MIT
+Copyright: 2018-2019
+"""
 import geopandas as gpd
 import pandas as pd
 import argparse
@@ -13,11 +22,11 @@ parser.add_argument('--output_file', type=str, help='desired name of output file
 
 def test_cnn(shp_pred: str, shp_gt: str, tolerance: float, output: str):
     """
-    :param shp_pred:
-    :param shp_gt:
-    :param tolerance:
-    :param output:
-    :return:
+    :param shp_pred: path to prediction shapefile
+    :param shp_gt: path to ground-truth shapefile
+    :param tolerance: maximum distance in pixels to consider two points a match
+    :param output: path to output file
+    :return: creates a .csv file with test statistics
     """
 
     # read csvs
@@ -62,7 +71,10 @@ def test_cnn(shp_pred: str, shp_gt: str, tolerance: float, output: str):
 
 def main():
     args = parser.parse_args()
-    test_cnn(args.shp_prediction, args.shp_ground_truth, args.tolerance, args.output_file)
+    test_cnn(shp_pred=args.shp_prediction,
+             shp_gt=args.shp_ground_truth,
+             tolerance=args.tolerance,
+             output=args.output_file)
 
 
 if __name__ == '__main__':

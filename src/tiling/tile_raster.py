@@ -1,4 +1,20 @@
+"""
+Tile raster
+==========================================================
+
+Tiling script for ICEBERG seals use case. Tiles rasters into predefined size patches. Patches are named according to
+the raster indices that define their boundaries. Optional arguments allow padding and multiple scale bands. Also saves
+a .csv for the raster's affine matrix -- used on 'predict_sealnet.py' to go from raster index to projected 'x' and
+'y' of predicted seals.
+
+Author: Bento Goncalves
+License: MIT
+Copyright: 2018-2019
+"""
+
+
 import numpy as np
+import pandas as pd
 import rasterio
 import os
 import argparse
@@ -28,6 +44,14 @@ def tile_raster(input_image, output_folder, scales, pad_img=False):
     # read image
     with rasterio.open(input_image) as src:
         band = np.array(src.read()[0, :, :], dtype=np.uint8)
+        # save affine matrix
+        affine_matrix = pd.DataFrame({'transform': src.transform[:6]})
+        affine_matrix.to_csv('%s/affine_matrix.csv' % output_folder)
+
+    # add tiles subfolder
+    output_folder = '%s/tiles/%s/' % (output_folder, os.path.basename(input_image))
+    if not os.path.exists(output_folder):
+        os.makedirs(output_folder)
 
     # pad image
     pad = 0
@@ -61,12 +85,12 @@ def tile_raster(input_image, output_folder, scales, pad_img=False):
             # combine scales and save tile
             scale_bands = np.dstack(scale_bands)
             # save it with polygon coordinates
-            filename = "{}/tile_{}_{}_{}_{}_.jpg".format(output_folder, up, left, down, right)
+            filename = "%s/tile_%d_%d_%d_%d_.jpg" % (output_folder, up, left, down, right)
             cv2.imwrite(filename, scale_bands)
             count += 1
     toc = time.time()
     elapsed = toc - tic
-    print('\n{} tiles created in {} minutes and {:.2f} seconds'.format(count, int(elapsed // 60), elapsed % 60))
+    print('\n%d tiles created in %d minutes and %.2f seconds' % (count, int(elapsed // 60), elapsed % 60))
 
 
 def main():
@@ -74,10 +98,8 @@ def main():
 
     # unroll arguments
     input_image = args.input_image
-    output_folder = args.output_folder
     scales = [int(ele) for ele in args.scale_bands.split('_')]
-    output_folder = './{}/{}/{}/tiles'.format(output_folder, os.path.basename(input_image), args.scale_bands)
-
+    output_folder = args.output_folder
     tile_raster(input_image, output_folder, scales, True)
 
 

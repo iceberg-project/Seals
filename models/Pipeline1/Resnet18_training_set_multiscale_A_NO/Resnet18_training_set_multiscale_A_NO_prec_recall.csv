@@ -1,5 +1,0 @@
-"","precision","recall","label","balanced_accuracy","model_name","n_parameters","running_time"
-"1",0.768,0.824034334763948,"crabeater",0.723959156095269,"Resnet18_training_set_multiscale_A_NO",11182155,3.574997975163
-"2",0.271551724137931,0.617647058823529,"weddell",0.723959156095269,"Resnet18_training_set_multiscale_A_NO",11182155,3.574997975163
-"3",0.936231884057971,0.458806818181818,"emperor",0.723959156095269,"Resnet18_training_set_multiscale_A_NO",11182155,3.574997975163
-"4",0.343283582089552,0.185483870967742,"marching-emperor",0.723959156095269,"Resnet18_training_set_multiscale_A_NO",11182155,3.574997975163

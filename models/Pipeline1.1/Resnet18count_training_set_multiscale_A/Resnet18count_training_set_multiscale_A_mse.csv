@@ -1,2 +1,0 @@
-"","n_parameters","running_time","MSE","model_name","precision","recall","total_predicted","total_ground_truth"
-"1",2787307,6.76314022783843,14.2248985216528,"Resnet18count_training_set_multiscale_A",0.848701069030818,0.410246384491701,1080.84100420773,2236

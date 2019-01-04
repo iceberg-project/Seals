@@ -8,7 +8,10 @@ Author: Ioannis Paraskevakos
 License: MIT
 Copyright: 2018-2019
 """
+
+from __future__ import print_function
 import argparse
+import os
 import pandas as pd
 
 from radical.entk import Pipeline, Stage, Task, AppManager
@@ -45,8 +48,9 @@ def generate_discover_pipeline(path):
     return pipeline
 
 
-def generate_pipeline(name, image, tile_size, pipeline, model_path, model_arch,
-                      model_name, hyperparam_set, device, output_dir):
+def generate_pipeline(name, image, image_size, scale_bands,
+                      model_arch, training_set, model_name,
+                      hyperparam_set, device):
 
     '''
     This function creates a pipeline for an image that will be analyzed.
@@ -54,14 +58,13 @@ def generate_pipeline(name, image, tile_size, pipeline, model_path, model_arch,
     :Arguments:
         :name: Pipeline name, str
         :image: image path, str
+        :image_size: image size in MBs, int
         :tile_size: The size of each tile, int
-        :pipeline: Prediction Pipeline, str
         :model_path: Path to the model file, str
         :model_arch: Prediction Model Architecture, str
         :model_name: Prediction Model Name, str
         :hyperparam_set: Which hyperparameter set to use, str
         :device: Which GPU device will be used by this pipeline, int
-        :output_dir: The directory in which the output will be stored
     '''
     # Create a Pipeline object
     entk_pipeline = Pipeline()
@@ -79,12 +82,16 @@ def generate_pipeline(name, image, tile_size, pipeline, model_path, model_arch,
                       'source $SCRATCH/pytorchCuda/bin/activate']
     task0.executable = 'python3'   # Assign executable to the task
     # Assign arguments for the task executable
-    task0.arguments = ['tile_raster.py', '--scale_bands=%s' % tile_size,
-                       '--input_image=%s' % image.split('/')[-1]]
+    task0.arguments = ['tile_raster.py', '--scale_bands=%s' % scale_bands,
+                       '--input_image=%s' % image.split('/')[-1],
+                       # This line points to the local filesystem of the node
+                       # that the tiling of the image happened.
+                       '--output_folder=$NODE_LFS_PATH/%s' % task0.name]
     task0.link_input_data = [image]
-    task0.upload_input_data = ['tile_raster.py']
-    task0.cpu_reqs = {'processes': 1, 'threads_per_process': 1,
+    task0.upload_input_data = [os.path.abspath('../tiling/tile_raster.py')]
+    task0.cpu_reqs = {'processes': 1, 'threads_per_process': 2,
                       'thread_type': 'OpenMP'}
+    task0.lfs_per_process = image_size
 
     stage0.add_tasks(task0)
     # Add Stage to the Pipeline
@@ -106,23 +113,26 @@ def generate_pipeline(name, image, tile_size, pipeline, model_path, model_arch,
     task1.executable = 'python3'   # Assign executable to the task
 
     # Assign arguments for the task executable
-    task1.arguments = ['predict_sealnet.py', '--pipeline', pipeline,
-                       '--dest_folder', './', '--test_dir', './',
+    task1.arguments = ['predict_raster.py',
                        '--model_architecture', model_arch,
-                       '--hyperparameter_set', hyperparam_set, '--model_name',
-                       model_name]
-    task1.link_input_data = ['$Pipeline_%s_Stage_%s_Task_%s/tiles' %
-                             (entk_pipeline.name, stage0.name, task0.name),
-                             model_path + '/%s.tar' % model_name]
-    task1.upload_input_data = ['predict_sealnet.py', 'utils/']
+                       '--hyperparameter_set', hyperparam_set,
+                       '--training_set', training_set,
+                       '--test_folder', '$NODE_LFS_PATH/%s' % task0.name,
+                       '--model_path', './',
+                       '--output_folder', './%s' % image.split('/')[-1]]
+    task1.link_input_data = ['$SHARED/%s.tar' % model_name]
+    task1.upload_input_data = [os.path.abspath('../predicting/' +
+                                               'predict_raster.py'),
+                               os.path.abspath('../predicting/' +
+                                               'predict_sealnet.py'),
+                               os.path.abspath('../utils/')]
     task1.cpu_reqs = {'processes': 1, 'threads_per_process': 1,
                       'thread_type': 'OpenMP'}
     task1.gpu_reqs = {'processes': 1, 'threads_per_process': 1,
                       'thread_type': 'OpenMP'}
     # Download resuting images
-    task1.download_output_data = ['%s_predictions.csv> %s/%s_predictions.csv' %
-                                  (model_name, output_dir,
-                                   image.split('/')[-1])]
+    task1.download_output_data = ['%s/' % image.split('/')[-1]]
+    task1.tag = task0.name
 
     stage1.add_tasks(task1)
     # Add Stage to the Pipeline
@@ -153,27 +163,32 @@ def args_parser():
     '''
     Argument Parsing Function for the script.
     '''
-    parser = argparse.ArgumentParser(description='Executes the Seals pipeline\
-                                                  for a set of images')
+    parser = argparse.ArgumentParser(description='Executes the Seals ' +
+                                     'pipeline for a set of images')
 
-    parser.add_argument('-c', '--cpus', type=int, default=1, help='The number \
-                        of CPUs required for execution')
-    parser.add_argument('-g', '--gpus', type=int, default=1, help='The number \
-                        of GPUs required for execution')
-    parser.add_argument('-ip', '--input_dir', type=str, help='Images input \
-                        directory on the selected resource')
-    parser.add_argument('-m', '--model', type=str, help='Which model will be \
-                        used')
-    parser.add_argument('-op', '--output_dir', type=str, help='Path to folder \
-                        that the output will be stored')
-    parser.add_argument('-p', '--project', type=str, help='The project that \
-                        will be charged')
-    parser.add_argument('-q', '--queue', type=str, help='The queue from which \
-                        resources are requested.')
-    parser.add_argument('-r', '--resource', type=str, help='HPC resource on \
-                        which the script will run.')
-    parser.add_argument('-w', '--walltime', type=int, help='The amount of \
-                        time resources are requested')
+    parser.add_argument('-c', '--cpus', type=int, default=1,
+                        help='The number of CPUs required for execution')
+    parser.add_argument('-g', '--gpus', type=int, default=1,
+                        help='The number of GPUs required for execution')
+    parser.add_argument('-ip', '--input_dir', type=str,
+                        help='Images input directory on the selected resource')
+    parser.add_argument('-m', '--model', type=str,
+                        help='Which model will be used')
+    parser.add_argument('-p', '--project', type=str,
+                        help='The project that will be charged')
+    parser.add_argument('-q', '--queue', type=str,
+                        help='The queue from which resources are requested.')
+    parser.add_argument('-r', '--resource', type=str,
+                        help='HPC resource on which the script will run.')
+    parser.add_argument('-w', '--walltime', type=int,
+                        help='The amount of time resources are requested in' +
+                        ' minutes')
+    parser.add_argument('--scale_bands', type=str,
+                        help='for multi-scale models, string with size of' +
+                        ' scale bands separated by spaces')
+    parser.add_argument('--name', type=str,
+                        help='name of the execution. It has to be a unique' +
+                        ' value')
 
     return parser.parse_args()
 
@@ -193,12 +208,14 @@ if __name__ == '__main__':
     try:
 
         # Create Application Manager
-        appman = AppManager(port=32773, hostname='localhost',
-                            autoterminate=False)
+        appman = AppManager(port=32773, hostname='localhost', name=args.name,
+                            autoterminate=False, write_workflow=True)
 
         # Assign resource manager to the Application Manager
         appman.resource_desc = res_dict
-
+        appman.shared_data = [os.path.abspath('../../models/Heatmap-Cnt/' +
+                                              'UnetCntWRN/' +
+                                              'UnetCntWRN_ts-vanilla.tar')]
         # Create a task that discovers the dataset
         disc_pipeline = generate_discover_pipeline(args.input_dir)
         appman.workflow = set([disc_pipeline])
@@ -206,22 +223,21 @@ if __name__ == '__main__':
         # Run
         appman.run()
 
-        images = pd.read_csv('images.csv')['Filename'].tolist()
+        images = pd.read_csv('images.csv')
 
         # Create a single pipeline per image
         pipelines = list()
         dev = 0
-        for idx, image_path in enumerate(images):
+        for idx in range(len(images)):
             p1 = generate_pipeline(name='P%s' % idx,
-                                   image=image_path,
-                                   tile_size=299,
-                                   pipeline='Pipeline1.1',
-                                   model_path=args.model,
-                                   model_arch='WideResnetCount',
-                                   model_name='WideResnetCount',
+                                   image=images['Filename'][idx],
+                                   image_size=images['Size'][idx],
+                                   scale_bands=args.scale_bands,
+                                   model_arch=args.model,
+                                   training_set='test_vanilla',
+                                   model_name='UnetCntWRN_ts-vanilla',
                                    hyperparam_set='A',
-                                   device=dev,
-                                   output_dir=args.output_dir)
+                                   device=dev)
             dev = dev ^ 1
             pipelines.append(p1)
         # Assign the workflow as a set of Pipelines to the Application Manager
@@ -230,8 +246,7 @@ if __name__ == '__main__':
         # Run the Application Manager
         appman.run()
 
-        # Get all results and produce a single one.
-        create_aggregated_output(images, args.output_dir)
+        print('Done')
 
     finally:
         # Now that all images have been analyzed, release the resources.
