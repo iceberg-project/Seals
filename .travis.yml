@@ -16,3 +16,6 @@ before_install:
 
 script:
   - flake8 src/entk_script/*.py
+  - flake8 src/tiling/*.py
+  - pylint src/entk_script/*.py
+  - pylint src/tiling/*.py
