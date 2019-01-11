@@ -158,6 +158,68 @@ def create_aggregated_output(image_names, path):
     aggr_results.to_csv(path + '/seal_predictions.csv', index=False)
 
 
+def run(resource, walltime, cpus, gpus, project, queue, name, input_dir,
+        scale_bands, model):
+    '''
+    This function realizes the basic functionality and includes the execution
+    of the pipelines
+    '''
+
+    res_dict = {'resource': resource,
+                    'walltime': walltime,
+                    'cpus': cpus,
+                    'gpus': gpus,
+                    'schema': 'gsissh',
+                    'project': project,
+                    'queue': queue}
+
+        try:
+
+            # Create Application Manager
+            appman = AppManager(port=32773, hostname='localhost', name=name,
+                                autoterminate=False, write_workflow=True)
+
+            # Assign resource manager to the Application Manager
+            appman.resource_desc = res_dict
+            appman.shared_data = [os.path.abspath('../../models/Heatmap-Cnt/' +
+                                                'UnetCntWRN/' +
+                                                'UnetCntWRN_ts-vanilla.tar')]
+            # Create a task that discovers the dataset
+            disc_pipeline = generate_discover_pipeline(input_dir)
+            appman.workflow = set([disc_pipeline])
+
+            # Run
+            appman.run()
+
+            images = pd.read_csv('images.csv')
+
+            # Create a single pipeline per image
+            pipelines = list()
+            dev = 0
+            for idx in range(len(images)):
+                p1 = generate_pipeline(name='P%s' % idx,
+                                    image=images['Filename'][idx],
+                                    image_size=images['Size'][idx],
+                                    scale_bands=scale_bands,
+                                    model_arch=model,
+                                    training_set='test_vanilla',
+                                    model_name='UnetCntWRN_ts-vanilla',
+                                    hyperparam_set='A',
+                                    device=dev)
+                dev = dev ^ 1
+                pipelines.append(p1)
+            # Assign the workflow as a set of Pipelines to the Application Manager
+            appman.workflow = set(pipelines)
+
+            # Run the Application Manager
+            appman.run()
+
+            print('Done')
+
+        finally:
+            # Now that all images have been analyzed, release the resources.
+            appman.resource_terminate()
+
 def args_parser():
 
     '''
@@ -192,62 +254,18 @@ def args_parser():
 
     return parser.parse_args()
 
-
 if __name__ == '__main__':
 
     args = args_parser()
 
-    res_dict = {'resource': args.resource,
-                'walltime': args.walltime,
-                'cpus': args.cpus,
-                'gpus': args.gpus,
-                'schema': 'gsissh',
-                'project': args.project,
-                'queue': args.queue}
-
-    try:
-
-        # Create Application Manager
-        appman = AppManager(port=32773, hostname='localhost', name=args.name,
-                            autoterminate=False, write_workflow=True)
-
-        # Assign resource manager to the Application Manager
-        appman.resource_desc = res_dict
-        appman.shared_data = [os.path.abspath('../../models/Heatmap-Cnt/' +
-                                              'UnetCntWRN/' +
-                                              'UnetCntWRN_ts-vanilla.tar')]
-        # Create a task that discovers the dataset
-        disc_pipeline = generate_discover_pipeline(args.input_dir)
-        appman.workflow = set([disc_pipeline])
-
-        # Run
-        appman.run()
-
-        images = pd.read_csv('images.csv')
-
-        # Create a single pipeline per image
-        pipelines = list()
-        dev = 0
-        for idx in range(len(images)):
-            p1 = generate_pipeline(name='P%s' % idx,
-                                   image=images['Filename'][idx],
-                                   image_size=images['Size'][idx],
-                                   scale_bands=args.scale_bands,
-                                   model_arch=args.model,
-                                   training_set='test_vanilla',
-                                   model_name='UnetCntWRN_ts-vanilla',
-                                   hyperparam_set='A',
-                                   device=dev)
-            dev = dev ^ 1
-            pipelines.append(p1)
-        # Assign the workflow as a set of Pipelines to the Application Manager
-        appman.workflow = set(pipelines)
-
-        # Run the Application Manager
-        appman.run()
-
-        print('Done')
-
-    finally:
-        # Now that all images have been analyzed, release the resources.
-        appman.resource_terminate()
+    run(resource=args.resource, 
+        walltime=args.walltime, 
+        cpus=args.cpus, 
+        gpus=args.gpus, 
+        project=args.project, 
+        queue=args.queue, 
+        name=args.name, 
+        input_dir=args.input_dir, 
+        scale_bands=args.scale_bands, 
+        mode=args.model 
+        )
