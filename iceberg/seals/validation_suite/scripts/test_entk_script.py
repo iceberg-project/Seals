@@ -19,4 +19,4 @@ if __name__ == '__main__':
 
     for image in images:
         # Check the output with the expected one. Report error otherwise
-        
+        print image
