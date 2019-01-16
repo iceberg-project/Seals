@@ -214,9 +214,9 @@ setup_args = {
     ],
 
     'namespace_packages': ['iceberg', 'iceberg'],
-    'packages'          : find_packages(),
+    'packages'          : find_packages('iceberg/seals'),
 
-    'package_dir'       : {'': ''},
+    'package_dir'       : {'': 'iceberg/seals/src'},
 
     'package_data'      :  {'': ['VERSION', 'SDIST']},
 
