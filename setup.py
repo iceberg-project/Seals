@@ -8,7 +8,7 @@ import subprocess as sp
 import re
 import shutil
 
-name = 'iceberg.seals'
+name = 'seals'
 mod_root = 'iceberg/seals'
 
 try:
@@ -142,18 +142,20 @@ setup_args = {
         'Operating System :: Unix'
     ],
 
-    'namespace_packages': ['iceberg.seals', 'iceberg.seals'],
-    'packages'          : find_packages(mod_root),
+    'namespace_packages': ['seals'],
+    'packages'          : find_packages('iceberg'),
 
-    'package_dir'       : {'': 'iceberg/seals/src'},
+    'package_dir'       : {'': 'iceberg/'},
 
-    'package_data'      :  {'': ['VERSION', 'SDIST']},
+    'package_data'      :  {'': ['VERSION', 'SDIST', sdist_name]},
 
     'install_requires'  :  ['radical.entk', 'pandas'],
 
     'zip_safe'          : False
 
 }
+
+print find_packages('iceberg')
 
 setup (**setup_args)
 
