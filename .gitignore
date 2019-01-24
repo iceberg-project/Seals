@@ -10,3 +10,7 @@ __pycache__
 .ipynb_checkpoints/
 "model_search_stable.ipynb" 
 "model_search_experimental.ipynb" 
+.gitignore
+.pylintrc
+.travis.yml
+.idea
