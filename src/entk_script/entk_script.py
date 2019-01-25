@@ -33,7 +33,9 @@ def generate_discover_pipeline(path):
                      'module load slurm/default',
                      'module load intel/17.4',
                      'module load python3',
-                     'source $SCRATCH/pytorchCuda/bin/activate']
+                     'source $SCRATCH/pytorchCuda/bin/activate',
+                     'export PYTHONPATH=$SCRATCH/pytorchCuda/lib/' +\
+                     'python3.5/site-packages:$PYTHONPATH']
     task.executable = 'python3'   # Assign executable to the task
     task.arguments = ['image_disc.py', '%s' % path, '--filename=images.csv',
                       '--filesize']
@@ -79,7 +81,9 @@ def generate_pipeline(name, image, image_size, scale_bands,
                       'module load slurm/default',
                       'module load intel/17.4',
                       'module load python3',
-                      'source $SCRATCH/pytorchCuda/bin/activate']
+                      'source $SCRATCH/pytorchCuda/bin/activate',
+                      'export PYTHONPATH=$SCRATCH/pytorchCuda/lib/' +\
+                      'python3.5/site-packages:$PYTHONPATH']
     task0.executable = 'python3'   # Assign executable to the task
     # Assign arguments for the task executable
     task0.arguments = ['tile_raster.py', '--scale_bands=%s' % scale_bands,
@@ -109,6 +113,8 @@ def generate_pipeline(name, image, image_size, scale_bands,
                       'module load python3',
                       'module load cuda',
                       'source $SCRATCH/pytorchCuda/bin/activate',
+                      'export PYTHONPATH=$SCRATCH/pytorchCuda/lib/' +\
+                      'python3.5/site-packages:$PYTHONPATH',
                       'export CUDA_VISIBLE_DEVICES=%d' % device]
     task1.executable = 'python3'   # Assign executable to the task
 
