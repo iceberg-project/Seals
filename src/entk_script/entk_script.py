@@ -120,12 +120,14 @@ def generate_pipeline(name, image, image_size, scale_bands,
 
     # Assign arguments for the task executable
     task1.arguments = ['predict_raster.py',
+                       '--input_image', % image.split('/')[-1],
                        '--model_architecture', model_arch,
                        '--hyperparameter_set', hyperparam_set,
                        '--training_set', training_set,
                        '--test_folder', '$NODE_LFS_PATH/%s' % task0.name,
                        '--model_path', './',
-                       '--output_folder', './%s' % image.split('/')[-1]]
+                       '--output_folder', './%s' % image.split('/')[-1].
+                                                         split('.')[0]]
     task1.link_input_data = ['$SHARED/%s.tar' % model_name]
     task1.upload_input_data = [os.path.abspath('../predicting/' +
                                                'predict_raster.py'),
@@ -137,7 +139,9 @@ def generate_pipeline(name, image, image_size, scale_bands,
     task1.gpu_reqs = {'processes': 1, 'threads_per_process': 1,
                       'thread_type': 'OpenMP'}
     # Download resuting images
-    task1.download_output_data = ['%s/' % image.split('/')[-1]]
+    task1.download_output_data = ['%s/ > %s' % (image.split('/')[-1].
+                                                      split('.')[0],
+                                                image.split('/')[-1])]
     task1.tag = task0.name
 
     stage1.add_tasks(task1)
