@@ -1,0 +1,530 @@
+<!DOCTYPE qgis PUBLIC 'http://mrcc.com/qgis.dtd' 'SYSTEM'>
+<qgis projectname="" version="2.18.20">
+  <title></title>
+  <autotransaction active="0"/>
+  <evaluateDefaultValues active="0"/>
+  <layer-tree-group expanded="1" checked="Qt::Checked" name="">
+    <customproperties/>
+    <layer-tree-layer expanded="1" providerKey="ogr" checked="Qt::Checked" id="seal_points_test20180903115628661" source="/home/bento/testing_scenes/seal-points-test.dbf" name="seal-points-test">
+      <customproperties/>
+    </layer-tree-layer>
+    <layer-tree-layer expanded="1" providerKey="gdal" checked="Qt::Checked" id="WV03_20170204000736_104001002678E600_17FEB04000736_P1BS_501513717060_01_P001_u08rf303120181001154826271" source="/home/bento/testing_scenes/WV03_20170204000736_104001002678E600_17FEB04000736-P1BS-501513717060_01_P001_u08rf3031.tif" name="WV03_20170204000736_104001002678E600_17FEB04000736-P1BS-501513717060_01_P001_u08rf3031">
+      <customproperties/>
+    </layer-tree-layer>
+    <layer-tree-layer expanded="1" providerKey="gdal" checked="Qt::Checked" id="WV03_20170203044432_1040010028C45900_17FEB03044432_P1BS_501172834040_01_P001_u08rf303120181001154823059" source="/home/bento/testing_scenes/WV03_20170203044432_1040010028C45900_17FEB03044432-P1BS-501172834040_01_P001_u08rf3031.tif" name="WV03_20170203044432_1040010028C45900_17FEB03044432-P1BS-501172834040_01_P001_u08rf3031">
+      <customproperties/>
+    </layer-tree-layer>
+    <layer-tree-layer expanded="1" providerKey="gdal" checked="Qt::Checked" id="WV03_20170202221638_104001002983B700_17FEB02221638_P1BS_501174626090_01_P002_u08rf303120181001154819657" source="/home/bento/testing_scenes/WV03_20170202221638_104001002983B700_17FEB02221638-P1BS-501174626090_01_P002_u08rf3031.tif" name="WV03_20170202221638_104001002983B700_17FEB02221638-P1BS-501174626090_01_P002_u08rf3031">
+      <customproperties/>
+    </layer-tree-layer>
+    <layer-tree-layer expanded="1" providerKey="gdal" checked="Qt::Checked" id="WV03_20170202190457_1040010028965400_17FEB02190457_P1BS_501172778010_01_P004_u08rf303120181001154814425" source="/home/bento/testing_scenes/WV03_20170202190457_1040010028965400_17FEB02190457-P1BS-501172778010_01_P004_u08rf3031.tif" name="WV03_20170202190457_1040010028965400_17FEB02190457-P1BS-501172778010_01_P004_u08rf3031">
+      <customproperties/>
+    </layer-tree-layer>
+    <layer-tree-layer expanded="1" providerKey="gdal" checked="Qt::Checked" id="WV03_20170301144508_104001002A465700_17MAR01144508_P1BS_501556087040_01_P001_u08rf303120180903115614888" source="/home/bento/testing_scenes/WV03_20170301144508_104001002A465700_17MAR01144508-P1BS-501556087040_01_P001_u08rf3031.tif" name="WV03_20170301144508_104001002A465700_17MAR01144508-P1BS-501556087040_01_P001_u08rf3031">
+      <customproperties/>
+    </layer-tree-layer>
+  </layer-tree-group>
+  <relations/>
+  <mapcanvas>
+    <units>meters</units>
+    <extent>
+      <xmin>1429821.32179656066000462</xmin>
+      <ymin>-2088900.74968983861617744</ymin>
+      <xmax>1519707.81253223307430744</xmax>
+      <ymax>-1998953.98271812568418682</ymax>
+    </extent>
+    <rotation>0</rotation>
+    <projections>0</projections>
+    <destinationsrs>
+      <spatialrefsys>
+        <proj4>+proj=stere +lat_0=-90 +lat_ts=-71 +lon_0=0 +k=1 +x_0=0 +y_0=0 +datum=WGS84 +units=m +no_defs</proj4>
+        <srsid>996</srsid>
+        <srid>3031</srid>
+        <authid>EPSG:3031</authid>
+        <description>WGS 84 / Antarctic Polar Stereographic</description>
+        <projectionacronym>stere</projectionacronym>
+        <ellipsoidacronym>WGS84</ellipsoidacronym>
+        <geographicflag>false</geographicflag>
+      </spatialrefsys>
+    </destinationsrs>
+    <rendermaptile>0</rendermaptile>
+    <layer_coordinate_transform_info/>
+  </mapcanvas>
+  <layer-tree-canvas>
+    <custom-order enabled="0">
+      <item>WV03_20170301144508_104001002A465700_17MAR01144508_P1BS_501556087040_01_P001_u08rf303120180903115614888</item>
+      <item>seal_points_test20180903115628661</item>
+      <item>WV03_20170202190457_1040010028965400_17FEB02190457_P1BS_501172778010_01_P004_u08rf303120181001154814425</item>
+      <item>WV03_20170202221638_104001002983B700_17FEB02221638_P1BS_501174626090_01_P002_u08rf303120181001154819657</item>
+      <item>WV03_20170203044432_1040010028C45900_17FEB03044432_P1BS_501172834040_01_P001_u08rf303120181001154823059</item>
+      <item>WV03_20170204000736_104001002678E600_17FEB04000736_P1BS_501513717060_01_P001_u08rf303120181001154826271</item>
+    </custom-order>
+  </layer-tree-canvas>
+  <legend updateDrawingOrder="true">
+    <legendlayer drawingOrder="-1" open="true" checked="Qt::Checked" name="seal-points-test" showFeatureCount="0">
+      <filegroup open="true" hidden="false">
+        <legendlayerfile isInOverview="0" layerid="seal_points_test20180903115628661" visible="1"/>
+      </filegroup>
+    </legendlayer>
+    <legendlayer drawingOrder="-1" open="true" checked="Qt::Checked" name="WV03_20170204000736_104001002678E600_17FEB04000736-P1BS-501513717060_01_P001_u08rf3031" showFeatureCount="0">
+      <filegroup open="true" hidden="false">
+        <legendlayerfile isInOverview="0" layerid="WV03_20170204000736_104001002678E600_17FEB04000736_P1BS_501513717060_01_P001_u08rf303120181001154826271" visible="1"/>
+      </filegroup>
+    </legendlayer>
+    <legendlayer drawingOrder="-1" open="true" checked="Qt::Checked" name="WV03_20170203044432_1040010028C45900_17FEB03044432-P1BS-501172834040_01_P001_u08rf3031" showFeatureCount="0">
+      <filegroup open="true" hidden="false">
+        <legendlayerfile isInOverview="0" layerid="WV03_20170203044432_1040010028C45900_17FEB03044432_P1BS_501172834040_01_P001_u08rf303120181001154823059" visible="1"/>
+      </filegroup>
+    </legendlayer>
+    <legendlayer drawingOrder="-1" open="true" checked="Qt::Checked" name="WV03_20170202221638_104001002983B700_17FEB02221638-P1BS-501174626090_01_P002_u08rf3031" showFeatureCount="0">
+      <filegroup open="true" hidden="false">
+        <legendlayerfile isInOverview="0" layerid="WV03_20170202221638_104001002983B700_17FEB02221638_P1BS_501174626090_01_P002_u08rf303120181001154819657" visible="1"/>
+      </filegroup>
+    </legendlayer>
+    <legendlayer drawingOrder="-1" open="true" checked="Qt::Checked" name="WV03_20170202190457_1040010028965400_17FEB02190457-P1BS-501172778010_01_P004_u08rf3031" showFeatureCount="0">
+      <filegroup open="true" hidden="false">
+        <legendlayerfile isInOverview="0" layerid="WV03_20170202190457_1040010028965400_17FEB02190457_P1BS_501172778010_01_P004_u08rf303120181001154814425" visible="1"/>
+      </filegroup>
+    </legendlayer>
+    <legendlayer drawingOrder="-1" open="true" checked="Qt::Checked" name="WV03_20170301144508_104001002A465700_17MAR01144508-P1BS-501556087040_01_P001_u08rf3031" showFeatureCount="0">
+      <filegroup open="true" hidden="false">
+        <legendlayerfile isInOverview="0" layerid="WV03_20170301144508_104001002A465700_17MAR01144508_P1BS_501556087040_01_P001_u08rf303120180903115614888" visible="1"/>
+      </filegroup>
+    </legendlayer>
+  </legend>
+  <projectlayers>
+    <maplayer minimumScale="0" maximumScale="1e+08" type="raster" hasScaleBasedVisibilityFlag="0">
+      <extent>
+        <xmin>-457733.11752262094523758</xmin>
+        <ymin>-1235423.29729908960871398</ymin>
+        <xmax>-439509.99590361636364833</xmax>
+        <ymax>-1215697.4356877205427736</ymax>
+      </extent>
+      <id>WV03_20170202190457_1040010028965400_17FEB02190457_P1BS_501172778010_01_P004_u08rf303120181001154814425</id>
+      <datasource>./WV03_20170202190457_1040010028965400_17FEB02190457-P1BS-501172778010_01_P004_u08rf3031.tif</datasource>
+      <keywordList>
+        <value></value>
+      </keywordList>
+      <layername>WV03_20170202190457_1040010028965400_17FEB02190457-P1BS-501172778010_01_P004_u08rf3031</layername>
+      <srs>
+        <spatialrefsys>
+          <proj4>+proj=stere +lat_0=-90 +lat_ts=-71 +lon_0=0 +k=1 +x_0=0 +y_0=0 +datum=WGS84 +units=m +no_defs</proj4>
+          <srsid>996</srsid>
+          <srid>3031</srid>
+          <authid>EPSG:3031</authid>
+          <description>WGS 84 / Antarctic Polar Stereographic</description>
+          <projectionacronym>stere</projectionacronym>
+          <ellipsoidacronym>WGS84</ellipsoidacronym>
+          <geographicflag>false</geographicflag>
+        </spatialrefsys>
+      </srs>
+      <customproperties>
+        <property key="identify/format" value="Value"/>
+      </customproperties>
+      <provider>gdal</provider>
+      <noData>
+        <noDataList bandNo="1" useSrcNoData="1"/>
+      </noData>
+      <map-layer-style-manager current="">
+        <map-layer-style name=""/>
+      </map-layer-style-manager>
+      <pipe>
+        <rasterrenderer gradient="BlackToWhite" opacity="1" alphaBand="-1" type="singlebandgray" grayBand="1">
+          <rasterTransparency/>
+          <contrastEnhancement>
+            <minValue>10</minValue>
+            <maxValue>173</maxValue>
+            <algorithm>StretchToMinimumMaximum</algorithm>
+          </contrastEnhancement>
+        </rasterrenderer>
+        <brightnesscontrast brightness="0" contrast="0"/>
+        <huesaturation colorizeGreen="128" colorizeOn="0" colorizeRed="255" colorizeBlue="128" grayscaleMode="0" saturation="0" colorizeStrength="100"/>
+        <rasterresampler maxOversampling="2"/>
+      </pipe>
+      <blendMode>0</blendMode>
+    </maplayer>
+    <maplayer minimumScale="0" maximumScale="1e+08" type="raster" hasScaleBasedVisibilityFlag="0">
+      <extent>
+        <xmin>340095.66690269287209958</xmin>
+        <ymin>-1807252.82125135022215545</ymin>
+        <xmax>358146.59781796380411834</xmax>
+        <ymax>-1796710.77460929262451828</ymax>
+      </extent>
+      <id>WV03_20170202221638_104001002983B700_17FEB02221638_P1BS_501174626090_01_P002_u08rf303120181001154819657</id>
+      <datasource>./WV03_20170202221638_104001002983B700_17FEB02221638-P1BS-501174626090_01_P002_u08rf3031.tif</datasource>
+      <keywordList>
+        <value></value>
+      </keywordList>
+      <layername>WV03_20170202221638_104001002983B700_17FEB02221638-P1BS-501174626090_01_P002_u08rf3031</layername>
+      <srs>
+        <spatialrefsys>
+          <proj4>+proj=stere +lat_0=-90 +lat_ts=-71 +lon_0=0 +k=1 +x_0=0 +y_0=0 +datum=WGS84 +units=m +no_defs</proj4>
+          <srsid>996</srsid>
+          <srid>3031</srid>
+          <authid>EPSG:3031</authid>
+          <description>WGS 84 / Antarctic Polar Stereographic</description>
+          <projectionacronym>stere</projectionacronym>
+          <ellipsoidacronym>WGS84</ellipsoidacronym>
+          <geographicflag>false</geographicflag>
+        </spatialrefsys>
+      </srs>
+      <customproperties>
+        <property key="identify/format" value="Value"/>
+      </customproperties>
+      <provider>gdal</provider>
+      <noData>
+        <noDataList bandNo="1" useSrcNoData="1"/>
+      </noData>
+      <map-layer-style-manager current="">
+        <map-layer-style name=""/>
+      </map-layer-style-manager>
+      <pipe>
+        <rasterrenderer gradient="BlackToWhite" opacity="1" alphaBand="-1" type="singlebandgray" grayBand="1">
+          <rasterTransparency/>
+          <contrastEnhancement>
+            <minValue>24</minValue>
+            <maxValue>244</maxValue>
+            <algorithm>StretchToMinimumMaximum</algorithm>
+          </contrastEnhancement>
+        </rasterrenderer>
+        <brightnesscontrast brightness="0" contrast="0"/>
+        <huesaturation colorizeGreen="128" colorizeOn="0" colorizeRed="255" colorizeBlue="128" grayscaleMode="0" saturation="0" colorizeStrength="100"/>
+        <rasterresampler maxOversampling="2"/>
+      </pipe>
+      <blendMode>0</blendMode>
+    </maplayer>
+    <maplayer minimumScale="0" maximumScale="1e+08" type="raster" hasScaleBasedVisibilityFlag="0">
+      <extent>
+        <xmin>2162644.35745153250172734</xmin>
+        <ymin>573748.78123354760464281</ymin>
+        <xmax>2178114.76865862682461739</xmax>
+        <ymax>591612.93642603256739676</ymax>
+      </extent>
+      <id>WV03_20170203044432_1040010028C45900_17FEB03044432_P1BS_501172834040_01_P001_u08rf303120181001154823059</id>
+      <datasource>./WV03_20170203044432_1040010028C45900_17FEB03044432-P1BS-501172834040_01_P001_u08rf3031.tif</datasource>
+      <keywordList>
+        <value></value>
+      </keywordList>
+      <layername>WV03_20170203044432_1040010028C45900_17FEB03044432-P1BS-501172834040_01_P001_u08rf3031</layername>
+      <srs>
+        <spatialrefsys>
+          <proj4>+proj=stere +lat_0=-90 +lat_ts=-71 +lon_0=0 +k=1 +x_0=0 +y_0=0 +datum=WGS84 +units=m +no_defs</proj4>
+          <srsid>996</srsid>
+          <srid>3031</srid>
+          <authid>EPSG:3031</authid>
+          <description>WGS 84 / Antarctic Polar Stereographic</description>
+          <projectionacronym>stere</projectionacronym>
+          <ellipsoidacronym>WGS84</ellipsoidacronym>
+          <geographicflag>false</geographicflag>
+        </spatialrefsys>
+      </srs>
+      <customproperties>
+        <property key="identify/format" value="Value"/>
+      </customproperties>
+      <provider>gdal</provider>
+      <noData>
+        <noDataList bandNo="1" useSrcNoData="1"/>
+      </noData>
+      <map-layer-style-manager current="">
+        <map-layer-style name=""/>
+      </map-layer-style-manager>
+      <pipe>
+        <rasterrenderer gradient="BlackToWhite" opacity="1" alphaBand="-1" type="singlebandgray" grayBand="1">
+          <rasterTransparency/>
+          <contrastEnhancement>
+            <minValue>28</minValue>
+            <maxValue>255</maxValue>
+            <algorithm>StretchToMinimumMaximum</algorithm>
+          </contrastEnhancement>
+        </rasterrenderer>
+        <brightnesscontrast brightness="0" contrast="0"/>
+        <huesaturation colorizeGreen="128" colorizeOn="0" colorizeRed="255" colorizeBlue="128" grayscaleMode="0" saturation="0" colorizeStrength="100"/>
+        <rasterresampler maxOversampling="2"/>
+      </pipe>
+      <blendMode>0</blendMode>
+    </maplayer>
+    <maplayer minimumScale="inf" maximumScale="1e+08" type="raster" hasScaleBasedVisibilityFlag="0">
+      <extent>
+        <xmin>1484103.6858783510979265</xmin>
+        <ymin>-2060268.92320005572400987</ymin>
+        <xmax>1505505.23129160655662417</xmax>
+        <ymax>-2038853.02630202868022025</ymax>
+      </extent>
+      <id>WV03_20170204000736_104001002678E600_17FEB04000736_P1BS_501513717060_01_P001_u08rf303120181001154826271</id>
+      <datasource>./WV03_20170204000736_104001002678E600_17FEB04000736-P1BS-501513717060_01_P001_u08rf3031.tif</datasource>
+      <keywordList>
+        <value></value>
+      </keywordList>
+      <layername>WV03_20170204000736_104001002678E600_17FEB04000736-P1BS-501513717060_01_P001_u08rf3031</layername>
+      <srs>
+        <spatialrefsys>
+          <proj4>+proj=stere +lat_0=-90 +lat_ts=-71 +lon_0=0 +k=1 +x_0=0 +y_0=0 +datum=WGS84 +units=m +no_defs</proj4>
+          <srsid>996</srsid>
+          <srid>3031</srid>
+          <authid>EPSG:3031</authid>
+          <description>WGS 84 / Antarctic Polar Stereographic</description>
+          <projectionacronym>stere</projectionacronym>
+          <ellipsoidacronym>WGS84</ellipsoidacronym>
+          <geographicflag>false</geographicflag>
+        </spatialrefsys>
+      </srs>
+      <customproperties>
+        <property key="embeddedWidgets/count" value="0"/>
+        <property key="identify/format" value="Value"/>
+      </customproperties>
+      <provider>gdal</provider>
+      <noData>
+        <noDataList bandNo="1" useSrcNoData="1"/>
+      </noData>
+      <map-layer-style-manager current="">
+        <map-layer-style name=""/>
+      </map-layer-style-manager>
+      <pipe>
+        <rasterrenderer gradient="BlackToWhite" opacity="1" alphaBand="-1" type="singlebandgray" grayBand="1">
+          <rasterTransparency/>
+          <contrastEnhancement>
+            <minValue>39</minValue>
+            <maxValue>255</maxValue>
+            <algorithm>StretchAndClipToMinimumMaximum</algorithm>
+          </contrastEnhancement>
+        </rasterrenderer>
+        <brightnesscontrast brightness="0" contrast="0"/>
+        <huesaturation colorizeGreen="255" colorizeOn="0" colorizeRed="35" colorizeBlue="68" grayscaleMode="0" saturation="0" colorizeStrength="100"/>
+        <rasterresampler maxOversampling="2"/>
+      </pipe>
+      <blendMode>0</blendMode>
+    </maplayer>
+    <maplayer minimumScale="inf" maximumScale="1e+08" type="raster" hasScaleBasedVisibilityFlag="0">
+      <extent>
+        <xmin>-2200718.59584292396903038</xmin>
+        <ymin>695608.82860176812391728</ymin>
+        <xmax>-2179799.53921476425603032</xmax>
+        <ymax>715391.61865111149381846</ymax>
+      </extent>
+      <id>WV03_20170301144508_104001002A465700_17MAR01144508_P1BS_501556087040_01_P001_u08rf303120180903115614888</id>
+      <datasource>./WV03_20170301144508_104001002A465700_17MAR01144508-P1BS-501556087040_01_P001_u08rf3031.tif</datasource>
+      <keywordList>
+        <value></value>
+      </keywordList>
+      <layername>WV03_20170301144508_104001002A465700_17MAR01144508-P1BS-501556087040_01_P001_u08rf3031</layername>
+      <srs>
+        <spatialrefsys>
+          <proj4>+proj=stere +lat_0=-90 +lat_ts=-71 +lon_0=0 +k=1 +x_0=0 +y_0=0 +datum=WGS84 +units=m +no_defs</proj4>
+          <srsid>996</srsid>
+          <srid>3031</srid>
+          <authid>EPSG:3031</authid>
+          <description>WGS 84 / Antarctic Polar Stereographic</description>
+          <projectionacronym>stere</projectionacronym>
+          <ellipsoidacronym>WGS84</ellipsoidacronym>
+          <geographicflag>false</geographicflag>
+        </spatialrefsys>
+      </srs>
+      <customproperties>
+        <property key="embeddedWidgets/count" value="0"/>
+        <property key="identify/format" value="Value"/>
+      </customproperties>
+      <provider>gdal</provider>
+      <noData>
+        <noDataList bandNo="1" useSrcNoData="1"/>
+      </noData>
+      <map-layer-style-manager current="">
+        <map-layer-style name=""/>
+      </map-layer-style-manager>
+      <pipe>
+        <rasterrenderer gradient="BlackToWhite" opacity="1" alphaBand="-1" type="singlebandgray" grayBand="1">
+          <rasterTransparency/>
+          <contrastEnhancement>
+            <minValue>53</minValue>
+            <maxValue>184</maxValue>
+            <algorithm>StretchAndClipToMinimumMaximum</algorithm>
+          </contrastEnhancement>
+        </rasterrenderer>
+        <brightnesscontrast brightness="0" contrast="0"/>
+        <huesaturation colorizeGreen="255" colorizeOn="0" colorizeRed="141" colorizeBlue="158" grayscaleMode="0" saturation="0" colorizeStrength="100"/>
+        <rasterresampler maxOversampling="2"/>
+      </pipe>
+      <blendMode>0</blendMode>
+    </maplayer>
+    <maplayer simplifyAlgorithm="0" minimumScale="0" maximumScale="1e+08" simplifyDrawingHints="1" minLabelScale="0" maxLabelScale="1e+08" simplifyDrawingTol="1" readOnly="0" geometry="Point" simplifyMaxScale="1" type="vector" hasScaleBasedVisibilityFlag="0" simplifyLocal="1" scaleBasedLabelVisibilityFlag="0">
+      <extent>
+        <xmin>-2199076.61419381387531757</xmin>
+        <ymin>-2050261.03798541915602982</ymin>
+        <xmax>1495060.63130546524189413</xmax>
+        <ymax>709382.73779810476116836</ymax>
+      </extent>
+      <id>seal_points_test20180903115628661</id>
+      <datasource>./seal-points-test.dbf</datasource>
+      <keywordList>
+        <value></value>
+      </keywordList>
+      <layername>seal-points-test</layername>
+      <srs>
+        <spatialrefsys>
+          <proj4>+proj=stere +lat_0=-90 +lat_ts=-71 +lon_0=0 +k=1 +x_0=0 +y_0=0 +datum=WGS84 +units=m +no_defs</proj4>
+          <srsid>996</srsid>
+          <srid>3031</srid>
+          <authid>EPSG:3031</authid>
+          <description>WGS 84 / Antarctic Polar Stereographic</description>
+          <projectionacronym>stere</projectionacronym>
+          <ellipsoidacronym>WGS84</ellipsoidacronym>
+          <geographicflag>false</geographicflag>
+        </spatialrefsys>
+      </srs>
+      <provider encoding="System">ogr</provider>
+      <vectorjoins/>
+      <layerDependencies/>
+      <expressionfields/>
+      <map-layer-style-manager current="">
+        <map-layer-style name=""/>
+      </map-layer-style-manager>
+      <edittypes>
+        <edittype widgetv2type="TextEdit" name="label">
+          <widgetv2config IsMultiline="0" fieldEditable="1" constraint="" UseHtml="0" labelOnTop="0" constraintDescription="" notNull="0"/>
+        </edittype>
+        <edittype widgetv2type="TextEdit" name="scene">
+          <widgetv2config IsMultiline="0" fieldEditable="1" constraint="" UseHtml="0" labelOnTop="0" constraintDescription="" notNull="0"/>
+        </edittype>
+      </edittypes>
+      <renderer-v2 forceraster="0" symbollevels="0" type="singleSymbol" enableorderby="0">
+        <symbols>
+          <symbol alpha="1" clip_to_extent="1" type="marker" name="0">
+            <layer pass="0" class="SimpleMarker" locked="0">
+              <prop k="angle" v="0"/>
+              <prop k="color" v="128,68,55,255"/>
+              <prop k="horizontal_anchor_point" v="1"/>
+              <prop k="joinstyle" v="bevel"/>
+              <prop k="name" v="circle"/>
+              <prop k="offset" v="0,0"/>
+              <prop k="offset_map_unit_scale" v="0,0,0,0,0,0"/>
+              <prop k="offset_unit" v="MM"/>
+              <prop k="outline_color" v="0,0,0,255"/>
+              <prop k="outline_style" v="solid"/>
+              <prop k="outline_width" v="0"/>
+              <prop k="outline_width_map_unit_scale" v="0,0,0,0,0,0"/>
+              <prop k="outline_width_unit" v="MM"/>
+              <prop k="scale_method" v="diameter"/>
+              <prop k="size" v="2"/>
+              <prop k="size_map_unit_scale" v="0,0,0,0,0,0"/>
+              <prop k="size_unit" v="MM"/>
+              <prop k="vertical_anchor_point" v="1"/>
+            </layer>
+          </symbol>
+        </symbols>
+        <rotation/>
+        <sizescale scalemethod="diameter"/>
+      </renderer-v2>
+      <labeling type="simple"/>
+      <customproperties/>
+      <blendMode>0</blendMode>
+      <featureBlendMode>0</featureBlendMode>
+      <layerTransparency>0</layerTransparency>
+      <displayfield>label</displayfield>
+      <label>0</label>
+      <labelattributes>
+        <label fieldname="" text="Label"/>
+        <family fieldname="" name="Ubuntu"/>
+        <size fieldname="" units="pt" value="12"/>
+        <bold fieldname="" on="0"/>
+        <italic fieldname="" on="0"/>
+        <underline fieldname="" on="0"/>
+        <strikeout fieldname="" on="0"/>
+        <color fieldname="" red="0" blue="0" green="0"/>
+        <x fieldname=""/>
+        <y fieldname=""/>
+        <offset x="0" y="0" units="pt" yfieldname="" xfieldname=""/>
+        <angle fieldname="" value="0" auto="0"/>
+        <alignment fieldname="" value="center"/>
+        <buffercolor fieldname="" red="255" blue="255" green="255"/>
+        <buffersize fieldname="" units="pt" value="1"/>
+        <bufferenabled fieldname="" on=""/>
+        <multilineenabled fieldname="" on=""/>
+        <selectedonly on=""/>
+      </labelattributes>
+      <annotationform>.</annotationform>
+      <aliases>
+        <alias field="label" index="0" name=""/>
+        <alias field="scene" index="1" name=""/>
+      </aliases>
+      <excludeAttributesWMS/>
+      <excludeAttributesWFS/>
+      <attributeactions default="-1"/>
+      <attributetableconfig actionWidgetStyle="dropDown" sortExpression="" sortOrder="0">
+        <columns>
+          <column width="-1" hidden="0" type="field" name="label"/>
+          <column width="-1" hidden="0" type="field" name="scene"/>
+          <column width="-1" hidden="1" type="actions"/>
+        </columns>
+      </attributetableconfig>
+      <editform>.</editform>
+      <editforminit/>
+      <editforminitcodesource>0</editforminitcodesource>
+      <editforminitfilepath>.</editforminitfilepath>
+      <editforminitcode><![CDATA[]]></editforminitcode>
+      <featformsuppress>0</featformsuppress>
+      <editorlayout>generatedlayout</editorlayout>
+      <widgets/>
+      <conditionalstyles>
+        <rowstyles/>
+        <fieldstyles/>
+      </conditionalstyles>
+      <defaults>
+        <default field="label" expression=""/>
+        <default field="scene" expression=""/>
+      </defaults>
+      <previewExpression>COALESCE( "label", '&lt;NULL>' )</previewExpression>
+    </maplayer>
+  </projectlayers>
+  <properties>
+    <Measurement>
+      <DistanceUnits type="QString"></DistanceUnits>
+      <AreaUnits type="QString"></AreaUnits>
+    </Measurement>
+    <SpatialRefSys>
+      <ProjectCRSProj4String type="QString">+proj=longlat +datum=WGS84 +no_defs</ProjectCRSProj4String>
+      <ProjectCrs type="QString">EPSG:4326</ProjectCrs>
+      <ProjectCRSID type="int">3452</ProjectCRSID>
+    </SpatialRefSys>
+    <Paths>
+      <Absolute type="bool">false</Absolute>
+    </Paths>
+    <Gui>
+      <SelectionColorBluePart type="int">0</SelectionColorBluePart>
+      <CanvasColorGreenPart type="int">255</CanvasColorGreenPart>
+      <CanvasColorRedPart type="int">255</CanvasColorRedPart>
+      <SelectionColorRedPart type="int">255</SelectionColorRedPart>
+      <SelectionColorAlphaPart type="int">255</SelectionColorAlphaPart>
+      <SelectionColorGreenPart type="int">255</SelectionColorGreenPart>
+      <CanvasColorBluePart type="int">255</CanvasColorBluePart>
+    </Gui>
+    <Digitizing>
+      <DefaultSnapToleranceUnit type="int">2</DefaultSnapToleranceUnit>
+      <LayerSnappingList type="QStringList">
+        <value>seal_points_test20180903115628661</value>
+      </LayerSnappingList>
+      <LayerSnappingEnabledList type="QStringList">
+        <value>disabled</value>
+      </LayerSnappingEnabledList>
+      <SnappingMode type="QString">current_layer</SnappingMode>
+      <AvoidIntersectionsList type="QStringList"/>
+      <LayerSnappingToleranceUnitList type="QStringList">
+        <value>2</value>
+      </LayerSnappingToleranceUnitList>
+      <LayerSnapToList type="QStringList">
+        <value>to_vertex_and_segment</value>
+      </LayerSnapToList>
+      <DefaultSnapType type="QString">off</DefaultSnapType>
+      <DefaultSnapTolerance type="double">0</DefaultSnapTolerance>
+      <LayerSnappingToleranceList type="QStringList">
+        <value>0.000000</value>
+      </LayerSnappingToleranceList>
+    </Digitizing>
+    <PositionPrecision>
+      <DecimalPlaces type="int">2</DecimalPlaces>
+      <Automatic type="bool">true</Automatic>
+    </PositionPrecision>
+    <Legend>
+      <filterByMap type="bool">false</filterByMap>
+    </Legend>
+  </properties>
+  <visibility-presets/>
+</qgis>
