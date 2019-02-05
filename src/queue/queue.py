@@ -46,7 +46,7 @@ class Queue():
 
         self._addr = self._socket.getsockopt(zmq.LAST_ENDPOINT)
 
-        with open('%s.queue.url' % name, 'w') as fout:
+        with open('%s.queue.url' % self._name, 'w') as fout:
             fout.write('ADDR %s\n' % self._addr)
 
     def _connect(self, send_rec):

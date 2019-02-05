@@ -15,7 +15,7 @@ git:
 env:
   global:
     - LOC=/home/travis/virtualenv/python2.7  # Location where VE is created on travis
-    - CMD1="coverage run -m pytest -vvv tests/;flake8 tests/;pylint tests/"
+    - CMD1="pytest -vvv src/tests/;flake8 src/tests/;pylint src/tests/"
     - CMD2="flake8 --config=.flake8 src/queue/queue.py"
     - CMD3="pylint src/queue/queue.py"
   matrix:
