@@ -15,11 +15,13 @@ git:
 env:
   global:
     - LOC=/home/travis/virtualenv/python2.7  # Location where VE is created on travis
-    - CMD1="pytest -vvv src/tests/;flake8 src/tests/;pylint src/tests/"
+    - CMD1="coverage run -m pytest -vvv src/tests/;flake8 src/tests/;pylint src/tests/"
     - CMD2="flake8 --config=.flake8 src/queue/queue.py"
     - CMD3="pylint src/queue/queue.py"
+    - COVERAGE=false
+    - CODECOV_TOKEN="793073d1-fd78-44b9-b313-5d55293ec113"
   matrix:
-    - MAIN_CMD=$CMD1
+    - MAIN_CMD=$CMD1 COVERAGE=true
     - MAIN_CMD=$CMD2
     - MAIN_CMD=$CMD3
 
@@ -36,3 +38,12 @@ before_install:
 script:
   - echo $MAIN_CMD
   - eval $MAIN_CMD
+
+after_success:
+  - |
+    if [[ $COVERAGE == 'true' ]]; then \
+      coverage combine; \
+      coverage xml; \
+      coverage report; \
+      curl -s https://codecov.io/bash | bash
+    fi

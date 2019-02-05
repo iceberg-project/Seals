@@ -35,14 +35,13 @@ class Queue():
         self._senders = 0
         self._receivers = 0
         self._queue = list()
-        self._socket = None
+        context = zmq.Context()
+        self._socket = context.socket(zmq.REP)
         self._addr = None
         self._name = name
 
-    def _configure(self):
-        context = zmq.Context()
-        self._socket = context.socket(zmq.REP)
-        self._socket.bind("tcp://*:*")
+    def _configure(self, addr='*', port='*'):
+        self._socket.bind("tcp://%s:%s" % (addr, port))
 
         self._addr = self._socket.getsockopt(zmq.LAST_ENDPOINT)
 
@@ -92,7 +91,7 @@ class Queue():
         Returns the top element of the queue
         """
 
-        data = self._queue.pop()
+        data = self._queue.pop(0)
 
         return data
 
