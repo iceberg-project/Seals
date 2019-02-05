@@ -1,8 +1,4 @@
-## This is a markdown file
-
 # SealNet seal detection pipeline
-
-
 
 ## ICBERG use case for detecting seals
 This repo contains code, model checkpoints and documentation to employ the SealNet seal detection pipeline. This branch serves as an appendix for the SealNet paper, for updated code and models, check 'Master' and 'devel' branches.
