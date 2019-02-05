@@ -1,96 +1,124 @@
-import zmq
+"""
+Project: ICEBERG Seals Project
+Author: Ioannis Paraskevakos
+License: MIT
+Copyright: 2018-2019
+"""
 import time
-import msgpack
+import zmq
+
 
 # ------------------------------------------------------------------------------
 #
 class Queue():
+    """
+    This class creates a queue and a communication protocol that allows the
+    queue to know how many producers and consumer are connected to the queue.
 
-    def __init__(self, name=None):
-        
+    Each producer connects to the  queue and starts pushing data to consumers.
+
+    When all producers have disconnected and the queue is empty then, consumers
+    are informed to disconnect.
+    """
+
+    def __init__(self, name='test'):
+        """
+        Contructor method. It instantiates a ZMQ channel to speak between
+        processes and writes it in the filesystem.
+
+
+        Parameters:
+        **name** : The name of the queue.
+        """
+
         self.delay = 0.0
         self._senders = 0
         self._receivers = 0
-        
-        # src side is proper push/pull (queue)
-        context       = zmq.Context()
-        self.socket = context.socket(zmq.REP)
-        self.socket.bind("tcp://*:*")
+        self._queue = list()
+        self._socket = None
+        self._addr = None
 
-        self._addr  = self.socket.getsockopt(zmq.LAST_ENDPOINT)
-        
+    def _configure(self):
+        context = zmq.Context()
+        self._socket = context.socket(zmq.REP)
+        self._socket.bind("tcp://*:*")
+
+        self._addr = self._socket.getsockopt(zmq.LAST_ENDPOINT)
+
         with open('%s.queue.url' % name, 'w') as fout:
             fout.write('ADDR %s\n' % self._addr)
-    
+
     def _connect(self, send_rec):
+        """
+        Adds a producer or a consumer to the queue.
+        """
 
         if send_rec == 'sender':
             self._senders += 1
         elif send_rec == 'receiver':
             self._receivers += 1
-    
-        
+
     def _disconnect(self, send_rec):
+        """
+        Removes a producer or a consumer to the queue.
+        """
 
         if send_rec == 'sender':
             self._senders -= 1
         elif send_rec == 'receiver':
             self._receivers -= 1
 
-
     def _check_status(self):
-        if self._queue and self._senders and self._receivers:
-            return True
-        else:
-            return False
 
+        """
+        Reports the status of the queue
+        """
+
+        if self._queue or self._senders or self._receivers:
+            return True
+
+        return False
+
+    def _enqueue(self, data):
+        """
+        Inserts an element in the queue
+        """
+
+        self._queue.append(data)
+
+    def _dequeue(self):
+        """
+        Returns the top element of the queue
+        """
+
+        data = self._queue.pop()
+
+        return data
 
     def run(self):
+        """
+        This is the main method that makes the queue run.
+
+        Based on messages from producers and consumers, it connects a producer,
+        or consumer, enqueues/dequeues data, and disconnects consumers.
+
+        When all connections have been closed and no data exist in the queue,
+        the process terminates and closes all channels.
+        """
 
         status = True
         while status:
-            message = socket.recv()
+            message = self._socket.recv()
             if 'connect' in message:
                 self._connect(message.split()[0])
             elif 'add' in message:
                 self._enqueue(message.split()[1])
             elif 'dequeue' in message:
                 send_message = self._dequeue()
-                self.socket.send(send_message.encode('utf-8'))
+                self._socket.send(send_message.encode('utf-8'))
             elif 'disconnect' in message:
                 self._disconnect(message.split[1])
+
             status = self._check_status()
 
-
-
-        finished = False
-        cont = True
-        while cont:
-            # only read from socket_in once we have a consumer requesting the data on
-            # socket_out.
-            req = self.socket_out.recv()
-            if req == 'connect':
-                self._connection += 1
-                self.socket_out.send(msgpack.packb('connect'))
-            elif req == 'image' and not finished:
-                msg = msgpack.unpackb(self.socket_in.recv())
-                if msg == 'Finished':
-                    finished = True
-                    self.socket_out.send(msgpack.packb('disconnect'))
-                    self._connections -= 1
-                else:
-                    self.socket_out.send(msgpack.packb(msg))
-            elif finished and self._connections != 0:
-                self.socket_out.send(msgpack.packb('disconnect'))
-                self._connections -= 1
-            else:
-                cont = False
-
             time.sleep(self.delay)
-
-
-# ------------------------------------------------------------------------------
-if __name__ == '__main__':
-
-    q = Queue('test')
-    q.run()
