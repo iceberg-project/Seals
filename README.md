@@ -1,6 +1,8 @@
 ## Quality Metrics
 
-[![Build Status](https://travis-ci.com/iceberg-project/Seals.svg?branch=devel)](https://travis-ci.com/iceberg-project/Seals)
+[![Build Status](https://travis-ci.com/iceberg-project/Seals.svg?branch=experimental%2Fdata-design)](https://travis-ci.com/iceberg-project/Seals)
+
+
 
 ## Software Dependencies
 
