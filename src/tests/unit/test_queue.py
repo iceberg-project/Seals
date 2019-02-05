@@ -10,6 +10,20 @@ except:
 
 # ------------------------------------------------------------------------------
 #
+def test_init():
+
+    q = Queue()
+
+    assert(q.delay == 0)
+    assert(q._name == 'simple')
+    assert(q._senders == 0)
+    assert(q._receivers == 0)
+    assert(q._socket == None)
+    assert(q._addr == None)
+    assert(q._queue == [])
+
+# ------------------------------------------------------------------------------
+#
 def test_check_status():
 
     q = Queue(name='test')
@@ -48,5 +62,3 @@ def test_check_status():
     # Case 8: Data, Senders, Receivers:
     q._receivers = 1
     assert(q._check_status() == True)
-
-

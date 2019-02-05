@@ -21,7 +21,7 @@ class Queue():
     are informed to disconnect.
     """
 
-    def __init__(self, name='test'):
+    def __init__(self, name='simple'):
         """
         Contructor method. It instantiates a ZMQ channel to speak between
         processes and writes it in the filesystem.
@@ -37,6 +37,7 @@ class Queue():
         self._queue = list()
         self._socket = None
         self._addr = None
+        self._name = name
 
     def _configure(self):
         context = zmq.Context()
