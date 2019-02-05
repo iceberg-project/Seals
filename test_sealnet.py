@@ -9,11 +9,12 @@ Author: Bento Goncalves
 License: MIT
 Copyright: 2018-2019
 """
+import argparse
+
 import geopandas as gpd
+import pandas as pd
 from fiona.crs import from_epsg
 from scipy.sparse.csgraph import connected_components
-import pandas as pd
-import argparse
 
 parser = argparse.ArgumentParser(description='compares model results to groundtruth to extract precision and recall')
 parser.add_argument('--shp_prediction', type=str, help='path to shapefile with model predictions')

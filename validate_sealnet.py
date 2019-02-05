@@ -9,21 +9,23 @@ License: MIT
 Copyright: 2018-2019
 """
 
+import argparse
+import os
+import time
+import warnings
+
+import cv2
+import numpy as np
+import pandas as pd
 import torch
 import torch.nn as nn
-import pandas as pd
-import numpy as np
-from torchvision import transforms
+from PIL import ImageFile
 from torch.autograd import Variable
-import os
-import cv2
-import argparse
-import time
-from utils.model_library import *
+from torchvision import transforms
+
 from utils.dataloaders.data_loader_train_det import ImageFolderTrainDet
 from utils.dataloaders.transforms_det_resized import ShapeTransform
-from PIL import ImageFile
-import warnings
+from utils.model_library import *
 
 parser = argparse.ArgumentParser(description='trains a CNN to find seals in satellite imagery')
 parser.add_argument('--training_dir', type=str, help='base directory to recursively search for images in')
@@ -60,7 +62,6 @@ warnings.filterwarnings('ignore', module='PIL')
 # Just normalization for validation
 arch_input_size = model_archs[args.model_architecture]['input_size']
 
-
 data_transforms = {
     'validation': {'shape_transform': ShapeTransform(arch_input_size, train=False),
                    'int_transform': transforms.Compose([
@@ -71,7 +72,6 @@ data_transforms = {
 # define data dir and image size
 data_dir = "./training_sets/{}".format(args.training_dir)
 img_size = training_sets[args.training_dir]['scale_bands'][0]
-
 
 # save image datasets
 image_datasets = {x: ImageFolderTrainDet(root=os.path.join(data_dir, x),
@@ -148,7 +148,6 @@ weights = make_weights_for_balanced_classes(image_datasets['training'].imgs, len
 weights = torch.DoubleTensor(weights)
 sampler = torch.utils.data.sampler.WeightedRandomSampler(weights, len(weights))
 
-
 # change batch size ot match number of GPU's being used?
 dataloaders = {"validation": torch.utils.data.DataLoader(image_datasets["validation"],
                                                          batch_size=
@@ -189,7 +188,7 @@ def validate_model(model, criterion1, criterion2, criterion3, bce_weight):
         # Each epoch has a training and validation phase
         for phase in ['validation']:
             print('\n{} \n'.format(phase))
-            
+
             model.train(False)  # Set model to evaluate mode
             with torch.no_grad():
                 running_loss = {'count': 0,
@@ -333,7 +332,7 @@ def main():
     torch.cuda.manual_seed_all(42)
 
     model = model_defs[pipeline][args.model_architecture]
-    
+
     # load checkpoint
     model.load_state_dict(torch.load("./{}/{}/{}/{}_best_f1.tar".format(args.models_folder, pipeline, args.model_name,
                                                                         args.model_name)))
@@ -344,7 +343,7 @@ def main():
     criterion3 = nn.BCEWithLogitsLoss()
 
     # find BCE weight
-    bce_weights = [arch_input_size ** 2 * (86514 / 232502), 11/2]
+    bce_weights = [arch_input_size ** 2 * (86514 / 232502), 11 / 2]
 
     if use_gpu:
         model = model.cuda()
@@ -360,7 +359,3 @@ def main():
 
 if __name__ == '__main__':
     main()
-
-
-
-

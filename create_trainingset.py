@@ -44,7 +44,7 @@ def get_patches(out_folder: str, raster_dir: str, shape_file: str, lon: str, lat
         folder with extracted multi-band training images separated in subfolders by intended label
     """
     # check for invalid inputs
-    assert sum([patch_sizes[idx] > patch_sizes[idx+1] for idx in range(len(patch_sizes) - 1)]) == 0,\
+    assert sum([patch_sizes[idx] > patch_sizes[idx + 1] for idx in range(len(patch_sizes) - 1)]) == 0, \
         "Patch sizes with non-increasing dimensions"
 
     # extract detection classes, the training set will store count and (x,y) within tile for objects of those classes
@@ -102,11 +102,11 @@ def get_patches(out_folder: str, raster_dir: str, shape_file: str, lon: str, lat
         with rasterio.open(rs) as src:
             if rgb:
                 rgb_bands = src.read()[0:3, :, :].astype(np.uint8)
-                #rgb_bands = np.vstack([np.pad(band, pad_width=pad, mode='constant', constant_values=0) for band in
+                # rgb_bands = np.vstack([np.pad(band, pad_width=pad, mode='constant', constant_values=0) for band in
                 #                       bands])
             else:
                 band = src.read()[0, :, :].astype(np.uint8)
-                #band = np.pad(band, pad_width=pad, mode='constant', constant_values=0)
+                # band = np.pad(band, pad_width=pad, mode='constant', constant_values=0)
             affine_transforms = src.transform
 
         # get coordinates from affine matrix
@@ -124,20 +124,21 @@ def get_patches(out_folder: str, raster_dir: str, shape_file: str, lon: str, lat
 
         # iterate through the points
         for row, p in enumerate(df_rs.iterrows()):
-            x = int((p[1][lon] - x0) / width) #+ pad
-            y = int((p[1][lat] - y0) / height) #+ pad
-            upper_left = [x - int(patch_sizes[0]/2), y - int(patch_sizes[0]/2)]
+            x = int((p[1][lon] - x0) / width)  # + pad
+            y = int((p[1][lat] - y0) / height)  # + pad
+            upper_left = [x - int(patch_sizes[0] / 2), y - int(patch_sizes[0] / 2)]
             bands = []
             # extract patches at different scales
             for idx, scale in enumerate(patch_sizes):
                 try:
                     if rgb:
                         patch = rgb_bands[idx, y - int(scale / 2): y + int((scale + 1) / 2),
-                                          x - int(scale / 2): x + int((scale + 1) / 2)]
+                                x - int(scale / 2): x + int((scale + 1) / 2)]
                         patch = cv2.resize(patch, (patch_sizes[0], patch_sizes[0]))
                         bands.append(patch)
                     else:
-                        patch = band[y - int(scale/2): y + int((scale+1)/2), x - int(scale/2): x + int((scale+1)/2)]
+                        patch = band[y - int(scale / 2): y + int((scale + 1) / 2),
+                                x - int(scale / 2): x + int((scale + 1) / 2)]
                         patch = cv2.resize(patch, (patch_sizes[0], patch_sizes[0]))
                         bands.append(patch)
                 except:
@@ -167,8 +168,8 @@ def get_patches(out_folder: str, raster_dir: str, shape_file: str, lon: str, lat
                         if search_idx > (len(df_rs) - 1):
                             break
                         # get det_x, det_y
-                        #det_x = (int((df_rs.loc[search_idx, lon] - x0) / width) + pad) - upper_left[0]
-                        #det_y = (int((df_rs.loc[search_idx, lat] - y0) / height) + pad) - upper_left[1]
+                        # det_x = (int((df_rs.loc[search_idx, lon] - x0) / width) + pad) - upper_left[0]
+                        # det_y = (int((df_rs.loc[search_idx, lat] - y0) / height) + pad) - upper_left[1]
                         det_x = (int((df_rs.loc[search_idx, lon] - x0) / width)) - upper_left[0]
                         det_y = (int((df_rs.loc[search_idx, lat] - y0) / height)) - upper_left[1]
 
@@ -191,8 +192,8 @@ def get_patches(out_folder: str, raster_dir: str, shape_file: str, lon: str, lat
                         if search_idx < 0:
                             break
                         # get det_x, det_y
-                        #det_x = (int((df_rs.loc[search_idx, lon] - x0) / width) + pad) - upper_left[0]
-                        #det_y = (int((df_rs.loc[search_idx, lat] - y0) / height) + pad) - upper_left[1]
+                        # det_x = (int((df_rs.loc[search_idx, lon] - x0) / width) + pad) - upper_left[0]
+                        # det_y = (int((df_rs.loc[search_idx, lat] - y0) / height) + pad) - upper_left[1]
                         det_x = (int((df_rs.loc[search_idx, lon] - x0) / width)) - upper_left[0]
                         det_y = (int((df_rs.loc[search_idx, lat] - y0) / height)) - upper_left[1]
 

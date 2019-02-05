@@ -9,23 +9,25 @@ License: MIT
 Copyright: 2018-2019
 """
 
+import argparse
+import os
+import shutil
+import time
+import warnings
+
+import cv2
+import numpy as np
 import torch
 import torch.nn as nn
 import torch.optim as optim
-import shutil
-from torch.optim import lr_scheduler
-import numpy as np
-from torchvision import transforms
+from PIL import ImageFile
 from torch.autograd import Variable
-import os
-import cv2
-import argparse
-import time
-from utils.model_library import *
+from torch.optim import lr_scheduler
+from torchvision import transforms
+
 from utils.dataloaders.data_loader_train_det import ImageFolderTrainDet
 from utils.dataloaders.transforms_det_resized import ShapeTransform
-from PIL import ImageFile
-import warnings
+from utils.model_library import *
 
 parser = argparse.ArgumentParser(description='trains a CNN to find seals in satellite imagery')
 parser.add_argument('--training_dir', type=str, help='base directory to recursively search for images in')
@@ -64,7 +66,6 @@ warnings.filterwarnings('ignore', module='PIL')
 # Just normalization for validation
 arch_input_size = model_archs[args.model_architecture]['input_size']
 
-
 data_transforms = {
     'training': {'shape_transform': ShapeTransform(arch_input_size, train=True),
                  'int_transform': transforms.Compose([
@@ -81,7 +82,6 @@ data_transforms = {
 # define data dir and image size
 data_dir = "./training_sets/{}".format(args.training_dir)
 img_size = training_sets[args.training_dir]['scale_bands'][0]
-
 
 # save image datasets
 image_datasets = {x: ImageFolderTrainDet(root=os.path.join(data_dir, x),
@@ -158,7 +158,6 @@ weights = make_weights_for_balanced_classes(image_datasets['training'].imgs, len
 weights = torch.DoubleTensor(weights)
 sampler = torch.utils.data.sampler.WeightedRandomSampler(weights, len(weights))
 
-
 # change batch size ot match number of GPU's being used?
 dataloaders = {"training": torch.utils.data.DataLoader(image_datasets["training"],
                                                        batch_size=
@@ -193,7 +192,7 @@ def save_checkpoint(state, is_best_loss, is_best_f1, is_best_recall, is_best_pre
     :return:
     """
     filename = './{}/{}/{}_LC/{}_LC-{}'.format(args.models_folder, pipeline, args.output_name, args.output_name,
-                                            n_samples)
+                                               n_samples)
     torch.save(state, filename + '.tar')
     if is_best_loss:
         shutil.copyfile(filename + '.tar', filename + '_best_loss.tar')
@@ -343,7 +342,8 @@ def generate_learning_curve(model, criterion1, criterion2, criterion3, optimizer
                         inputs, _, counts, locations = data
 
                         # get precision and recall
-                        ground_truth_xy = [get_xy_locs(loc, int(counts[idx])) for idx, loc in enumerate(locations.numpy())]
+                        ground_truth_xy = [get_xy_locs(loc, int(counts[idx])) for idx, loc in
+                                           enumerate(locations.numpy())]
 
                         # get occupancy
                         occ = torch.Tensor([cnt > 0 for cnt in counts]).cuda()
@@ -370,7 +370,6 @@ def generate_learning_curve(model, criterion1, criterion2, criterion3, optimizer
                         pred_xy = [get_xy_locs(loc, int(round(
                             out_dict['count'][idx].item()))) for idx, loc in
                                    enumerate(out_dict['heatmap'].cpu().numpy())]
-
 
                         if 'occupancy' in out_dict:
                             fixed_cnt = out_dict['count'] * torch.Tensor([ele > 0.5 for ele in
@@ -480,7 +479,7 @@ def main():
         criterion3 = nn.BCEWithLogitsLoss()
 
         # find BCE weight
-        bce_weights = [arch_input_size ** 2 * (86514 / 232502), 11/2]
+        bce_weights = [arch_input_size ** 2 * (86514 / 232502), 11 / 2]
 
         if use_gpu:
             model = model.cuda()
@@ -492,7 +491,8 @@ def main():
         optimizer_ft = optim.Adam(model.parameters(), lr=hyperparameters[args.hyperparameter_set]['learning_rate'])
 
         # Decay LR by a factor of 0.5 every 20 epochs
-        exp_lr_scheduler = lr_scheduler.StepLR(optimizer_ft, step_size=hyperparameters[args.hyperparameter_set]['step_size']
+        exp_lr_scheduler = lr_scheduler.StepLR(optimizer_ft,
+                                               step_size=hyperparameters[args.hyperparameter_set]['step_size']
                                                , gamma=hyperparameters[args.hyperparameter_set]['gamma'])
 
         # start training
@@ -503,7 +503,3 @@ def main():
 
 if __name__ == '__main__':
     main()
-
-
-
-

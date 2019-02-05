@@ -1,11 +1,8 @@
-## This is a markdown file
-
 # SealNet seal detection pipeline
 
-
-
 ## ICBERG use case for detecting seals
-This repo contains code, model checkpoints and documentation to employ the SealNet seal detection pipeline. This branch serves as an appendix for the SealNet paper, for updated code and models, check 'Master' and 'devel' branches.
+This repo contains code and documentation to employ the SealNet seal detection pipeline. This branch serves as an appendix for the SealNet paper, for updated code and models, check 'Master' and 'devel' branches. For detailed documentation, see jupyter notebooks under 'Main components'. Apart from code, this repository contains '.tar' files with PyTorch model checkpoints trained on our training set and shapefiles with point coordinates for our training samples, test samples and human observer counts on test scenes.
+
 
 ## Requirements:
 
@@ -18,11 +15,11 @@ This repo contains code, model checkpoints and documentation to employ the SealN
 4. Python packages listed in requirements.txt
 
 
-
 ## Main components
 
-1. Training set creation
+1. [Training set creation](https://github.com/iceberg-project/Seals/blob/paper/SealNet_code/training_set_generation.ipynb)
 
-2. Model search / training
+2. [Model search / training](https://github.com/iceberg-project/Seals/blob/paper/SealNet_code/model_search_stable.ipynb)
 
-3. Deployment
+3. [Deployment](https://github.com/iceberg-project/Seals/blob/paper/SealNet_code/deploy_sealnet.ipynb)
+

@@ -12,14 +12,14 @@ License: MIT
 Copyright: 2018-2019
 """
 
+import argparse
+import os
+import time
 
+import cv2
 import numpy as np
 import pandas as pd
 import rasterio
-import os
-import argparse
-import cv2
-import time
 
 
 def parse_args():
@@ -77,7 +77,7 @@ def tile_raster(input_image, output_folder, scales, stride=1, pad_img=False):
             down = y + scales[0] // 2
             right = x + scales[0] // 2
             for scale in scales:
-                curr_scale = band[x - scale // 2: x + scale // 2,  y - scale // 2: y + scale // 2]
+                curr_scale = band[x - scale // 2: x + scale // 2, y - scale // 2: y + scale // 2]
                 curr_scale = cv2.resize(curr_scale, (scales[0], scales[0]))
                 scale_bands.append(curr_scale)
             # remove black corners
@@ -106,7 +106,3 @@ def main():
 
 if __name__ == '__main__':
     main()
-
-
-
-

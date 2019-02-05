@@ -10,14 +10,16 @@ License: MIT
 Copyright: 2018-2019
 """
 
-import torch
-import warnings
 import argparse
 import os
 import shutil
-from utils.model_library import *
+import warnings
+
+import torch
+
 from predict_sealnet import predict_patch
 from tile_raster import tile_raster
+from utils.model_library import *
 
 warnings.filterwarnings('ignore', module='PIL')
 
@@ -27,7 +29,8 @@ parser.add_argument('--model_architecture', type=str, help='model architecture f
 parser.add_argument('--hyperparameter_set', type=str, help='combination of hyperparameters used for CNNs, must be a '
                                                            'member of hyperparameters dictionary')
 parser.add_argument('--training_set', type=str, help='training set where models were trained')
-parser.add_argument('--stride', type=float, default=1.0, help='stride for tiling (e.g. 1 = adjacent tiles, 0.5 = 50% overlap)')
+parser.add_argument('--stride', type=float, default=1.0,
+                    help='stride for tiling (e.g. 1 = adjacent tiles, 0.5 = 50% overlap)')
 parser.add_argument('--test_folder', type=str, default='to_classify', help='folder where the model will be saved')
 parser.add_argument('--save_heatmaps', type=int, default=0, help='whether or not heatmaps are saved')
 
@@ -71,4 +74,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-

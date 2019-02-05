@@ -1,0 +1,12 @@
+torch
+torchvision
+tensorboardX
+cv2
+geopandas
+fiona
+rasterio
+affine
+pandas
+numpy
+scipy
+PIL

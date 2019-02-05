@@ -9,25 +9,26 @@ License: MIT
 Copyright: 2018-2019
 """
 
-import torch
-import pandas as pd
-import geopandas as gpd
+import argparse
 import os
-import rasterio
-from torchvision import transforms
-from fiona.crs import from_epsg
-from shapely.geometry.geo import box, Point
-import numpy as np
-from utils.dataloaders.data_loader_test import ImageFolderTest
+import shutil
 import time
 import warnings
-import argparse
-import shutil
-import cv2
-from utils.model_library import *
 
+import cv2
+import geopandas as gpd
+import numpy as np
+import pandas as pd
+import rasterio
+import torch
 # image transforms seem to cause truncated images, so we need this
 from PIL import ImageFile
+from fiona.crs import from_epsg
+from shapely.geometry.geo import box, Point
+from torchvision import transforms
+
+from utils.dataloaders.data_loader_test import ImageFolderTest
+from utils.model_library import *
 
 ImageFile.LOAD_TRUNCATED_IMAGES = True
 
@@ -171,7 +172,8 @@ def predict_patch(model, output_dir, test_dir, batch_size=2, input_size=299, thr
                     for idx, loc in enumerate(locs):
                         loc = loc.numpy()
                         loc = (loc - np.min(loc)) / (np.max(loc) - np.min(loc))
-                        loc = np.vstack([np.zeros([1, input_size, input_size]), loc.reshape(1, input_size, input_size), np.zeros([1, input_size, input_size])]) * 255
+                        loc = np.vstack([np.zeros([1, input_size, input_size]), loc.reshape(1, input_size, input_size),
+                                         np.zeros([1, input_size, input_size])]) * 255
                         cv2.imwrite(f'{output_dir}/heatmaps/{filenames[idx]}.jpg', loc.transpose(1, 2, 0))
 
                 # find predicted location
@@ -180,10 +182,10 @@ def predict_patch(model, output_dir, test_dir, batch_size=2, input_size=299, thr
                 # save batch predictions
                 predicted_cnts.extend(pred_cnt_batch)
                 predicted_locs.extend(points)
-                
+
                 # add filename
                 fnames.extend(filenames)
-                
+
                 # add intensity values
                 for idx, batch in enumerate(points):
                     for pnt in batch:
@@ -202,7 +204,7 @@ def predict_patch(model, output_dir, test_dir, batch_size=2, input_size=299, thr
             pred_locations['filenames'].append(fnames[idx])
             pred_locations['intensity'].append(intensity[pnt_idx])
             pnt_idx += 1
-    
+
     pred_locations = pd.DataFrame(pred_locations)
 
     pred_counts = pd.DataFrame({'predictions': [ele for ele in predicted_cnts],
@@ -253,7 +255,7 @@ def predict_patch(model, output_dir, test_dir, batch_size=2, input_size=299, thr
 
         # order locations by heatmap intensity
         pred_locations = pred_locations.iloc[np.argsort(pred_locations['intensity'] * -1)]
-        
+
         # add locations
         for _, row in pred_locations.iterrows():
             fname = row['filenames']
@@ -261,7 +263,7 @@ def predict_patch(model, output_dir, test_dir, batch_size=2, input_size=299, thr
             up, left, down, right = [int(ele) for ele in fname.split('_')[-5: -1]]
             x, y = [up + row['y'], left + row['x']]
             x_loc, y_loc = [x, y] * affine_matrix
-            
+
             # keep point if there isn't any duplicate with higher intensity
             keep = True
             for _, row2 in output_shpfile_locs.iterrows():
@@ -274,8 +276,7 @@ def predict_patch(model, output_dir, test_dir, batch_size=2, input_size=299, thr
                                                                             'filename': fname,
                                                                             'intensity': intensity}),
                                                                  ignore_index=True)
-                                                             
-                
+
         # add scene name
         output_shpfile_locs = output_shpfile_locs.join(pd.DataFrame({
             'scene': [os.path.basename(test_dir)] * len(output_shpfile_locs)}))
@@ -288,7 +289,7 @@ def predict_patch(model, output_dir, test_dir, batch_size=2, input_size=299, thr
         if remove_tiles:
             shutil.rmtree('{}/tiles'.format(test_dir))
 
-    print('Total predicted in %s: '% os.path.basename(test_dir), sum(pred_counts['predictions']))
+    print('Total predicted in %s: ' % os.path.basename(test_dir), sum(pred_counts['predictions']))
 
 
 def main():
@@ -304,7 +305,7 @@ def main():
 
     # find pipeline
     pipeline = model_archs[args.model_architecture]['pipeline']
-    
+
     # create model instance
     model = model_defs[pipeline][args.model_architecture]
 

@@ -10,11 +10,12 @@ License: MIT
 Copyright: 2018-2019
 """
 
+import argparse
+import os
+import shutil
+
 import geopandas as gpd
 from fiona.crs import from_epsg
-import os
-import argparse
-import shutil
 
 
 def parse_args():
@@ -28,7 +29,7 @@ def main():
     args = parse_args()
     merged = gpd.GeoDataFrame()
     merged.crs = from_epsg(3031)
-    
+
     if os.path.exists(args.output_dir):
         shutil.rmtree(args.output_dir)
     os.makedirs(args.output_dir)

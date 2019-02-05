@@ -1,9 +1,11 @@
-import numpy as np
-import matplotlib.pyplot as plt
 import os
+
+import matplotlib.pyplot as plt
+import numpy as np
 import torch
-from torchvision import transforms
 import torchvision
+from torchvision import transforms
+
 from utils.dataloaders import ImageFolderTrainDet
 from utils.dataloaders.transforms_det_resized import ShapeTransform
 
@@ -46,6 +48,8 @@ image_datasets = {x: ImageFolderTrainDet(root=os.path.join(data_dir, x),
                                          int_transform=data_transforms[x]['int_transform'],
                                          training_set=training_set)
                   for x in ['training', 'validation']}
+
+
 # sampler
 # Force minibatches to have an equal representation amongst classes during training with a weighted sampler
 
@@ -92,6 +96,7 @@ imshow(out_location, rgb=False)
 diff = 0
 for i in range(len(counts)):
     diff += int(counts[i]) - np.sum(np.array(locations[i]))
-    print('img {}, class = {}, counts: {}, sum: {}'.format(i, classes[i], int(counts[i]), np.sum(np.array(locations[i]))))
+    print(
+        'img {}, class = {}, counts: {}, sum: {}'.format(i, classes[i], int(counts[i]), np.sum(np.array(locations[i]))))
 
 print('total difference :', diff)
