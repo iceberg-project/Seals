@@ -34,7 +34,7 @@ def generate_discover_pipeline(path):
                      'module load intel/17.4',
                      'module load python3',
                      'source $SCRATCH/pytorchCuda/bin/activate',
-                     'export PYTHONPATH=$SCRATCH/pytorchCuda/lib/' +\
+                     'export PYTHONPATH=$SCRATCH/pytorchCuda/lib/' +
                      'python3.5/site-packages:$PYTHONPATH']
     task.executable = 'python3'   # Assign executable to the task
     task.arguments = ['image_disc.py', '%s' % path, '--filename=images.csv',
@@ -82,7 +82,7 @@ def generate_pipeline(name, image, image_size, scale_bands,
                       'module load intel/17.4',
                       'module load python3',
                       'source $SCRATCH/pytorchCuda/bin/activate',
-                      'export PYTHONPATH=$SCRATCH/pytorchCuda/lib/' +\
+                      'export PYTHONPATH=$SCRATCH/pytorchCuda/lib/' +
                       'python3.5/site-packages:$PYTHONPATH']
     task0.executable = 'python3'   # Assign executable to the task
     # Assign arguments for the task executable
@@ -113,7 +113,7 @@ def generate_pipeline(name, image, image_size, scale_bands,
                       'module load python3',
                       'module load cuda',
                       'source $SCRATCH/pytorchCuda/bin/activate',
-                      'export PYTHONPATH=$SCRATCH/pytorchCuda/lib/' +\
+                      'export PYTHONPATH=$SCRATCH/pytorchCuda/lib/' +
                       'python3.5/site-packages:$PYTHONPATH',
                       'export CUDA_VISIBLE_DEVICES=%d' % device]
     task1.executable = 'python3'   # Assign executable to the task
@@ -127,7 +127,7 @@ def generate_pipeline(name, image, image_size, scale_bands,
                        '--test_folder', '$NODE_LFS_PATH/%s' % task0.name,
                        '--model_path', './',
                        '--output_folder', './%s' % image.split('/')[-1].
-                                                         split('.')[0]]
+                       split('.')[0]]
     task1.link_input_data = ['$SHARED/%s.tar' % model_name]
     task1.upload_input_data = [os.path.abspath('../predicting/' +
                                                'predict_raster.py'),
@@ -140,7 +140,7 @@ def generate_pipeline(name, image, image_size, scale_bands,
                       'thread_type': 'OpenMP'}
     # Download resuting images
     task1.download_output_data = ['%s/ > %s' % (image.split('/')[-1].
-                                                      split('.')[0],
+                                                split('.')[0],
                                                 image.split('/')[-1])]
     task1.tag = task0.name
 
@@ -221,7 +221,7 @@ if __name__ == '__main__':
         # Create a single pipeline per image
         pipelines = list()
         dev = 0
-        for idx in range(0,len(images):
+        for idx in range(0, len(images)):
             p1 = generate_pipeline(name='P%s' % idx,
                                    image=images['Filename'][idx],
                                    image_size=images['Size'][idx],
