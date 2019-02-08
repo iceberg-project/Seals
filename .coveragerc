@@ -1,0 +1,2 @@
+[run]
+exclude = /src/tests/*
