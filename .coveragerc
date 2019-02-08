@@ -1,2 +1,2 @@
 [run]
-exclude = /src/tests/*
+include = /src/queue/*
