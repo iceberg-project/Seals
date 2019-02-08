@@ -195,4 +195,3 @@ def test_dequeue(mocked_init):
         test_datum = q._dequeue()
         datum = data.pop(0)
         assert test_datum == datum
-    
