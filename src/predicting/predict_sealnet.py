@@ -45,6 +45,7 @@ def parse_args():
                                                        'used in subsequent steps of the pipeline')
     parser.add_argument('--models_folder', type=str, default='saved_models', help='folder where the model tar file is'
                                                                                   'saved')
+    parser.add_argument('--input_image', type=str, help='filename of input raster')
     parser.add_argument('--output_dir', type=str, help='folder where output shapefiles will be stored')
     return parser.parse_args()
 
@@ -89,10 +90,12 @@ def get_xy_locs(array, count, min_dist=3):
     return np.array([(x // cols, x % cols) for x in flat_order[:count]])
 
 
-def predict_patch(model, output_dir, test_dir, batch_size=2, input_size=299, threshold=0.5, num_workers=1, remove_tiles=False):
+def predict_patch(input_image, model, output_dir, test_dir, batch_size=2, input_size=299, threshold=0.5, num_workers=1,
+                  remove_tiles=False):
     """
     Patch prediction function. Outputs shapefiles for counts and locations.
 
+    :param input_image: filename raster image from tile_raster
     :param model: pytorch model
     :param test_dir: directory with input tiles
     :param output_dir: output directory name
@@ -230,7 +233,7 @@ def predict_patch(model, output_dir, test_dir, batch_size=2, input_size=299, thr
 
         # add scene name
         output_shpfile_locs = output_shpfile_locs.join(pd.DataFrame({
-            'scene': [os.path.basename(test_dir)] * len(output_shpfile_locs)}))
+            'scene': [input_image] * len(output_shpfile_locs)}))
 
         # save shapefile
         output_shpfile_locs.to_file(shapefile_path + 'locations.shp'.format(
@@ -271,7 +274,8 @@ def main():
                                                                 args.model_name)))
 
     # run validation to get confusion matrix
-    predict_patch(model=model, input_size=model_archs[args.model_architecture]['input_size'],
+    predict_patch(input_image=args.input_image, model=model,
+                  input_size=model_archs[args.model_architecture]['input_size'],
                   test_dir=args.test_dir, output_dir=args.output_dir,
                   batch_size=hyperparameters[args.hyperparameter_set]['batch_size_test'],
                   num_workers=hyperparameters[args.hyperparameter_set]['num_workers_train'],
