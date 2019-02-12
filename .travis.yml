@@ -1,0 +1,18 @@
+# After changing this file, check it on:
+#   http://lint.travis-ci.org/
+language: python
+sudo: disabled
+
+python:
+  - "2.7"
+
+git:
+  depth: 3
+
+before_install:
+  - python -V
+  - pip install pylint
+  - pip install flake8
+
+script:
+  - flake8 src/entk_script/*.py
