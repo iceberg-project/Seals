@@ -202,7 +202,8 @@ def test_dequeue(mocked_init):
 @mock.patch.object(Queue, '_disconnect')
 @mock.patch.object(Queue, '_enqueue')
 @mock.patch.object(Queue, '_dequeue', return_value='Hello')
-@mock.patch.object(Queue, '_check_status', side_effect=[True, True, True, False])
+@mock.patch.object(Queue, '_check_status', side_effect=[True, True, True,
+                                                        False])
 def test_run(mocked_init, mocked_connect, mocked_disconnect, mocked_enqueue,
              mocked_dequeue, mocked_check_status):
     """
