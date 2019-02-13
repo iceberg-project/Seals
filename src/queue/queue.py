@@ -109,16 +109,20 @@ class Queue():
         status = True
         while status:
             message = self._socket.recv()
-            if 'connect' in message:
-                self._connect(message.split()[0])
+            print message, status
+            if 'disconnect' in message:
+                print 'disconnecting'
+                self._disconnect(message.split[1])
             elif 'add' in message:
+                print 'adding'
                 self._enqueue(message.split()[1])
             elif 'dequeue' in message:
+                print 'dequeueing'
                 send_message = self._dequeue()
                 self._socket.send(send_message.encode('utf-8'))
-            elif 'disconnect' in message:
-                self._disconnect(message.split[1])
+            elif 'connect' in message:
+                print 'connecting'
+                self._connect(message.split()[1])
 
             status = self._check_status()
-
             time.sleep(self.delay)

@@ -100,12 +100,12 @@ def test_disconnect(mocked_init):
     num_receivers = random.randint(50, 100)
     q._receivers = num_receivers
 
-    remove_senders = random.randint(0, num_senders)
+    remove_senders = random.randint(1, num_senders)
     for _ in xrange(remove_senders):
         q._disconnect(send_rec='sender')
     assert q._senders == num_senders - remove_senders
 
-    remove_receivers = random.randint(0, num_receivers)
+    remove_receivers = random.randint(1, num_receivers)
     print num_receivers, remove_receivers
     for _ in xrange(remove_receivers):
         q._disconnect(send_rec='receiver')
@@ -195,3 +195,24 @@ def test_dequeue(mocked_init):
         test_datum = q._dequeue()
         datum = data.pop(0)
         assert test_datum == datum
+
+
+@mock.patch.object(Queue, '__init__', return_value=None)
+@mock.patch.object(Queue, '_connect')
+@mock.patch.object(Queue, '_disconnect')
+@mock.patch.object(Queue, '_enqueue')
+@mock.patch.object(Queue, '_dequeue', return_value='Hello')
+@mock.patch.object(Queue, '_check_status', side_effect=[True, True, True, False])
+def test_run(mocked_init, mocked_connect, mocked_disconnect, mocked_enqueue,
+             mocked_dequeue, mocked_check_status):
+    """
+    Test the basic queue method
+    """
+
+    q = Queue()
+    mock_socket = mock.Mock()
+    mock_socket.recv.side_effect = ['connect someone', 'add something',
+                                    'dequeue something', 'disconnect someone']
+    q._socket = mock_socket
+    q.delay = 1.0
+    q.run()
