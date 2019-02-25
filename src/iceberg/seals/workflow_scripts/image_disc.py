@@ -21,6 +21,7 @@ class Discovery():
 
     def __int__(self, name='simple',queue_out='simple'):
 
+        self._name = name
         with open(queue_out) as fqueue:
             pub_addr_line, sub_addr_line = fqueue.readlines()
 
@@ -29,7 +30,7 @@ class Discovery():
         else:
             RuntimeError('Publisher address not specified in %s' % queue_out)
 
-        if pub_addr_line.startswith('PUB'):
+        if pub_addr_line.startswith('SUB'):
             self._addr_out = sub_addr_line.split()[1]
         else:
             RuntimeError('Subscriber address not specified in %s' % queue_out)
@@ -39,7 +40,7 @@ class Discovery():
 
         self.dataset = None
 
-    def image_discovery(self, path, filesize=False):
+    def image_discovery(self, path, filesize=True):
         """
         This function creates a dataframe with image names and size from a path.
 
@@ -66,13 +67,19 @@ class Discovery():
 
     def _connect(self):
 
-        self._publisher.put(topic='request',message={'name':'discovery',
-                                                     'request':'connect'})
+        self._publisher.put(topic='request',msg={'name':self._name,
+                                                 'request':'connect',
+                                                 'type':'sender'})
     def _send_data(self):
 
-        for blabla in self.dataset:
-            blablabla
+        for path,size in self.dataset.values:
+            self._publisher.put(topic='image',msg={'request': 'enqueue',
+                                                   'data': path})
 
+    def _disconnect(self):
+
+        self._publisher.put(topic='request',msg={'name':self._name,
+                                                     'request':'disconnect'})        
             
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()

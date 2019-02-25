@@ -11,7 +11,7 @@ from ..iceberg_zmq import PubSub, Publisher, Subscriber
 
 # ------------------------------------------------------------------------------
 #
-class Queue():
+class Queue(object):
     """
     This class creates a queue and a communication protocol that allows the
     queue to know how many producers and consumer are connected to the queue.
@@ -68,9 +68,9 @@ class Queue():
         Adds a producer or a consumer to the queue.
         """
 
-        if send_rec == 'sender' and name not in self._enqueuers:
+        if send_rec == b'sender' and name not in self._enqueuers:
             self._enqueuers.append(name)
-        elif send_rec == 'receiver' and name not in self._dequeuers:
+        elif send_rec == b'receiver' and name not in self._dequeuers:
             self._dequeuers.append(name)
 
     def _disconnect(self, send_rec, name):
@@ -78,9 +78,9 @@ class Queue():
         Removes a producer or a consumer to the queue.
         """
 
-        if send_rec == 'sender' and name in self._enqueuers:
+        if send_rec == b'sender' and name in self._enqueuers:
             self._enqueuers.remove(name)
-        elif send_rec == 'receiver' and name in self._dequeuers:
+        elif send_rec == b'receiver' and name in self._dequeuers:
             self._dequeuers.remove(name)
 
     def _check_status(self):
@@ -124,19 +124,19 @@ class Queue():
         status = True
         while status:
             topic, recv_message = self._sub.get()
-            if topic == 'request':
-                if recv_message['request'] == 'connect':
-                    self._connect(recv_message['type'], recv_message['name'])
-                elif recv_message['request'] == 'disconnect':
-                    self._disconnect(recv_message['type'], recv_mesesage['name'])
-            elif topic == 'image':
-                if recv_message['request'] == 'dequeue':
+            if topic == b'request':
+                if recv_message[b'request'] == b'connect':
+                    self._connect(recv_message[b'type'], recv_message[b'name'])
+                elif recv_message[b'request'] == b'disconnect':
+                    self._disconnect(recv_message[b'type'], recv_message[b'name'])
+            elif topic == b'image':
+                if recv_message[b'request'] == b'dequeue':
                     image = self._dequeue()
                     send_message = {'type': 'image', 'data': image}
-                    send_topic = recv_message['name']
+                    send_topic = recv_message[b'name'].decode('utf-8')
                     self._pub.put(topic=send_topic, msg=send_message)
-                elif recv_message['request'] == 'enqueue':
-                    self._enqueue(recv_message['data'])
+                elif recv_message[b'request'] == b'enqueue':
+                    self._enqueue(recv_message[b'data'])
 
             status = self._check_status()
             time.sleep(self._delay)
