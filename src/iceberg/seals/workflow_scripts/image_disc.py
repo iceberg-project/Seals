@@ -19,7 +19,7 @@ from ..iceberg_zmq import Publisher, Subscriber
 
 class Discovery():
 
-    def __int__(self, name='simple',queue_out='simple'):
+    def __int__(self, name='simple',queue_out='simple',path=None):
 
         self._name = name
         with open(queue_out) as fqueue:
@@ -40,7 +40,7 @@ class Discovery():
 
         self.dataset = None
 
-    def image_discovery(self, path, filesize=True):
+    def _image_discovery(self, filesize=True):
         """
         This function creates a dataframe with image names and size from a path.
 
@@ -79,16 +79,28 @@ class Discovery():
     def _disconnect(self):
 
         self._publisher.put(topic='request',msg={'name':self._name,
-                                                     'request':'disconnect'})        
+                                                 'request':'disconnect'})
+
+    def run(self):
+
+        self._connect()
+
+        self._image_discovery()
+
+        self._send_data()
+
+        self._disconnect()
+
+        return 0
+
             
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
-    parser.add_argument('path', help='Path to a remote resource where data \
-                        are')
-    parser.add_argument('--filename', type=str, default='list.csv',
-                        help='Name of the output CSV file')
-    parser.add_argument('--filesize', help='Include the filesize to the \
-                        output CSV', action='store_true')
+    parser.add_argument('path', type=str)
+    parser.add_argument('name', type=str)
+    parser.add_argument('queue_file',type=str)
+
     args = parser.parse_args()
 
-    image_discovery(args.path, args.filename, args.filesize)
+    discovery = Discovery(name=args.name, queue_out=args.queue_file,
+                          path=args.path)
