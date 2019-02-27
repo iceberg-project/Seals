@@ -19,22 +19,27 @@ from ..iceberg_zmq import Publisher, Subscriber
 
 class Discovery():
 
-    def __int__(self, name='simple',queue_out='simple',path=None):
+    def __init__(self, name='simple',queue_out='simple',path=None):
 
         self._name = name
+        self._path = path
         with open(queue_out) as fqueue:
             pub_addr_line, sub_addr_line = fqueue.readlines()
 
         if pub_addr_line.startswith('PUB'):
+            print(pub_addr_line)
             self._addr_in = pub_addr_line.split()[1]
         else:
             RuntimeError('Publisher address not specified in %s' % queue_out)
 
-        if pub_addr_line.startswith('SUB'):
+        if sub_addr_line.startswith('SUB'):
+            print(sub_addr_line)
             self._addr_out = sub_addr_line.split()[1]
         else:
             RuntimeError('Subscriber address not specified in %s' % queue_out)
 
+        print(self._name)
+        print(self._addr_in,type(self._addr_in),self._addr_out,type(self._addr_in))
         self._publisher = Publisher(channel=self._name, url=self._addr_in)
         self._subscriber = Subscriber(channel=self._name, url=self._addr_out)
 
@@ -52,7 +57,7 @@ class Discovery():
                     dataframe. Default value: False
         """
 
-        filepaths = glob(path + '/*.tif')
+        filepaths = glob(self._path + '/*.tif')
         if filesize:
             dataset_df = pd.DataFrame(columns=['Filename', 'Size'])
             for filepath in filepaths:
