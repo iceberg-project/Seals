@@ -15,34 +15,27 @@ import os
 import math
 import pandas as pd
 
-from ..iceberg_zmq import Publisher, Subscriber
+from ..iceberg_zmq import Publisher
 
-class Discovery():
+class Discovery(object):
 
     def __init__(self, name='simple',queue_out='simple',path=None):
 
         self._name = name
         self._path = path
         with open(queue_out) as fqueue:
-            pub_addr_line, sub_addr_line = fqueue.readlines()
+            pub_addr_line, _ = fqueue.readlines()
 
         if pub_addr_line.startswith('PUB'):
-            print(pub_addr_line)
+            #print(pub_addr_line)
             self._addr_in = pub_addr_line.split()[1]
         else:
             RuntimeError('Publisher address not specified in %s' % queue_out)
 
-        if sub_addr_line.startswith('SUB'):
-            print(sub_addr_line)
-            self._addr_out = sub_addr_line.split()[1]
-        else:
-            RuntimeError('Subscriber address not specified in %s' % queue_out)
-
-        print(self._name)
-        print(self._addr_in,type(self._addr_in),self._addr_out,type(self._addr_in))
+        #print(self._name)
+        #print(self._addr_in,type(self._addr_in),self._addr_out,type(self._addr_in))
         self._publisher = Publisher(channel=self._name, url=self._addr_in)
-        self._subscriber = Subscriber(channel=self._name, url=self._addr_out)
-
+        
         self.dataset = None
 
     def _image_discovery(self, filesize=True):
@@ -72,19 +65,20 @@ class Discovery():
 
     def _connect(self):
 
-        self._publisher.put(topic='request',msg={'name':self._name,
-                                                 'request':'connect',
-                                                 'type':'sender'})
+        self._publisher.put(topic='request', msg={'name': self._name,
+                                                  'request': 'connect',
+                                                  'type': 'sender'})
     def _send_data(self):
 
-        for path,size in self.dataset.values:
-            self._publisher.put(topic='image',msg={'request': 'enqueue',
-                                                   'data': path})
+        for path, _ in self.dataset.values:
+            self._publisher.put(topic='image', msg={'request': 'enqueue',
+                                                    'data': path})
 
     def _disconnect(self):
 
-        self._publisher.put(topic='request',msg={'name':self._name,
-                                                 'request':'disconnect'})
+        self._publisher.put(topic='request', msg={'name': self._name,
+                                                  'type': 'sender',
+                                                  'request': 'disconnect'})
 
     def run(self):
 
@@ -103,9 +97,10 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('path', type=str)
     parser.add_argument('name', type=str)
-    parser.add_argument('queue_file',type=str)
+    parser.add_argument('queue_file', type=str)
 
     args = parser.parse_args()
 
     discovery = Discovery(name=args.name, queue_out=args.queue_file,
                           path=args.path)
+    discovery.run()

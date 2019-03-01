@@ -39,7 +39,7 @@ def get_hostip(req=None):
     If interface is not given, do some magic.
     '''
 
-    global _hostip 
+    global _hostip
     
     _hostip = None
 

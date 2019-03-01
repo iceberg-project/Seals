@@ -1,4 +1,5 @@
 
+import sys
 import zmq
 import time
 import errno
@@ -95,17 +96,17 @@ class PubSub(Bridge):
     # 
     def _initialize_bridge(self):
 
-        self._url        = 'tcp://*:*'
+        self._url = 'tcp://*:*'
 
-        self._ctx        = zmq.Context()  # rely on GC for destruction
-        self._in         = self._ctx.socket(zmq.XSUB)
-        self._in.linger  = _LINGER_TIMEOUT
-        self._in.hwm     = _HIGH_WATER_MARK
+        self._ctx = zmq.Context()  # rely on GC for destruction
+        self._in = self._ctx.socket(zmq.XSUB)
+        self._in.linger = _LINGER_TIMEOUT
+        self._in.hwm = _HIGH_WATER_MARK
         self._in.bind(self._url)
 
-        self._out        = self._ctx.socket(zmq.XPUB)
+        self._out = self._ctx.socket(zmq.XPUB)
         self._out.linger = _LINGER_TIMEOUT
-        self._out.hwm    = _HIGH_WATER_MARK
+        self._out.hwm = _HIGH_WATER_MARK
         self._out.bind(self._url)
 
         # communicate the bridge ports to the parent process
@@ -113,16 +114,16 @@ class PubSub(Bridge):
         _addr_out = self._out.getsockopt(zmq.LAST_ENDPOINT)
 
         # store addresses
-        self._addr_in  = _addr_in
-        self._addr_out = _addr_out
+        self._addr_in = _addr_in.decode('utf-8')
+        self._addr_out =_addr_out.decode('utf-8')
 
         # use the local hostip for bridge addresses
-        self._addr_in_host  = get_hostip()
+        self._addr_in_host = get_hostip()
         self._addr_out_host = get_hostip()
 
         # start polling for messages
         self._poll = zmq.Poller()
-        self._poll.register(self._in,  zmq.POLLIN)
+        self._poll.register(self._in, zmq.POLLIN)
         self._poll.register(self._out, zmq.POLLIN)
 
         # the bridge runs in a daemon thread, so that the main process will not

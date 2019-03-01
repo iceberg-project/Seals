@@ -58,7 +58,7 @@ class Queue(object):
             fout.write('SUB: %s\n' % self._addr_out)
 
         self._pub = Publisher(channel=self._name, url=self._addr_in)
-        self._sub = Subscriber(channel=self._name, url = self._addr_out)
+        self._sub = Subscriber(channel=self._name, url=self._addr_out)
         self._sub.subscribe(topic='request')
         self._sub.subscribe(topic='image')
 
