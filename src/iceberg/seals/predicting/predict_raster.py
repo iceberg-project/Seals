@@ -17,7 +17,89 @@ import os
 import shutil
 from utils.model_library import *
 from predict_sealnet import predict_patch
+from ..iceberg_zmq import Publisher, Subscriber
 warnings.filterwarnings('ignore', module='PIL')
+
+class SealnetPredict(object):
+
+    def __init__(self, name, queue_in, cfg):
+         
+        self._name = name
+
+        with open(queue_in) as fqueue:
+            pub_addr_line, sub_addr_line = fqueue.readlines()
+
+            if pub_addr_line.startswith('PUB'):
+                print(pub_addr_line)
+                self._in_addr_in = pub_addr_line.split()[1]
+            else:
+                RuntimeError('Publisher address not specified in %s' % queue_in)
+
+            if sub_addr_line.startswith('SUB'):
+                print(sub_addr_line)
+                self._in_addr_out = sub_addr_line.split()[1]
+            else:
+                RuntimeError('Subscriber address not specified in %s' % queue_in)
+
+        self._publisher_in = Publisher(channel=self._name, url=self._addr_in)
+        self._subscriber_in = Subscriber(channel=self._name, url=self._addr_out)
+        self._sub.subscribe(topic=self._name)
+
+    def _connect(self):
+
+        self._publisher_in.put(topic='request', msg={'name': self._name,
+                                                  'request': 'connect',
+                                                  'type': 'receiver'})
+
+    def _disconnect(self):
+
+        self._publisher_in.put(topic='request', msg={'name': self._name,
+                                                     'type': 'receiver',
+                                                     'request': 'disconnect'})
+
+    def _get_image(self):
+
+        self._publisher_in.put(topic='image', msg={'request': 'dequeue',
+                                                   'name': self._name})
+
+        _, recv_message = self._subscriber_in.get()
+
+        if recv_message[b'type'] == b'image':
+            return recv_message['data'].decode('utf-8')
+
+        return None
+
+    def _predict_raster(self):
+        # predict tiles
+        model = model_defs[pipeline][args.model_architecture]
+
+        use_gpu = torch.cuda.is_available()
+        if use_gpu:
+            model.cuda()
+        model.eval()
+
+        # load saved model weights from training
+        model_name = args.model_architecture + '_ts-' + args.training_set.split('_')[-1]
+        model.load_state_dict(
+            torch.load("%s/%s.tar" % (args.model_path, model_name)))
+
+        predict_patch(model=model, input_size=model_archs[args.model_architecture]['input_size'],
+                  batch_size=hyperparameters[args.hyperparameter_set]['batch_size_test'],
+                  test_dir=args.test_folder,
+                  output_dir='%s' % (args.output_folder),
+                  num_workers=hyperparameters[args.hyperparameter_set]['num_workers_train'])
+
+    def run(self):
+
+        self._connect()
+
+        cont = True
+
+        while cont:
+            self._get_image()
+            self._predict_raster()
+        
+        self._disconnect()
 
 
 if __name__ == "__main__":
@@ -51,21 +133,3 @@ if __name__ == "__main__":
         # tile raster into patches
         tile_raster(input_image, output_folder, scales)
 
-    # predict tiles
-    model = model_defs[pipeline][args.model_architecture]
-
-    use_gpu = torch.cuda.is_available()
-    if use_gpu:
-        model.cuda()
-    model.eval()
-
-    # load saved model weights from training
-    model_name = args.model_architecture + '_ts-' + args.training_set.split('_')[-1]
-    model.load_state_dict(
-        torch.load("%s/%s.tar" % (args.model_path, model_name)))
-
-    predict_patch(model=model, input_size=model_archs[args.model_architecture]['input_size'],
-                  batch_size=hyperparameters[args.hyperparameter_set]['batch_size_test'],
-                  test_dir=args.test_folder,
-                  output_dir='%s' % (args.output_folder),
-                  num_workers=hyperparameters[args.hyperparameter_set]['num_workers_train'])

@@ -53,13 +53,13 @@ class ImageTilling(object):
                 print(pub_addr_line)
                 self._in_addr_in = pub_addr_line.split()[1]
             else:
-                RuntimeError('Publisher address not specified in %s' % queue_in)
+                RuntimeError('Publisher address not specified in %s' % queue_out)
 
             if sub_addr_line.startswith('SUB'):
                 print(sub_addr_line)
                 self._in_addr_out = sub_addr_line.split()[1]
             else:
-                RuntimeError('Subscriber address not specified in %s' % queue_in)
+                RuntimeError('Subscriber address not specified in %s' % queue_out)
 
         self._publisher_in = Publisher(channel=self._name, url=self._addr_in)
         self._subscriber_in = Subscriber(channel=self._name, url=self._addr_out)
