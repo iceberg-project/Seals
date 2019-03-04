@@ -106,7 +106,12 @@ class Queue(object):
         Returns the top element of the queue
         """
 
-        data = self._queue.pop(0)
+        if self._queue:
+            data = self._queue.pop(0)
+        elif not self._queue and self._enqueuers:
+            data = 'wait'
+        else:
+            data = 'disconnect'
 
         return data
 
@@ -124,6 +129,7 @@ class Queue(object):
         status = True
         while status:
             topic, recv_message = self._sub.get()
+            print(topic, recv_message)
             if topic == b'request':
                 if recv_message[b'request'] == b'connect':
                     self._connect(recv_message[b'type'], recv_message[b'name'])
@@ -134,6 +140,7 @@ class Queue(object):
                     image = self._dequeue()
                     send_message = {'type': 'image', 'data': image}
                     send_topic = recv_message[b'name'].decode('utf-8')
+                    print('Dequeueing', send_topic, image)
                     self._pub.put(topic=send_topic, msg=send_message)
                 elif recv_message[b'request'] == b'enqueue':
                     self._enqueue(recv_message[b'data'])

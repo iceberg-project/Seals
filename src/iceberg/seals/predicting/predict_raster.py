@@ -10,13 +10,15 @@ License: MIT
 Copyright: 2018-2019
 """
 
-import torch
+#import torch
 import warnings
 import argparse
 import os
 import shutil
-from utils.model_library import *
-from predict_sealnet import predict_patch
+import time
+import random
+#from utils.model_library import *
+#from predict_sealnet import predict_patch
 from ..iceberg_zmq import Publisher, Subscriber
 warnings.filterwarnings('ignore', module='PIL')
 
@@ -41,15 +43,15 @@ class SealnetPredict(object):
             else:
                 RuntimeError('Subscriber address not specified in %s' % queue_in)
 
-        self._publisher_in = Publisher(channel=self._name, url=self._addr_in)
-        self._subscriber_in = Subscriber(channel=self._name, url=self._addr_out)
-        self._sub.subscribe(topic=self._name)
+        self._publisher_in = Publisher(channel=self._name, url=self._in_addr_in)
+        self._subscriber_in = Subscriber(channel=self._name, url=self._in_addr_out)
+        self._subscriber_in.subscribe(topic=self._name)
 
     def _connect(self):
 
         self._publisher_in.put(topic='request', msg={'name': self._name,
-                                                  'request': 'connect',
-                                                  'type': 'receiver'})
+                                                     'request': 'connect',
+                                                     'type': 'receiver'})
 
     def _disconnect(self):
 
@@ -65,29 +67,30 @@ class SealnetPredict(object):
         _, recv_message = self._subscriber_in.get()
 
         if recv_message[b'type'] == b'image':
-            return recv_message['data'].decode('utf-8')
+            return recv_message[b'data'].decode('utf-8')
 
         return None
 
     def _predict_raster(self):
-        # predict tiles
-        model = model_defs[pipeline][args.model_architecture]
+        time.sleep(random.randint(10,30))
+        # # predict tiles
+        # model = model_defs[pipeline][args.model_architecture]
 
-        use_gpu = torch.cuda.is_available()
-        if use_gpu:
-            model.cuda()
-        model.eval()
+        # use_gpu = torch.cuda.is_available()
+        # if use_gpu:
+        #     model.cuda()
+        # model.eval()
 
-        # load saved model weights from training
-        model_name = args.model_architecture + '_ts-' + args.training_set.split('_')[-1]
-        model.load_state_dict(
-            torch.load("%s/%s.tar" % (args.model_path, model_name)))
+        # # load saved model weights from training
+        # model_name = args.model_architecture + '_ts-' + args.training_set.split('_')[-1]
+        # model.load_state_dict(
+        #     torch.load("%s/%s.tar" % (args.model_path, model_name)))
 
-        predict_patch(model=model, input_size=model_archs[args.model_architecture]['input_size'],
-                  batch_size=hyperparameters[args.hyperparameter_set]['batch_size_test'],
-                  test_dir=args.test_folder,
-                  output_dir='%s' % (args.output_folder),
-                  num_workers=hyperparameters[args.hyperparameter_set]['num_workers_train'])
+        # predict_patch(model=model, input_size=model_archs[args.model_architecture]['input_size'],
+        #           batch_size=hyperparameters[args.hyperparameter_set]['batch_size_test'],
+        #           test_dir=args.test_folder,
+        #           output_dir='%s' % (args.output_folder),
+        #           num_workers=hyperparameters[args.hyperparameter_set]['num_workers_train'])
 
     def run(self):
 
@@ -96,10 +99,17 @@ class SealnetPredict(object):
         cont = True
 
         while cont:
-            self._get_image()
-            self._predict_raster()
-        
-        self._disconnect()
+            image = self._get_image()
+            print(image)
+            if image not in ['disconnect','wait']:
+                self._predict_raster()#input_image=image,
+                #                output_folder=self._output_path,
+                #                scales=self._scale_bands)
+            elif image == 'wait':
+                time.sleep(1)
+            else:
+                self._disconnect()
+                cont = False
 
 
 if __name__ == "__main__":
@@ -116,20 +126,20 @@ if __name__ == "__main__":
     parser.add_argument('--output_folder', type=str, help='folder where results will be saved')
     # unroll arguments
     args = parser.parse_args()
-    pipeline = model_archs[args.model_architecture]['pipeline']
-    input_image = args.input_image
-    output_folder = args.test_folder
-    scales = [model_archs[args.model_architecture]['input_size']]
+    # pipeline = model_archs[args.model_architecture]['pipeline']
+    # input_image = args.input_image
+    # output_folder = args.test_folder
+    # scales = [model_archs[args.model_architecture]['input_size']]
     
-    # check if the image needs to be tiled.
-    if args.tile:
+    # # check if the image needs to be tiled.
+    # if args.tile:
         
-        from tile_raster import tile_raster
+    #     from tile_raster import tile_raster
 
-        # check for pre-existing tiles and subtiles
-        if os.path.exists('%s/tiles' % (args.test_folder)):
-            shutil.rmtree('%s/tiles' % (args.test_folder))
+    #     # check for pre-existing tiles and subtiles
+    #     if os.path.exists('%s/tiles' % (args.test_folder)):
+    #         shutil.rmtree('%s/tiles' % (args.test_folder))
 
-        # tile raster into patches
-        tile_raster(input_image, output_folder, scales)
+    #     # tile raster into patches
+    #     tile_raster(input_image, output_folder, scales)
 

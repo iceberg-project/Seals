@@ -16,6 +16,7 @@ Copyright: 2018-2019
 import os
 import argparse
 import time
+import random
 import numpy as np
 import pandas as pd
 import rasterio
@@ -47,24 +48,18 @@ class ImageTilling(object):
                 RuntimeError('Subscriber address not specified in %s' % queue_in)
 
         with open(queue_out) as fqueue:
-            pub_addr_line, sub_addr_line = fqueue.readlines()
+            pub_addr_line, _ = fqueue.readlines()
 
             if pub_addr_line.startswith('PUB'):
                 print(pub_addr_line)
-                self._in_addr_in = pub_addr_line.split()[1]
+                self._out_addr_in = pub_addr_line.split()[1]
             else:
                 RuntimeError('Publisher address not specified in %s' % queue_out)
 
-            if sub_addr_line.startswith('SUB'):
-                print(sub_addr_line)
-                self._in_addr_out = sub_addr_line.split()[1]
-            else:
-                RuntimeError('Subscriber address not specified in %s' % queue_out)
-
-        self._publisher_in = Publisher(channel=self._name, url=self._addr_in)
-        self._subscriber_in = Subscriber(channel=self._name, url=self._addr_out)
-        self._sub.subscribe(topic=self._name)
-        self._publisher_out = Publisher(channel=self._name, url=self._addr_in)
+        self._publisher_in = Publisher(channel=self._name, url=self._in_addr_in)
+        self._subscriber_in = Subscriber(channel=self._name, url=self._in_addr_out)
+        self._subscriber_in.subscribe(topic=self._name)
+        self._publisher_out = Publisher(channel=self._name, url=self._out_addr_in)
 
     def _connect(self):
 
@@ -94,75 +89,92 @@ class ImageTilling(object):
         _, recv_message = self._subscriber_in.get()
 
         if recv_message[b'type'] == b'image':
-            return recv_message['data'].decode('utf-8')
+            return recv_message[b'data'].decode('utf-8')
 
         return None
 
     def _tile_raster(self, input_image, output_folder, scales, pad_img=True):
-        # time it
-        tic = time.time()
 
-        # create output folder
-        if not os.path.exists(output_folder):
-            os.makedirs(output_folder)
+        time.sleep(random.randint(10,30))
+        
+        # # time it
+        # tic = time.time()
 
-        # read image
-        with rasterio.open(input_image) as src:
-            band = np.array(src.read()[0, :, :], dtype=np.uint8)
-            # save affine matrix
-            affine_matrix = pd.DataFrame({'transform': src.transform[:6]})
-            affine_matrix.to_csv('%s/affine_matrix.csv' % output_folder)
+        # # read image
+        # with rasterio.open(input_image) as src:
+        #     band = np.array(src.read()[0, :, :], dtype=np.uint8)
+        #     # save affine matrix
+        #     affine_matrix = pd.DataFrame({'transform': src.transform[:6]})
+        #     affine_matrix.to_csv('%s/affine_matrix.csv' % output_folder)
 
-        # add tiles subfolder
-        output_folder = '%s/tiles/%s/' % (output_folder, os.path.basename(input_image))
-        if not os.path.exists(output_folder):
-            os.makedirs(output_folder)
+        # # add tiles subfolder
+        output_folder = '%s/%s/' % (output_folder, os.path.basename(input_image))
+        # if not os.path.exists(output_folder):
+        #     os.makedirs(output_folder)
 
-        # pad image
-        pad = 0
+        # # pad image
+        # pad = 0
 
-        if pad_img:
-            pad = scales[-1] // 2
-            band = np.pad(band, pad_width=pad, mode='constant', constant_values=0)
+        # if pad_img:
+        #     pad = scales[-1] // 2
+        #     band = np.pad(band, pad_width=pad, mode='constant', constant_values=0)
 
-        # extract tile size and raster size
-        tile_size = scales[0]
-        raster_width = band.shape[0]
-        raster_height = band.shape[1]
+        # # extract tile size and raster size
+        # tile_size = scales[0]
+        # raster_width = band.shape[0]
+        # raster_height = band.shape[1]
 
-        # tile out image
-        count = 0
-        for x in range(tile_size // 2 + pad, raster_width - pad, tile_size):
-            for y in range(tile_size // 2 + pad, raster_height - pad, tile_size):
-                scale_bands = []
-                # find corners for polygon
-                up = y - scales[0] // 2
-                left = x - scales[0] // 2
-                down = y + scales[0] // 2
-                right = x + scales[0] // 2
-                for scale in scales:
-                    curr_scale = band[x - scale // 2: x + scale // 2, 
-                                      y - scale // 2: y + scale // 2]
-                    curr_scale = cv2.resize(curr_scale, (scales[0], scales[0]))
-                    scale_bands.append(curr_scale)
-                # remove black corners
-                if np.max(scale_bands[0]) == 0:
-                    continue
-                # combine scales and save tile
-                scale_bands = np.dstack(scale_bands)
-                # save it with polygon coordinates
-                filename = "%s/tile_%d_%d_%d_%d_.jpg" % (output_folder, up, left, 
-                                                         down, right)
-                cv2.imwrite(filename, scale_bands)
-                count += 1
-        toc = time.time()
-        elapsed = toc - tic
-        print('\n%d tiles created in %d minutes' % (count, int(elapsed // 60)) +
-              ' and %.2f seconds' % elapsed % 60)
+        # # tile out image
+        # count = 0
+        # for x in range(tile_size // 2 + pad, raster_width - pad, tile_size):
+        #     for y in range(tile_size // 2 + pad, raster_height - pad, tile_size):
+        #         scale_bands = []
+        #         # find corners for polygon
+        #         up = y - scales[0] // 2
+        #         left = x - scales[0] // 2
+        #         down = y + scales[0] // 2
+        #         right = x + scales[0] // 2
+        #         for scale in scales:
+        #             curr_scale = band[x - scale // 2: x + scale // 2, 
+        #                               y - scale // 2: y + scale // 2]
+        #             curr_scale = cv2.resize(curr_scale, (scales[0], scales[0]))
+        #             scale_bands.append(curr_scale)
+        #         # remove black corners
+        #         if np.max(scale_bands[0]) == 0:
+        #             continue
+        #         # combine scales and save tile
+        #         scale_bands = np.dstack(scale_bands)
+        #         # save it with polygon coordinates
+        #         filename = "%s/tile_%d_%d_%d_%d_.jpg" % (output_folder, up, left, 
+        #                                                  down, right)
+        #         cv2.imwrite(filename, scale_bands)
+        #         count += 1
+        # toc = time.time()
+        # elapsed = toc - tic
+        # print('\n%d tiles created in %d minutes' % (count, int(elapsed // 60)) +
+        #       ' and %.2f seconds' % elapsed % 60)
 
         self._publisher_out.put(topic='image', msg={'name': self._name,
                                                     'request': 'enqueue',
                                                     'data': output_folder})
+
+    def run(self):
+
+        self._connect()
+        cont = True
+
+        while cont:
+            image = self._get_image()
+            print(image)
+            if image not in ['disconnect','wait']:
+                self._tile_raster(input_image=image,
+                                output_folder=self._output_path,
+                                scales=self._scale_bands)
+            elif image == 'wait':
+                time.sleep(1)
+            else:
+                self._disconnect()
+                cont = False
 
 
 if __name__ == "__main__":
