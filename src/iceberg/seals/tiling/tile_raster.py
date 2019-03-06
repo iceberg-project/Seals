@@ -16,8 +16,8 @@ Copyright: 2018-2019
 import os
 import argparse
 import time
-import random
-# import numpy as np
+#import random
+import numpy as np
 import pandas as pd
 import rasterio
 import cv2
@@ -29,7 +29,7 @@ class ImageTilling(object):
     def __init__(self, name, scale_bands, output_path, queue_in, queue_out):
         
         self._name = name
-        self._output_path = output_path
+        self._output_path = output_path + '/' + name
         self._scale_bands = scale_bands
 
         with open(queue_in) as fqueue:
@@ -100,6 +100,8 @@ class ImageTilling(object):
         # time it
         tic = time.time()
 
+        if not os.path.exists(output_folder): os.makedirs(output_folder)
+
         # read image
         with rasterio.open(input_image) as src:
             band = np.array(src.read()[0, :, :], dtype=np.uint8)
@@ -152,7 +154,7 @@ class ImageTilling(object):
         toc = time.time()
         elapsed = toc - tic
         print('\n%d tiles created in %d minutes' % (count, int(elapsed // 60)) +
-              ' and %.2f seconds' % elapsed % 60)
+              ' and %.2f seconds' % (elapsed % 60))
 
         self._publisher_out.put(topic='image', msg={'name': self._name,
                                                     'request': 'enqueue',
@@ -162,14 +164,15 @@ class ImageTilling(object):
 
         self._connect()
         cont = True
-
+        count = 0
         while cont:
             image = self._get_image()
             print(image)
             if image not in ['disconnect','wait']:
                 self._tile_raster(input_image=image,
-                                output_folder=self._output_path,
-                                scales=self._scale_bands)
+                                output_folder=self._output_path + '/image%d' % count,
+                                scales=[self._scale_bands])
+                count += 1
             elif image == 'wait':
                 time.sleep(1)
             else:

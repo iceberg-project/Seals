@@ -213,7 +213,7 @@ setup_args = {
 
     'package_data'      :  {'': ['VERSION', 'SDIST', sdist_name]},
 
-    'install_requires'  :  ['pandas', 'pyzmq'],
+    'install_requires'  :  ['pandas', 'pyzmq', 'netifaces', 'msgpack'],
 
     'zip_safe'          : False,
 
