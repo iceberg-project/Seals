@@ -19,7 +19,7 @@ import time
 import random
 import json
 from ..utils.model_library import *
-from predict_sealnet import predict_patch
+from .predict_sealnet import predict_patch
 from ..iceberg_zmq import Publisher, Subscriber
 warnings.filterwarnings('ignore', module='PIL')
 

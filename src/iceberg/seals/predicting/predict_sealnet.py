@@ -18,13 +18,13 @@ from torchvision import transforms
 from fiona.crs import from_epsg
 from shapely.geometry.geo import box, Point
 import numpy as np
-from utils.dataloaders.data_loader_test import ImageFolderTest
+from ..utils.dataloaders.data_loader_test import ImageFolderTest
 import time
 import warnings
 import argparse
 import shutil
 import cv2
-from utils.model_library import *
+from ..utils.model_library import *
 
 # image transforms seem to cause truncated images, so we need this
 from PIL import ImageFile
