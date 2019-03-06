@@ -80,7 +80,7 @@ def get_hostip(req=None):
                       iface not in white_list and
                       iface not in black_list]
 
-    preflist = req + white_list + black_list + rest
+    preflist = req + white_list + rest
 
     for iface in preflist:
 

@@ -16,8 +16,8 @@ Copyright: 2018-2019
 import os
 import argparse
 import time
-import random
-# import numpy as np
+# import random
+import numpy as np
 import pandas as pd
 import rasterio
 import cv2
@@ -166,7 +166,7 @@ class ImageTilling(object):
         while cont:
             image = self._get_image()
             print(image)
-            if image not in ['disconnect','wait']:
+            if image not in ['disconnect', 'wait']:
                 self._tile_raster(input_image=image,
                                 output_folder=self._output_path,
                                 scales=self._scale_bands)

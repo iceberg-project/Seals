@@ -52,10 +52,14 @@ class Queue(object):
 
         self._addr_in = self._pubsub_bridge.addr_in
         self._addr_out = self._pubsub_bridge.addr_out
-
+        
         with open('%s.queue.url' % self._name, 'w') as fout:
-            fout.write('PUB: %s\n' % self._addr_in)
-            fout.write('SUB: %s\n' % self._addr_out)
+            addr_in = 'tcp://' + self._pubsub_bridge._addr_in_host + ':' +
+                      self._addr_in.split(':')[-1]
+            addr_out = 'tcp://' + self._pubsub_bridge._addr_out_host + ':' +
+                      self._addr_out.split(':')[-1]
+            fout.write('PUB: %s\n' % addr_in)
+            fout.write('SUB: %s\n' % addr_out)
 
         self._pub = Publisher(channel=self._name, url=self._addr_in)
         self._sub = Subscriber(channel=self._name, url=self._addr_out)
