@@ -49,7 +49,7 @@ class SealnetPredict(object):
         self._subscriber_in.subscribe(topic=self._name)
     
         with open(cfg) as conf:
-            self._cfg = json.loads(conf)
+            self._cfg = json.load(conf)
 
     def _connect(self):
 
@@ -75,10 +75,11 @@ class SealnetPredict(object):
 
         return None
 
-    def _predict_raster(self, pipeline, model_arch, training_set, model_path,
+    def _predict_raster(self, model_arch, training_set, model_path,
                         hyperparameter_set, test_folder, output_folder):
         #time.sleep(random.randint(10,30))
         # predict tiles
+        pipeline = model_archs[model_arch]['pipeline']
         model = model_defs[pipeline][model_arch]
 
         use_gpu = torch.cuda.is_available()
@@ -107,13 +108,12 @@ class SealnetPredict(object):
             image = self._get_image()
             print(image)
             if image not in ['disconnect','wait']:
-                self._predict_raster(pipeline=self._cfg['pipeline'],
-                                     model_arch=self._cfg['model_arch'],
+                self._predict_raster(model_arch=self._cfg['model_arch'],
                                      training_set=self._cfg['training_set'],
                                      model_path=self._cfg['model_path'],
                                      hyperparameter_set=self._cfg['hyperparameter_set'],
                                      test_folder=image,
-                                     output_folder=self._cfg['output_folder'])
+                                     output_folder=image.split('/')[-1])
             elif image == 'wait':
                 time.sleep(1)
             else:
