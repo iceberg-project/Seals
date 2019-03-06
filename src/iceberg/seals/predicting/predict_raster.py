@@ -10,15 +10,16 @@ License: MIT
 Copyright: 2018-2019
 """
 
-#import torch
+import torch
 import warnings
 import argparse
 import os
 import shutil
 import time
 import random
-#from utils.model_library import *
-#from predict_sealnet import predict_patch
+import json
+from ..utils.model_library import *
+from predict_sealnet import predict_patch
 from ..iceberg_zmq import Publisher, Subscriber
 warnings.filterwarnings('ignore', module='PIL')
 
@@ -46,6 +47,9 @@ class SealnetPredict(object):
         self._publisher_in = Publisher(channel=self._name, url=self._in_addr_in)
         self._subscriber_in = Subscriber(channel=self._name, url=self._in_addr_out)
         self._subscriber_in.subscribe(topic=self._name)
+    
+        with open(cfg) as conf:
+            self._cfg = json.loads(conf)
 
     def _connect(self):
 
@@ -71,26 +75,27 @@ class SealnetPredict(object):
 
         return None
 
-    def _predict_raster(self):
-        time.sleep(random.randint(10,30))
-        # # predict tiles
-        # model = model_defs[pipeline][args.model_architecture]
+    def _predict_raster(self, pipeline, model_arch, training_set, model_path,
+                        hyperparameter_set, test_folder, output_folder):
+        #time.sleep(random.randint(10,30))
+        # predict tiles
+        model = model_defs[pipeline][model_arch]
 
-        # use_gpu = torch.cuda.is_available()
-        # if use_gpu:
-        #     model.cuda()
-        # model.eval()
+        use_gpu = torch.cuda.is_available()
+        if use_gpu:
+            model.cuda()
+        model.eval()
 
-        # # load saved model weights from training
-        # model_name = args.model_architecture + '_ts-' + args.training_set.split('_')[-1]
-        # model.load_state_dict(
-        #     torch.load("%s/%s.tar" % (args.model_path, model_name)))
+        # load saved model weights from training
+        model_name = model_arch + '_ts-' + training_set.split('_')[-1]
+        model.load_state_dict(
+            torch.load("%s/%s.tar" % (model_path, model_name)))
 
-        # predict_patch(model=model, input_size=model_archs[args.model_architecture]['input_size'],
-        #           batch_size=hyperparameters[args.hyperparameter_set]['batch_size_test'],
-        #           test_dir=args.test_folder,
-        #           output_dir='%s' % (args.output_folder),
-        #           num_workers=hyperparameters[args.hyperparameter_set]['num_workers_train'])
+        predict_patch(model=model, input_size=model_archs[model_arch]['input_size'],
+                  batch_size=hyperparameters[hyperparameter_set]['batch_size_test'],
+                  test_dir=test_folder,
+                  output_dir='%s' % (output_folder),
+                  num_workers=hyperparameters[hyperparameter_set]['num_workers_train'])
 
     def run(self):
 
@@ -102,9 +107,13 @@ class SealnetPredict(object):
             image = self._get_image()
             print(image)
             if image not in ['disconnect','wait']:
-                self._predict_raster()#input_image=image,
-                #                output_folder=self._output_path,
-                #                scales=self._scale_bands)
+                self._predict_raster(pipeline=self._cfg['pipeline'],
+                                     model_arch=self._cfg['model_arch'],
+                                     training_set=self._cfg['training_set'],
+                                     model_path=self._cfg['model_path'],
+                                     hyperparameter_set=self._cfg['hyperparameter_set'],
+                                     test_folder=image,
+                                     output_folder=self._cfg['output_folder'])
             elif image == 'wait':
                 time.sleep(1)
             else:
@@ -115,31 +124,11 @@ class SealnetPredict(object):
 if __name__ == "__main__":
     
     parser = argparse.ArgumentParser(description='validates a CNN at the haul out level')
-    parser.add_argument('--input_image', type=str, help='base directory to recursively search for validation images in')
-    parser.add_argument('--model_architecture', type=str, help='model architecture for seal detection')
-    parser.add_argument('--hyperparameter_set', type=str, help='combination of hyperparameters used for CNNs, must be a '
-                                                           'member of hyperparameters dictionary')
-    parser.add_argument('--training_set', type=str, help='training set where models were trained')
-    parser.add_argument('--test_folder', type=str, default='to_classify', help='folder where the model will be saved')
-    parser.add_argument('--tile', type=bool, default=False, help='Input image needs to be tiled')
-    parser.add_argument('--model_path', type=str, help='folder where the model is tarball is')
-    parser.add_argument('--output_folder', type=str, help='folder where results will be saved')
-    # unroll arguments
+    parser.add_argument('--name', type=str)
+    parser.add_argument('--queue_in', type=str)
+    parser.add_argument('--config_file',type=str)
     args = parser.parse_args()
-    # pipeline = model_archs[args.model_architecture]['pipeline']
-    # input_image = args.input_image
-    # output_folder = args.test_folder
-    # scales = [model_archs[args.model_architecture]['input_size']]
-    
-    # # check if the image needs to be tiled.
-    # if args.tile:
-        
-    #     from tile_raster import tile_raster
 
-    #     # check for pre-existing tiles and subtiles
-    #     if os.path.exists('%s/tiles' % (args.test_folder)):
-    #         shutil.rmtree('%s/tiles' % (args.test_folder))
+    pred = SealnetPredict(name=args.name, queue_in=args.queue_in, cfg=args.config_file)
 
-    #     # tile raster into patches
-    #     tile_raster(input_image, output_folder, scales)
-
+    pred.run()
