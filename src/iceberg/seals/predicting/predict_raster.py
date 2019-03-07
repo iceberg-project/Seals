@@ -75,7 +75,7 @@ class SealnetPredict(object):
 
         return None
 
-    def _predict_raster(self, model_arch, training_set, model_path,
+    def _predict_raster(self, input_image, model_arch, training_set, model_path,
                         hyperparameter_set, test_folder, output_folder):
         #time.sleep(random.randint(10,30))
         # predict tiles
@@ -92,11 +92,12 @@ class SealnetPredict(object):
         model.load_state_dict(
             torch.load("%s/%s.tar" % (model_path, model_name)))
 
-        predict_patch(model=model, input_size=model_archs[model_arch]['input_size'],
-                  batch_size=hyperparameters[hyperparameter_set]['batch_size_test'],
-                  test_dir=test_folder,
-                  output_dir='%s' % (output_folder),
-                  num_workers=hyperparameters[hyperparameter_set]['num_workers_train'])
+        predict_patch(input_image=input_image, model=model,
+                      input_size=model_archs[model_arch]['input_size'],
+                      batch_size=hyperparameters[hyperparameter_set]['batch_size_test'],
+                      test_dir=test_folder,
+                      output_dir='%s' % (output_folder),
+                      num_workers=hyperparameters[hyperparameter_set]['num_workers_train'])
 
     def run(self):
 
@@ -108,12 +109,13 @@ class SealnetPredict(object):
             image = self._get_image()
             print(image)
             if image not in ['disconnect','wait']:
-                self._predict_raster(model_arch=self._cfg['model_arch'],
+                self._predict_raster(input_image=image.split('/')[-1],
+                                     model_arch=self._cfg['model_arch'],
                                      training_set=self._cfg['training_set'],
                                      model_path=self._cfg['model_path'],
                                      hyperparameter_set=self._cfg['hyperparameter_set'],
-                                     test_folder=image,
-                                     output_folder=image.split('/')[-1])
+                                     test_folder=image.strip(image.split('/')[-1]),
+                                     output_folder=image.split('/')[-1].split('.')[0])
             elif image == 'wait':
                 time.sleep(1)
             else:

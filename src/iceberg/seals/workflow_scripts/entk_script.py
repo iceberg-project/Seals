@@ -33,7 +33,9 @@ def generate_discover_pipeline(path):
                      'module load slurm/default',
                      'module load intel/17.4',
                      'module load python3',
-                     'source $SCRATCH/pytorchCuda/bin/activate']
+                     'source $SCRATCH/pytorchCuda/bin/activate',
+                     'export PYTHONPATH=$SCRATCH/pytorchCuda/lib/' +
+                     'python3.5/site-packages:$PYTHONPATH']
     task.executable = 'python3'   # Assign executable to the task
     task.arguments = ['image_disc.py', '%s' % path, '--filename=images.csv',
                       '--filesize']
@@ -79,7 +81,9 @@ def generate_pipeline(name, image, image_size, scale_bands,
                       'module load slurm/default',
                       'module load intel/17.4',
                       'module load python3',
-                      'source $SCRATCH/pytorchCuda/bin/activate']
+                      'source $SCRATCH/pytorchCuda/bin/activate',
+                      'export PYTHONPATH=$SCRATCH/pytorchCuda/lib/' +
+                      'python3.5/site-packages:$PYTHONPATH']
     task0.executable = 'python3'   # Assign executable to the task
     # Assign arguments for the task executable
     task0.arguments = ['tile_raster.py', '--scale_bands=%s' % scale_bands,
@@ -89,7 +93,7 @@ def generate_pipeline(name, image, image_size, scale_bands,
                        '--output_folder=$NODE_LFS_PATH/%s' % task0.name]
     task0.link_input_data = [image]
     task0.upload_input_data = [os.path.abspath('../tiling/tile_raster.py')]
-    task0.cpu_reqs = {'processes': 1, 'threads_per_process': 2,
+    task0.cpu_reqs = {'processes': 1, 'threads_per_process': 4,
                       'thread_type': 'OpenMP'}
     task0.lfs_per_process = image_size
 
@@ -109,17 +113,21 @@ def generate_pipeline(name, image, image_size, scale_bands,
                       'module load python3',
                       'module load cuda',
                       'source $SCRATCH/pytorchCuda/bin/activate',
+                      'export PYTHONPATH=$SCRATCH/pytorchCuda/lib/' +
+                      'python3.5/site-packages:$PYTHONPATH',
                       'export CUDA_VISIBLE_DEVICES=%d' % device]
     task1.executable = 'python3'   # Assign executable to the task
 
     # Assign arguments for the task executable
     task1.arguments = ['predict_raster.py',
+                       '--input_image', image.split('/')[-1],
                        '--model_architecture', model_arch,
                        '--hyperparameter_set', hyperparam_set,
                        '--training_set', training_set,
                        '--test_folder', '$NODE_LFS_PATH/%s' % task0.name,
                        '--model_path', './',
-                       '--output_folder', './%s' % image.split('/')[-1]]
+                       '--output_folder', './%s' % image.split('/')[-1].
+                       split('.')[0]]
     task1.link_input_data = ['$SHARED/%s.tar' % model_name]
     task1.upload_input_data = [os.path.abspath('../predicting/' +
                                                'predict_raster.py'),
@@ -131,7 +139,9 @@ def generate_pipeline(name, image, image_size, scale_bands,
     task1.gpu_reqs = {'processes': 1, 'threads_per_process': 1,
                       'thread_type': 'OpenMP'}
     # Download resuting images
-    task1.download_output_data = ['%s/' % image.split('/')[-1]]
+    task1.download_output_data = ['%s/ > %s' % (image.split('/')[-1].
+                                                split('.')[0],
+                                                image.split('/')[-1])]
     task1.tag = task0.name
 
     stage1.add_tasks(task1)
@@ -139,23 +149,6 @@ def generate_pipeline(name, image, image_size, scale_bands,
     entk_pipeline.add_stages(stage1)
 
     return entk_pipeline
-
-
-def create_aggregated_output(image_names, path):
-
-    '''
-    This function takes a list of images and aggregates the results into a
-    single CSV file
-    '''
-
-    aggr_results = pd.DataFrame(columns=['Image', 'Seals'])
-    for image in image_names:
-        image_pred = pd.read_csv(path + image.split('/')[-1] +
-                                 '_predictions.csv')
-        aggr_results.loc[len(aggr_results)] = [image.split('/')[-1],
-                                               image_pred['predictions'].sum()]
-
-    aggr_results.to_csv(path + '/seal_predictions.csv', index=False)
 
 
 def args_parser():
@@ -224,11 +217,11 @@ if __name__ == '__main__':
         appman.run()
 
         images = pd.read_csv('images.csv')
-
+        print('Images Found:', len(images))
         # Create a single pipeline per image
         pipelines = list()
         dev = 0
-        for idx in range(len(images)):
+        for idx in range(0, len(images)):
             p1 = generate_pipeline(name='P%s' % idx,
                                    image=images['Filename'][idx],
                                    image_size=images['Size'][idx],

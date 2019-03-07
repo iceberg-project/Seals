@@ -110,9 +110,9 @@ class ImageTilling(object):
             affine_matrix.to_csv('%s/affine_matrix.csv' % output_folder)
 
         # add tiles subfolder
-        tile_folder = '%s/%s/' % (output_folder, os.path.basename(input_image))
-        if not os.path.exists(tile_folder):
-            os.makedirs(tile_folder)
+        output_folder = '%s/%s/' % (output_folder, os.path.basename(input_image))
+        if not os.path.exists(output_folder):
+            os.makedirs(output_folder)
 
         # pad image
         pad = 0
@@ -147,7 +147,7 @@ class ImageTilling(object):
                 # combine scales and save tile
                 scale_bands = np.dstack(scale_bands)
                 # save it with polygon coordinates
-                filename = "%s/tile_%d_%d_%d_%d_.jpg" % (tile_folder, up, left, 
+                filename = "%s/tile_%d_%d_%d_%d_.jpg" % (output_folder, up, left, 
                                                          down, right)
                 cv2.imwrite(filename, scale_bands)
                 count += 1

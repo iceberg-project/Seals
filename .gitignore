@@ -11,3 +11,4 @@ __pycache__
 "model_search_stable.ipynb" 
 "model_search_experimental.ipynb" 
 *.pyc
+.idea
