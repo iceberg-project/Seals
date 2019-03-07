@@ -27,15 +27,12 @@ class Discovery(object):
             pub_addr_line, _ = fqueue.readlines()
 
         if pub_addr_line.startswith('PUB'):
-            #print(pub_addr_line)
             self._addr_in = pub_addr_line.split()[1]
         else:
             RuntimeError('Publisher address not specified in %s' % queue_out)
 
-        #print(self._name)
-        #print(self._addr_in,type(self._addr_in),self._addr_out,type(self._addr_in))
         self._publisher = Publisher(channel=self._name, url=self._addr_in)
-        
+
         self.dataset = None
 
     def _image_discovery(self, filesize=True):
