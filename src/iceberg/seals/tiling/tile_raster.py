@@ -62,11 +62,10 @@ class ImageTilling(object):
         self._publisher_out = Publisher(channel=self._name, url=self._out_addr_in)
 
     def _connect(self):
-
         self._publisher_in.put(topic='request', msg={'name': self._name,
                                                      'request': 'connect',
                                                      'type': 'receiver'})
-
+        time.sleep(1)
         self._publisher_out.put(topic='request', msg={'name': self._name,
                                                       'request': 'connect',
                                                       'type': 'sender'})
@@ -76,7 +75,7 @@ class ImageTilling(object):
         self._publisher_in.put(topic='request', msg={'name': self._name,
                                                      'request': 'disconnect',
                                                      'type': 'receiver'})
-
+        time.sleep(1)
         self._publisher_out.put(topic='request', msg={'name': self._name,
                                                       'request': 'disconnect',
                                                       'type': 'sender'})
@@ -110,7 +109,7 @@ class ImageTilling(object):
             affine_matrix.to_csv('%s/affine_matrix.csv' % output_folder)
 
         # add tiles subfolder
-        output_folder = '%s/%s/' % (output_folder, os.path.basename(input_image))
+        output_folder = '%s/%s' % (output_folder, os.path.basename(input_image))
         if not os.path.exists(output_folder):
             os.makedirs(output_folder)
 
@@ -153,7 +152,7 @@ class ImageTilling(object):
                 count += 1
         toc = time.time()
         elapsed = toc - tic
-        print('\n%d tiles created in %d minutes' % (count, int(elapsed // 60)) +
+        print('%d tiles created in %d minutes' % (count, int(elapsed // 60)) +
               ' and %.2f seconds' % (elapsed % 60))
 
         self._publisher_out.put(topic='image', msg={'name': self._name,

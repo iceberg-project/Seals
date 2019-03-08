@@ -91,12 +91,12 @@ class SealnetPredict(object):
         model_name = model_arch + '_ts-' + training_set.split('_')[-1]
         model.load_state_dict(
             torch.load("%s/%s.tar" % (model_path, model_name)))
-
+        print('input_image=', input_image, 'test_dir=', test_folder, 'output_dir=', output_folder)
         predict_patch(input_image=input_image, model=model,
                       input_size=model_archs[model_arch]['input_size'],
                       batch_size=hyperparameters[hyperparameter_set]['batch_size_test'],
                       test_dir=test_folder,
-                      output_dir='%s' % (output_folder),
+                      output_dir=output_folder,
                       num_workers=hyperparameters[hyperparameter_set]['num_workers_train'])
 
     def run(self):
@@ -107,14 +107,14 @@ class SealnetPredict(object):
 
         while cont:
             image = self._get_image()
-            print(image)
             if image not in ['disconnect','wait']:
+                print(image)
                 self._predict_raster(input_image=image.split('/')[-1],
                                      model_arch=self._cfg['model_arch'],
                                      training_set=self._cfg['training_set'],
                                      model_path=self._cfg['model_path'],
                                      hyperparameter_set=self._cfg['hyperparameter_set'],
-                                     test_folder=image.strip(image.split('/')[-1]),
+                                     test_folder=image[:-len(image.split('/')[-1])],
                                      output_folder=image.split('/')[-1].split('.')[0])
             elif image == 'wait':
                 time.sleep(1)
