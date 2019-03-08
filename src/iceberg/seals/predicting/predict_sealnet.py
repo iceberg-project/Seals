@@ -106,7 +106,7 @@ def predict_patch(input_image, model, output_dir, test_dir, batch_size=2, input_
     :param remove_tiles: Remove the tiles folder from the filesystem.
     :return:
     """
-
+    toc = time.time()
     # crop and normalize images
     data_transforms = transforms.Compose([
         transforms.CenterCrop(input_size),
@@ -238,12 +238,16 @@ def predict_patch(input_image, model, output_dir, test_dir, batch_size=2, input_
         # save shapefile
         output_shpfile_locs.to_file(shapefile_path + 'locations.shp'.format(
             os.path.basename(output_dir)))
-
+    
         # remove tiles
         if remove_tiles:
             shutil.rmtree('{}/tiles'.format(test_dir))
+    
+    toc = time.time()
 
     print('Total predicted in %s: '% os.path.basename(test_dir), sum(pred_counts['predictions']))
+
+    return [tic,toc], sum(pred_counts['predictions'])
 
 
 def main():

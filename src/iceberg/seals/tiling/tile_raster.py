@@ -27,6 +27,8 @@ from ..iceberg_zmq import Publisher, Subscriber
 class ImageTilling(object):
 
     def __init__(self, name, scale_bands, output_path, queue_in, queue_out):
+
+        self._timings = pd.DataFrame(columns=['Image','Start','End','Tiles'])
         
         self._name = name
         self._output_path = output_path + '/' + name
@@ -155,6 +157,7 @@ class ImageTilling(object):
         print('%d tiles created in %d minutes' % (count, int(elapsed // 60)) +
               ' and %.2f seconds' % (elapsed % 60))
 
+        self._timings.loc[len(self._timings)] = [input_image,tic,toc,count]
         self._publisher_out.put(topic='image', msg={'name': self._name,
                                                     'request': 'enqueue',
                                                     'data': output_folder})
@@ -177,6 +180,8 @@ class ImageTilling(object):
             else:
                 self._disconnect()
                 cont = False
+        
+        self._timings.to_csv(self._name + ".csv", index=False)
 
 
 if __name__ == "__main__":

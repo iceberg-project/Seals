@@ -18,6 +18,7 @@ import shutil
 import time
 import random
 import json
+import pandas as pd
 from ..utils.model_library import *
 from .predict_sealnet import predict_patch
 from ..iceberg_zmq import Publisher, Subscriber
@@ -28,6 +29,7 @@ class SealnetPredict(object):
     def __init__(self, name, queue_in, cfg):
          
         self._name = name
+        self._timings = pd.DataFrame(columns=['Image','Start','End','Seals'])
 
         with open(queue_in) as fqueue:
             pub_addr_line, sub_addr_line = fqueue.readlines()
@@ -92,12 +94,13 @@ class SealnetPredict(object):
         model.load_state_dict(
             torch.load("%s/%s.tar" % (model_path, model_name)))
         print('input_image=', input_image, 'test_dir=', test_folder, 'output_dir=', output_folder)
-        predict_patch(input_image=input_image, model=model,
-                      input_size=model_archs[model_arch]['input_size'],
-                      batch_size=hyperparameters[hyperparameter_set]['batch_size_test'],
-                      test_dir=test_folder,
-                      output_dir=output_folder,
-                      num_workers=hyperparameters[hyperparameter_set]['num_workers_train'])
+        tic, toc, count = predict_patch(input_image=input_image, model=model,
+                                        input_size=model_archs[model_arch]['input_size'],
+                                        batch_size=hyperparameters[hyperparameter_set]['batch_size_test'],
+                                        test_dir=test_folder,
+                                        output_dir=output_folder,
+                                        num_workers=hyperparameters[hyperparameter_set]['num_workers_train'])
+        self._timings.loc[len(self._timings)] = [output_folder, tic, toc, count]
 
     def run(self):
 
@@ -121,6 +124,7 @@ class SealnetPredict(object):
             else:
                 self._disconnect()
                 cont = False
+        self._timings.to_csv(self._name + ".csv", index=False)
 
 
 if __name__ == "__main__":
