@@ -34,6 +34,7 @@ before_install:
   - pip install zmq
   - pip install msgpack
   - pip install radical.entk
+  - pip install pandas
 
    
 script:

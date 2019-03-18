@@ -12,9 +12,8 @@ Copyright: 2018-2019
 from __future__ import print_function
 import argparse
 import os
-import pandas as pd
-
 from radical.entk import Pipeline, Stage, Task, AppManager
+import pandas as pd
 
 
 def generate_discover_pipeline(path):
