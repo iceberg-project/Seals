@@ -25,7 +25,7 @@ class Discovery(object):
         self._path = path
         with open(queue_out) as fqueue:
             pub_addr_line, _ = fqueue.readlines()
-
+        print(pub_addr_line)
         if pub_addr_line.startswith('PUB'):
             self._addr_in = pub_addr_line.split()[1]
         else:
@@ -51,7 +51,7 @@ class Discovery(object):
         if filesize:
             dataset_df = pd.DataFrame(columns=['Filename', 'Size'])
             for filepath in filepaths:
-                filesize = int(math.ceil(os.path.getsize(filepath)/1024/1024))
+                filesize = 0  # int(math.ceil(os.path.getsize(filepath)/1024/1024))
                 dataset_df.loc[len(dataset_df)] = [filepath, filesize]
         else:
             dataset_df = pd.DataFrame(columns=['Filename'])
@@ -67,7 +67,8 @@ class Discovery(object):
                                                   'type': 'sender'})
     def _send_data(self):
 
-        for path, _ in self.dataset.values:
+        for path, _ in self.dataset.values[0:int(len(self.dataset.values)/2)]:
+            print('image {request: enqueue, data: %s}' % path)
             self._publisher.put(topic='image', msg={'request': 'enqueue',
                                                     'data': path})
 

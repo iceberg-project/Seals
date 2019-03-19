@@ -16,6 +16,7 @@ Copyright: 2018-2019
 import os
 import argparse
 import time
+import sys
 # import random
 import numpy as np
 import pandas as pd
@@ -168,13 +169,17 @@ class ImageTilling(object):
         cont = True
         count = 0
         while cont:
+            sys.stdout.flush()
             image = self._get_image()
             print(image)
             if image not in ['disconnect', 'wait']:
-                self._tile_raster(input_image=image,
+                try:
+                    self._tile_raster(input_image=image,
                                 output_folder=self._output_path + '/image%d' % count,
                                 scales=[self._scale_bands])
-                count += 1
+                    count += 1
+                except:
+                    print('Image was not tiled:', image)
             elif image == 'wait':
                 time.sleep(1)
             else:
@@ -195,7 +200,7 @@ if __name__ == "__main__":
     parser.add_argument('--output_folder', type=str, help='folder where tiles \
                                                            will be stored')
     parser.add_argument('--queue_in', type=str)
-    parser.add_argument('--queue_out', tpye=str)
+    parser.add_argument('--queue_out', type=str)
 
     args = parser.parse_args()
 

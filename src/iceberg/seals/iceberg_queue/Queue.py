@@ -6,6 +6,7 @@ Copyright: 2018-2019
 """
 import time
 import random
+import sys
 
 from ..iceberg_zmq import PubSub, Publisher, Subscriber
 
@@ -148,6 +149,6 @@ class Queue(object):
                     self._pub.put(topic=send_topic, msg=send_message)
                 elif recv_message[b'request'] == b'enqueue':
                     self._enqueue(recv_message[b'data'])
-
+            sys.stdout.flush()
             status = self._check_status()
             time.sleep(self._delay)

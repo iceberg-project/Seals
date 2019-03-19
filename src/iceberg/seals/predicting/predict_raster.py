@@ -18,6 +18,7 @@ import shutil
 import time
 import random
 import json
+import sys
 import pandas as pd
 from ..utils.model_library import *
 from .predict_sealnet import predict_patch
@@ -111,14 +112,18 @@ class SealnetPredict(object):
         while cont:
             image = self._get_image()
             if image not in ['disconnect','wait']:
-                print(image)
-                self._predict_raster(input_image=image.split('/')[-1],
+                try:
+                    print(image)
+                    sys.stdout.flush()
+                    self._predict_raster(input_image=image.split('/')[-1],
                                      model_arch=self._cfg['model_arch'],
                                      training_set=self._cfg['training_set'],
                                      model_path=self._cfg['model_path'],
                                      hyperparameter_set=self._cfg['hyperparameter_set'],
                                      test_folder=image[:-len(image.split('/')[-1])],
                                      output_folder=image.split('/')[-1].split('.')[0])
+                except:
+                    print('Image not predicted', image)
             elif image == 'wait':
                 time.sleep(1)
             else:
