@@ -18,7 +18,7 @@ def test_generate_discover_pipeline():
     Test if the discover pipeline is correct.
     """
     pass
-    
+
     #pipe_obj = generate_discover_pipeline(path='test')
     #pipeline = write_workflow([pipe_obj],'./',fwrite=False)
     #expected_pipeline = ru.read_json('src/tests/disc_workflow.json')
