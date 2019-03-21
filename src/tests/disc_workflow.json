@@ -1,0 +1,96 @@
+[
+    {
+        "stack": {
+            "radical": {
+                "radical.entk": "0.7.16-0.7.15-10-g4f74b9f7@feature-expand_workflow_writer", 
+                "radical.pilot": "0.50.19-v0.50.19-163-ga7f40dbd@feature-jsrun_erf", 
+                "radical.utils": "0.50.3", 
+                "saga": "0.50.4"
+            }, 
+            "sys": {
+                "python": "2.7.15", 
+                "pythonpath": "", 
+                "virtualenv": "testing"
+            }
+        }
+    }, 
+    {
+        "name": "Disc", 
+        "stages": [
+            {
+                "name": "Disc-S0", 
+                "state_history": [
+                    "DESCRIBED"
+                ], 
+                "tasks": [
+                    {
+                        "arguments": [
+                            "image_disc.py", 
+                            "test", 
+                            "--filename=images.csv", 
+                            "--filesize"
+                        ], 
+                        "copy_input_data": [], 
+                        "copy_output_data": [], 
+                        "cpu_reqs": {
+                            "process_type": null, 
+                            "processes": 1, 
+                            "thread_type": "OpenMP", 
+                            "threads_per_process": 1
+                        }, 
+                        "download_output_data": [
+                            "images.csv"
+                        ], 
+                        "executable": "python3", 
+                        "exit_code": null, 
+                        "gpu_reqs": {
+                            "process_type": null, 
+                            "processes": 0, 
+                            "thread_type": null, 
+                            "threads_per_process": 0
+                        }, 
+                        "lfs_per_process": 0, 
+                        "link_input_data": [], 
+                        "move_input_data": [], 
+                        "move_output_data": [], 
+                        "name": "Disc-T0", 
+                        "parent_pipeline": {
+                            "name": null, 
+                            "uid": null
+                        }, 
+                        "parent_stage": {
+                            "name": null, 
+                            "uid": null
+                        }, 
+                        "path": null, 
+                        "post_exec": [], 
+                        "pre_exec": [
+                            "module load psc_path/1.1", 
+                            "module load slurm/default", 
+                            "module load intel/17.4", 
+                            "module load python3", 
+                            "source $SCRATCH/pytorchCuda/bin/activate", 
+                            "export PYTHONPATH=$SCRATCH/pytorchCuda/lib/python3.5/site-packages:$PYTHONPATH"
+                        ], 
+                        "state": "DESCRIBED", 
+                        "state_history": [
+                            "DESCRIBED"
+                        ], 
+                        "stderr": null, 
+                        "stdout": null, 
+                        "tag": null, 
+                        "uid": null, 
+                        "upload_input_data": [
+                            "image_disc.py"
+                        ]
+                    }
+                ], 
+                "uid": null
+            }
+        ], 
+        "state_history": [
+            "DESCRIBED"
+        ], 
+        "uid": null
+    }
+]
