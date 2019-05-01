@@ -1,15 +1,94 @@
 import torchvision.transforms.functional as TF
 from torchvision import transforms
 import numpy as np
+import cv2
+from PIL import Image
+
+
+class HideAndSeek(object):
+    '''
+    Class that performs Random Erasing in Random Erasing Data Augmentation by Zhong et al.
+    -------------------------------------------------------------------------------------
+    probability: The probability that the operation will be performed.
+    sl: min erasing area
+    sh: max erasing area
+    r1: min aspect ratio
+    mean: erasing value
+    -------------------------------------------------------------------------------------
+    '''
+
+    def __init__(self, probability=0.25, mean=(0.485, 0.456, 0.406), n_patches=16):
+        assert np.sqrt(n_patches) % 1 == 0, 'invalid input value for n_patches, n_patches has to be quadratic'
+        self.probability = probability
+        self.mean = mean
+        self.n_patches = n_patches
+
+    def __call__(self, img, locations):
+        img = np.array(img)
+        if len(img.shape) < 3:
+            img = img.reshape((img.shape[0], img.shape[1], 1))
+        patch_size = int(img.shape[0] / np.sqrt(self.n_patches))
+        n_bands = img.shape[2]
+
+        for idx in range(self.n_patches):
+            if np.random.rand() < self.probability:
+                i = max(0, int(patch_size * (idx % np.sqrt(self.n_patches))))
+                j = max(0, int(patch_size * (idx // np.sqrt(self.n_patches))))
+
+                for band in range(n_bands):
+                    img[i:i + patch_size, j: j + patch_size, band] = np.random.normal(self.mean[band] * 255,
+                                                                                      self.mean[band] * 51,
+                                                                                      (patch_size, patch_size))
+
+                locations[i:i + patch_size, j: j + patch_size] = 0
+
+        if n_bands == 1:
+            img = img.reshape((img.shape[0], img.shape[1]))
+        img = Image.fromarray(img)
+        return img, locations
+
+
+def get_xy_locs(array, count, min_dist=4):
+    if count == 0:
+        return np.array([])
+    cols = array.shape[1]
+    # flatten array, get rid of zeros and sort it
+    flat = array.flatten()
+    flat_order = (-flat).argsort()
+    # find first zero and remove tail
+    flat_order = flat_order[next((idx for idx, ele in enumerate(flat_order) if flat[ele]), None):]
+    # check if detections are too close
+    to_remove = []
+    for idx, ele in enumerate(flat_order):
+        if idx in to_remove:
+            continue
+        for idx2 in range(idx + 1, len(flat_order)):
+            if np.linalg.norm(np.array([flat_order[idx] // cols, flat_order[idx] % cols]) -
+                              np.array([flat_order[idx2] // cols, flat_order[idx2] % cols])) < min_dist:
+                to_remove.append(idx2)
+    flat_order = np.delete(flat_order, to_remove)
+    # return x peaks
+    return np.array([[x // cols, x % cols] for x in flat_order[:count]])
+
+
+def add_kernel(array: np.array, kernel_size: int):
+    assert kernel_size % 2 == 1 and kernel_size != 1, 'kernel size must be an odd number greater than 1'
+    final = array.copy()
+    for k_size in range(3, kernel_size + 1, 2):
+        final = final + cv2.dilate(array, np.ones([k_size, k_size]))
+    return final / np.max(final)
 
 
 class ShapeTransform(object):
     """
     Class to ensure image and locations get the same transformations during training
     """
-    def __init__(self, output_size, train):
+
+    def __init__(self, output_size, train, kernel_size=5):
+        self.kernel_size = kernel_size
         self.output_size = output_size
         self.train = train
+        self.hide_and_seek = HideAndSeek()
 
     # random rotation
     def __call__(self, image, locations):
@@ -25,7 +104,7 @@ class ShapeTransform(object):
                 locations = TF.vflip(locations)
 
             # random rotation
-            angle = np.random.uniform(-180, 180)
+            angle = np.random.uniform(0, 360)
             image = TF.rotate(image, angle, expand=True)
             locations = TF.rotate(locations, angle, expand=True)
 
@@ -34,36 +113,40 @@ class ShapeTransform(object):
             image = center_crop(image)
             locations = center_crop(locations)
 
-            if np.random.random() > 1:
-                # random crop
-                i, j, h, w = transforms.RandomResizedCrop.get_params(image, scale=(0.2, 0.9), ratio=(1, 1))
-                image = TF.resized_crop(image, i, j, h, w, size=int(self.output_size))
-                # get counts
-                counts = np.float32(np.sum(np.not_equal(TF.crop(locations, i, j, h, w), 0)))
-                locations = TF.resized_crop(locations, i, j, h, w, size=int(self.output_size))
+            # random resized crop
+            i, j, h, w = transforms.RandomResizedCrop.get_params(image, scale=(0.45, 0.8), ratio=(1, 1))
+            image = TF.resized_crop(image, i, j, h, w, size=int(self.output_size))
 
-                #if counts > 0:
-                #    # update locations to have only maximum values
-                #    locs = get_xy_locs(locations, int(counts))
-                #    locations = np.zeros([self.output_size, self.output_size])
-                #    for point in locs:
-                #        locations[point[0], point[1]] = 1
-                #locations = Image.fromarray(locations)
+            # get counts
+            loc_map = TF.crop(locations, i, j, h, w)
+            counts = np.float32(np.sum(np.not_equal(loc_map, 0)))
+            locations = np.array(TF.resized_crop(locations, i, j, h, w, size=int(self.output_size)))
 
-            else:
-                i, j, h, w = transforms.RandomCrop.get_params(image, output_size=(self.output_size, self.output_size))
-                image = TF.crop(image, i, j, h, w)
-                # get counts
-                counts = np.float32(np.sum(np.not_equal(np.array(TF.crop(locations, i, j, h, w)), 0)))
-                locations = TF.crop(locations, i, j, h, w)
+            # get locations
+            if counts > 0:
+                locs = get_xy_locs(locations, int(counts))
+                # lbl, n_lbl = ndimage.label(locations)
+                # locs = ndimage.center_of_mass(locations, lbl, [ele for ele in range(1, n_lbl + 1)])
+                locations = np.zeros([self.output_size, self.output_size], dtype=np.uint8)
+                for point in locs:
+                    locations[int(round(point[0])), int(round(point[1]))] = 255
+                locations = add_kernel(locations, self.kernel_size)
+
+            # hide-and-seek
+            if np.random.rand() > 0.1:
+                image, locations = self.hide_and_seek(image, locations)
+                counts = np.float32(np.sum(np.not_equal(locations, 0)))
+            locations = Image.fromarray(locations)
 
         else:
             center_crop = transforms.CenterCrop(self.output_size)
             image = center_crop(image)
             locations = center_crop(locations)
             counts = np.float32(np.sum(np.not_equal(np.array(locations), 0)))
+            # add kernel to locations
+            locations = add_kernel(locations, kernel_size=self.kernel_size)
 
         # change locations to tensor
-        locations = TF.to_tensor(locations) 
+        locations = TF.to_tensor(locations)
 
         return image, locations, counts

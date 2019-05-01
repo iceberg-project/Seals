@@ -28,7 +28,7 @@ from torch.optim import lr_scheduler
 from torchvision import transforms
 
 from utils.dataloaders.data_loader_train_det import ImageFolderTrainDet
-from utils.dataloaders.transforms_det_resized import ShapeTransform
+from utils.dataloaders.transforms_det import ShapeTransform
 from utils.model_library import *
 
 parser = argparse.ArgumentParser(description='trains a CNN to find seals in satellite imagery')
