@@ -40,6 +40,7 @@ parser.add_argument('--hyperparameter_set', type=str, help='combination of hyper
 parser.add_argument('--output_name', type=str, help='name of output file from training, this name will also be used in '
                                                     'subsequent steps of the pipeline')
 parser.add_argument('--models_folder', type=str, default='saved_models', help='folder where the model will be saved')
+parser.add_argument('--all_train', type=int, default=0, help='whether all samples will be used for training')
 
 args = parser.parse_args()
 
@@ -84,12 +85,21 @@ data_dir = "./training_sets/{}".format(args.training_dir)
 img_size = training_sets[args.training_dir]['scale_bands'][0]
 
 # save image datasets
-image_datasets = {x: ImageFolderTrainDet(root=os.path.join(data_dir, x),
-                                         shape_transform=data_transforms[x]['shape_transform'],
-                                         int_transform=data_transforms[x]['int_transform'],
-                                         training_set=args.training_dir,
-                                         shuffle=x == 'training')
-                  for x in ['training', 'validation']}
+if args.all_train:
+    image_datasets = {x: ImageFolderTrainDet(root=os.path.join(data_dir, x),
+                                             shape_transform=data_transforms['training']['shape_transform'],
+                                             int_transform=data_transforms['training']['int_transform'],
+                                             training_set=args.training_dir,
+                                             shuffle=True)
+                      for x in ['training', 'validation']}
+else:
+    image_datasets = {x: ImageFolderTrainDet(root=os.path.join(data_dir, x),
+                                             shape_transform=data_transforms[x]['shape_transform'],
+                                             int_transform=data_transforms[x]['int_transform'],
+                                             training_set=args.training_dir,
+                                             shuffle=x == 'training')
+                      for x in ['training', 'validation']}
+
 
 
 def get_xy_locs(array, count, min_dist=3):
@@ -202,7 +212,7 @@ def save_checkpoint(state, is_best_loss, is_best_f1, is_best_recall, is_best_pre
         shutil.copyfile(filename + '.tar', filename + '_best_precision.tar')
 
 
-def train_model(model, criterion1, criterion2, criterion3, optimizer, scheduler, bce_weight, num_epochs=25):
+def train_model(model, criterion1, criterion2, criterion3, optimizer, scheduler, bce_weight, all_train, num_epochs=25):
     """
     Helper function to train CNNs. Trains detection models using heatmaps, where the output heatmap has the same
     dimensions of the input image. Heatmap detection may be assisted with a regression branch to provide counts and/or
@@ -245,7 +255,7 @@ def train_model(model, criterion1, criterion2, criterion3, optimizer, scheduler,
         # Each epoch has a training and validation phase
         for phase in ['training', 'validation']:
             print('\n{} \n'.format(phase))
-            if phase == 'training':
+            if phase == 'training' or all_train:
                 if epoch % 20 == 0:
                     scheduler.step()
                 model.train(True)  # Set model to training mode
