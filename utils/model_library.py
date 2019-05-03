@@ -18,13 +18,16 @@ model_archs = {'Unet': {'input_size': 224, 'pipeline': 'Heatmap'},
                'UnetCntWRN': {'input_size': 224, 'pipeline': 'Heatmap-Cnt'},
                'UnetOccDense': {'input_size': 224, 'pipeline': 'Heatmap-Occ'},
                'UnetCntWRNOccDense': {'input_size': 224, 'pipeline': 'Heatmap-Cnt-Occ'},
+               'SealNet_V10': {'input_size': 224, 'pipeline': 'Heatmap-Cnt-Occ'},
                }
 
 # model definitions
 model_defs = {'Heatmap': {'Unet': UNet(scale=32)},
               'Heatmap-Cnt': {'UnetCntWRN': UNetCntWRN(scale=32, depth=28)},
               'Heatmap-Occ': {'UnetOccDense': UNetOccDense(scale=32)},
-              'Heatmap-Cnt-Occ': {'UnetCntWRNOccDense': UNetCntWRNOccDense(scale=32, depth=28)}}
+              'Heatmap-Cnt-Occ': {'UnetCntWRNOccDense': UNetCntWRNOccDense(scale=32, depth=28),
+                                  'SealNet_V10': SealNet_V10(scale=32, depth=28)}
+}
 
 
 # model dataloaders
