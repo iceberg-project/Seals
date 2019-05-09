@@ -31,7 +31,7 @@ class SealnetPredict(object):
          
         self._name = name
         self._timings = pd.DataFrame(columns=['Image','Start','End','Seals'])
-
+        tic = time.time()
         with open(queue_in) as fqueue:
             pub_addr_line, sub_addr_line = fqueue.readlines()
 
@@ -53,18 +53,24 @@ class SealnetPredict(object):
     
         with open(cfg) as conf:
             self._cfg = json.load(conf)
+        toc = time.time()
+        self._timings.loc[len(self._timings)] = ['config',tic,toc,0]
 
     def _connect(self):
-
+        tic = time.time()
         self._publisher_in.put(topic='request', msg={'name': self._name,
                                                      'request': 'connect',
                                                      'type': 'receiver'})
+        toc = time.time()
+        self._timings.loc[len(self._timings)] = ['connect',tic,toc,0]
 
     def _disconnect(self):
-
+        tic = time.time()
         self._publisher_in.put(topic='request', msg={'name': self._name,
                                                      'type': 'receiver',
                                                      'request': 'disconnect'})
+        toc = time.time()
+        self._timings.loc[len(self._timings)] = ['disconnect',tic,toc,0]
 
     def _get_image(self):
 
@@ -82,6 +88,7 @@ class SealnetPredict(object):
                         hyperparameter_set, test_folder, output_folder):
         #time.sleep(random.randint(10,30))
         # predict tiles
+        tic = time.time()
         pipeline = model_archs[model_arch]['pipeline']
         model = model_defs[pipeline][model_arch]
 
@@ -94,6 +101,8 @@ class SealnetPredict(object):
         model_name = model_arch + '_ts-' + training_set.split('_')[-1]
         model.load_state_dict(
             torch.load("%s/%s.tar" % (model_path, model_name)))
+        toc = time.time()
+        self._timings.loc[len(self._timings)] = ['model_load', tic, toc, 0]
         print('input_image=', input_image, 'test_dir=', test_folder, 'output_dir=', output_folder)
         tic, toc, count = predict_patch(input_image=input_image, model=model,
                                         input_size=model_archs[model_arch]['input_size'],

@@ -58,6 +58,9 @@ class Discovery(object):
             for filepath in filepaths:
                 dataset_df.loc[len(dataset_df)] = [filepath]
 
+        dataset_df.sort_values(by='Size',axis=0,inplace=True)
+        dataset_df.reset_index(drop='index',inplace=True)
+
         self.dataset = dataset_df
 
     def _connect(self):

@@ -8,6 +8,7 @@ import time
 import random
 import sys
 
+import pandas as pd
 from ..iceberg_zmq import PubSub, Publisher, Subscriber
 
 # ------------------------------------------------------------------------------
@@ -23,7 +24,7 @@ class Queue(object):
     are informed to disconnect.
     """
 
-    def __init__(self, name='simple'):
+    def __init__(self, name='simple', data=None):
         """
         Contructor method. It instantiates a ZMQ channel to speak between
         processes and writes it in the filesystem.
@@ -31,11 +32,16 @@ class Queue(object):
 
         Parameters:
         **name** : The name of the queue.
+        **name** : CSV file with queue data
         """
         self._delay = 0.0
         self._enqueuers = list()
         self._dequeuers = list()
-        self._queue = list()
+        if data:
+            input_data = pd.read_csv(data)
+            self._queue = input_data['Filename'].values.tolist()
+        else:
+            self._queue = list()
         self._pub = None
         self._sub = None
         self._pubsub_bridge = None

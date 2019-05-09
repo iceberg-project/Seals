@@ -30,7 +30,7 @@ class ImageTilling(object):
     def __init__(self, name, scale_bands, output_path, queue_in, queue_out):
 
         self._timings = pd.DataFrame(columns=['Image','Start','End','Tiles'])
-        
+        tic = time.time()
         self._name = name
         self._output_path = output_path + '/' + name
         self._scale_bands = scale_bands
@@ -63,8 +63,11 @@ class ImageTilling(object):
         self._subscriber_in = Subscriber(channel=self._name, url=self._in_addr_out)
         self._subscriber_in.subscribe(topic=self._name)
         self._publisher_out = Publisher(channel=self._name, url=self._out_addr_in)
+        toc = time.time()
+        self._timings.loc[len(self._timings)] = ['configure',tic,toc,0]
 
     def _connect(self):
+        tic = time.time()
         self._publisher_in.put(topic='request', msg={'name': self._name,
                                                      'request': 'connect',
                                                      'type': 'receiver'})
@@ -72,9 +75,11 @@ class ImageTilling(object):
         self._publisher_out.put(topic='request', msg={'name': self._name,
                                                       'request': 'connect',
                                                       'type': 'sender'})
+        toc = time.time()
+        self._timings.loc[len(self._timings)] = ['connect',tic,toc,0]
 
     def _disconnect(self):
-        
+        tic = time.time()
         self._publisher_in.put(topic='request', msg={'name': self._name,
                                                      'request': 'disconnect',
                                                      'type': 'receiver'})
@@ -82,6 +87,8 @@ class ImageTilling(object):
         self._publisher_out.put(topic='request', msg={'name': self._name,
                                                       'request': 'disconnect',
                                                       'type': 'sender'})
+        toc = time.time()
+        self._timings.loc[len(self._timings)] = ['disconnect',tic,toc,0]
 
     def _get_image(self):
 
