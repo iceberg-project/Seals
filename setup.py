@@ -15,7 +15,7 @@ import glob
 import shutil
 import subprocess as sp
 
-name     = 'iceberg.seals'
+name     = 'iceberg_seals.search'
 mod_root = 'src/'
 
 try:
@@ -99,7 +99,6 @@ def get_version(mod_root):
         sdist_name = sdist_name.replace('/', '-')
         sdist_name = sdist_name.replace('@', '-')
         sdist_name = sdist_name.replace('#', '-')
-        sdist_name = sdist_name.replace('_', '-')
 
         if '--record'    in sys.argv or \
            'bdist_egg'   in sys.argv or \
@@ -181,7 +180,7 @@ setup_args = {
         'Operating System :: POSIX',
         'Operating System :: Unix'
     ],
-    'namespace_packages': ['iceberg','iceberg.seals'],
+    'namespace_packages': ['iceberg_seals','iceberg_seals.search'],
     'packages'          : find_packages('src/'),
 
     'package_dir'       : {'': 'src/'},
@@ -208,4 +207,3 @@ setup_args = {
 setup(**setup_args)
 
 # ------------------------------------------------------------------------------
-

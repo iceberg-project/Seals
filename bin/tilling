@@ -5,7 +5,7 @@ License: MIT
 Copyright: 2018-2019
 """
 
-from iceberg.seals.tiling.tile_raster import parse_args, tile_raster
+from iceberg_seals.search.tiling.tile_raster import parse_args, tile_raster
 
 if __name__ == "__main__":
     args = parse_args()
