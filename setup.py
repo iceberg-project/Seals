@@ -197,8 +197,8 @@ setup_args = {
                             'numpy'
                            ],
     'zip_safe'          : False,
-    'scripts'           : ['bin/tilling',
-                           'bin/predicting'
+    'scripts'           : ['bin/iceberg_seals.tilling',
+                           'bin/iceberg_seals.predicting'
                            ]
 }
 
