@@ -193,8 +193,7 @@ setup_args = {
                             'opencv-python',
                             'rasterio',
                             'affine',
-                            'pandas',
-                            'numpy'
+                            'pandas'
                            ],
     'zip_safe'          : False,
     'scripts'           : ['bin/iceberg_seals.tilling',
