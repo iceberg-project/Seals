@@ -1,12 +1,12 @@
 #!/usr/bin/env python
 """
 Predict sealnet
-==========================================================
+================================================================================
 
-CNN deployment script for ICEBERG seals use case. Splits a raster into tiles and predicts seal counts and locations in
-tiles with 'predict_sealnet.py'.
+CNN deployment script for ICEBERG seals use case. Splits a raster into tiles 
+and predicts seal counts and locations in tiles with 'predict_sealnet.py'.
 
-Author: Bento Goncalves
+Author: Bento Goncalves, Ioannis Paraskevakos
 License: MIT
 Copyright: 2018-2019
 """
@@ -23,11 +23,23 @@ warnings.filterwarnings('ignore', module='PIL')
 
 if __name__ == "__main__":
     
-    parser = argparse.ArgumentParser(description='validates a CNN at the haul out level')
-    parser.add_argument('--input_image', type=str, help='base directory to recursively search for validation images in')
-    parser.add_argument('--model_architecture', type=str, help='model architecture for seal detection')
-    parser.add_argument('--hyperparameter_set', type=str, help='combination of hyperparameters used for CNNs, must be a '
-                                                           'member of hyperparameters dictionary')
+    parser = argparse.ArgumentParser(description='validates a CNN at the haul \
+                                                  out level')
+    parser.add_argument('--input_image', type=str, help='base directory to \
+                                                         recursively search \
+                                                         for validation images \
+                                                         in')
+    parser.add_argument('--model_architecture', type=str, help='model \
+                                                                architecture \
+                                                                for seal \
+                                                                detection')
+    parser.add_argument('--hyperparameter_set', type=str, help='combination of \
+                                                                hyperparameters\
+                                                                 used for CNNs,\
+                                                                must be a \
+                                                                member of \
+                                                                hyperparameters\
+                                                                 dictionary')
     parser.add_argument('--training_set', type=str, help='training set where models were trained')
     parser.add_argument('--test_folder', type=str, default='to_classify', help='folder where the model will be saved')
     parser.add_argument('--tile', type=bool, default=False, help='Input image needs to be tiled')
