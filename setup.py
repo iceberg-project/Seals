@@ -196,7 +196,7 @@ setup_args = {
                             'pandas'
                            ],
     'zip_safe'          : False,
-    'scripts'           : ['bin/iceberg_seals.tilling',
+    'scripts'           : ['bin/iceberg_seals.tiling',
                            'bin/iceberg_seals.predicting'
                            ]
 }
