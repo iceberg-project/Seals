@@ -12,8 +12,8 @@ Copyright: 2018-2019
 __all__ = ['model_archs', 'training_sets', 'hyperparameters', 'model_defs', 'dataloaders']
 
 
-from utils.custom_architectures import *
-from utils.dataloaders import *
+from .custom_architectures import *
+from .dataloaders import *
 
 # architecture definitions with input size and whether the model is used at the haulout level or single seal level
 model_archs = {'Unet': {'input_size': 224, 'pipeline': 'Heatmap'},
