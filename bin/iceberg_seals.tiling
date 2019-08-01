@@ -1,0 +1,17 @@
+#!/usr/bin/env python
+"""
+Author: Ioannis Paraskevakos
+License: MIT
+Copyright: 2018-2019
+"""
+
+from iceberg_seals.search.tiling.tile_raster import parse_args, tile_raster
+
+if __name__ == "__main__":
+    args = parse_args()
+
+    # unroll arguments
+    input_image = args.input_image
+    scales = [int(ele) for ele in args.scale_bands.split('_')]
+    output_folder = args.output_folder
+    tile_raster(input_image, output_folder, scales, True)
