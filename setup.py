@@ -197,6 +197,7 @@ setup_args = {
                             'opencv-python',
                             'rasterio',
                             'affine',
+                            'geopandas',
                             'pandas'
                            ],
     'zip_safe'          : False,
