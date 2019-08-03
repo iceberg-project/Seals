@@ -72,11 +72,11 @@ def get_version(mod_root):
                      'branch=`git branch | grep -e "^*" | cut -f 2- -d " "` 2>/dev/null ; '
                      'echo $tag@$branch' % src_root,
                      stdout=sp.PIPE, stderr=sp.STDOUT, shell=True)
-        test = p.communicate()[0]
-        print('GIANNIS test: ', test)
-        version_detail = test.decode('utf-8')
+
+        version_detail = p.communicate()[0]
+        version_detail = version_detail.decode('utf-8')
         version_detail = version_detail.replace('detached from ', 'detached-')
-        print('GIANNIS Version Detail Popen: ', version_detail)
+
         # remove all non-alphanumeric (and then some) chars
         version_detail = re.sub('[/ ]+', '-', version_detail)
         version_detail = re.sub('[^a-zA-Z0-9_+@.-]+', '', version_detail)
@@ -91,13 +91,13 @@ def get_version(mod_root):
             version = '%s-%s' % (version_base, version_detail)
         else:
             version = version_base
-        print('Giannis VERSION 1: ', version)
+
         # make sure the version files exist for the runtime version inspection
         path = '%s/%s' % (src_root, mod_root)
-        print('GIANNIS Path: ', path)
+
         with open(path + "/VERSION", "w") as f:
             f.write(version + "\n")
-        print('GIANNIS Version: ', version)
+
         sdist_name = "%s-%s.tar.gz" % (name, version)
         sdist_name = sdist_name.replace('/', '-')
         sdist_name = sdist_name.replace('@', '-')
@@ -114,9 +114,6 @@ def get_version(mod_root):
             shutil.move("VERSION", "VERSION.bak")            # backup version
             shutil.copy("%s/VERSION" % path, "VERSION")      # use full version instead
             os.system  ("python setup.py sdist")             # build sdist
-            print('GIANNIS After setup.py Root: ', mod_root, sdist_name)
-            print(os.getcwd())
-            print(glob.glob(os.getcwd() + '/dist/*'))
             shutil.copy('dist/%s' % sdist_name,
                         '%s/%s'   % (mod_root, sdist_name))  # copy into tree
             shutil.move("VERSION.bak", "VERSION")            # restore version
@@ -193,7 +190,8 @@ setup_args = {
 
     'package_data'      :  {'': ['VERSION', 'SDIST', sdist_name]},
 
-    'install_requires'  :  ['torch',
+    'install_requires'  :  ['numpy>1.12',
+                            'torch',
                             'torchvision',
                             'tensorboardX',
                             'opencv-python',
