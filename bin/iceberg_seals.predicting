@@ -16,8 +16,8 @@ import warnings
 import argparse
 import os
 import shutil
-from utils.model_library import *
-from predict_sealnet import predict_patch
+from iceberg_seals.search.utils.model_library import *
+from iceberg_seals.search.predicting.predict_sealnet import predict_patch
 warnings.filterwarnings('ignore', module='PIL')
 
 
