@@ -191,6 +191,7 @@ setup_args = {
     'package_data'      :  {'': ['VERSION', 'SDIST', sdist_name]},
 
     'install_requires'  :  ['numpy>1.12',
+                            'scipy',
                             'torch',
                             'torchvision',
                             'tensorboardX',
