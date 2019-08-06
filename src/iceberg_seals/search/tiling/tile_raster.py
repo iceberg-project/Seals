@@ -24,11 +24,16 @@ import time
 
 def parse_args():
     parser = argparse.ArgumentParser(description='divides a raster image into files')
-    parser.add_argument('--scale_bands', type=str, help='for multi-scale models, string with size of scale bands '
-                                                        'separated by spaces')
-    parser.add_argument('--input_image', type=str, help='full path to raster file we wish to tile out')
-    parser.add_argument('--output_folder', type=str, help='folder where tiles will be stored')
-    parser.add_argument('--pad', type=str, default=False, help='flag for padding the image, required for multiscale')
+    parser.add_argument('--scale_bands', type=str, required=True,
+                        help='for multi-scale models, string with size of \
+                              scale bands separated by spaces')
+    parser.add_argument('--input_image', type=str, required=True,
+                        help='full path to raster file we wish to tile out')
+    parser.add_argument('--output_folder', type=str, required=True,
+                        help='folder where tiles will be stored')
+    parser.add_argument('--pad', type=str, default=False,
+                        help='flag for padding the image, required for \
+                              multiscale')
 
     return parser.parse_args()
 

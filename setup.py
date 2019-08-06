@@ -72,7 +72,9 @@ def get_version(mod_root):
                      'branch=`git branch | grep -e "^*" | cut -f 2- -d " "` 2>/dev/null ; '
                      'echo $tag@$branch' % src_root,
                      stdout=sp.PIPE, stderr=sp.STDOUT, shell=True)
-        version_detail = str(p.communicate()[0].strip())
+
+        version_detail = p.communicate()[0]
+        version_detail = version_detail.decode('utf-8')
         version_detail = version_detail.replace('detached from ', 'detached-')
 
         # remove all non-alphanumeric (and then some) chars
@@ -92,6 +94,7 @@ def get_version(mod_root):
 
         # make sure the version files exist for the runtime version inspection
         path = '%s/%s' % (src_root, mod_root)
+
         with open(path + "/VERSION", "w") as f:
             f.write(version + "\n")
 
@@ -166,7 +169,7 @@ setup_args = {
     'author'             : 'ICEBERG Team',
     'author_email'       : 'iceberg-ci@googlegroups.com',
     'url'                : 'https://www.github.com/iceberg-project/seals/',
-    'license'            : '',
+    'license'            : 'MIT',
     'classifiers'        : [
         'Development Status :: 1 - Planning',
         'Intended Audience :: Developers',
@@ -187,12 +190,15 @@ setup_args = {
 
     'package_data'      :  {'': ['VERSION', 'SDIST', sdist_name]},
 
-    'install_requires'  :  ['torch',
+    'install_requires'  :  ['numpy>1.12',
+                            'scipy',
+                            'torch',
                             'torchvision',
                             'tensorboardX',
                             'opencv-python',
                             'rasterio',
                             'affine',
+                            'geopandas',
                             'pandas'
                            ],
     'zip_safe'          : False,
