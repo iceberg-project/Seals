@@ -20,13 +20,24 @@
 ## Installation
 
 ### PSC Bridges
+From source:
 ```bash
 iparask$ module load cuda
 iparask$ module load python3
 iparask$ virtualenv iceberg_seals
 iparask$ source iceberg_seals/bin/activate
-[iceberg_seals] iparask$ export PYTHONPATH= <path>/iceberg_seals/bin/activate:
+[iceberg_seals] iparask$ export PYTHONPATH= <path>/iceberg_seals/bin/activate
 [iceberg_seals] iparask$ pip install . --upgrade
+```
+
+From PyPi:
+```bash
+iparask$ module load cuda
+iparask$ module load python3
+iparask$ virtualenv iceberg_seals
+iparask$ source iceberg_seals/bin/activate
+[iceberg_seals] iparask$ export PYTHONPATH= <path>/iceberg_seals/bin/activate
+[iceberg_seals] iparask$ pip install iceberg_seals.search
 ```
 
 To test
