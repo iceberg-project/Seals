@@ -22,6 +22,7 @@
 ### PSC Bridges
 From source:
 ```bash
+iparask$ git clone https://github.com/iceberg-project/Seals.git
 iparask$ module load cuda
 iparask$ module load python3
 iparask$ virtualenv iceberg_seals
