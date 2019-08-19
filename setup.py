@@ -192,7 +192,7 @@ setup_args = {
 
     'install_requires'  :  ['numpy',
                             'scipy',
-                            'pandas'
+                            'pandas',
                             'torch==0.4.0',
                             'torchvision==0.2.1',
                             'tensorboardX==1.8',
