@@ -190,11 +190,12 @@ setup_args = {
 
     'package_data'      :  {'': ['VERSION', 'SDIST', sdist_name]},
 
-    'install_requires'  :  ['numpy>1.12',
+    'install_requires'  :  ['numpy',
                             'scipy',
-                            'torch',
-                            'torchvision',
-                            'tensorboardX',
+                            'pandas',
+                            'torch==0.4.0',
+                            'torchvision==0.2.1',
+                            'tensorboardX==1.8',
                             'opencv-python',
                             'rasterio',
                             'affine',
