@@ -27,7 +27,7 @@ $ module load cuda
 $ module load python3
 $ virtualenv iceberg_seals
 $ source iceberg_seals/bin/activate
-[iceberg_seals] $ export PYTHONPATH= <path>/iceberg_seals/bin/activate
+[iceberg_seals] $ export PYTHONPATH=<path>/iceberg_seals/lib/python3.5/site-packages
 [iceberg_seals] $ pip install . --upgrade
 ```
 
@@ -37,7 +37,7 @@ $ module load cuda
 $ module load python3
 $ virtualenv iceberg_seals
 $ source iceberg_seals/bin/activate
-[iceberg_seals] $ export PYTHONPATH= <path>/iceberg_seals/bin/activate
+[iceberg_seals] $ export PYTHONPATH=<path>/iceberg_seals/lib/python3.5/site-packages
 [iceberg_seals] $ pip install iceberg_seals.search
 ```
 
