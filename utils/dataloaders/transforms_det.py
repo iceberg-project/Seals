@@ -70,15 +70,6 @@ def get_xy_locs(array, count, min_dist=4):
     # return x peaks
     return np.array([[x // cols, x % cols] for x in flat_order[:count]])
 
-
-def add_kernel(array: np.array, kernel_size: int):
-    assert kernel_size % 2 == 1 and kernel_size != 1, 'kernel size must be an odd number greater than 1'
-    final = array.copy()
-    for k_size in range(3, kernel_size + 1, 2):
-        final = final + cv2.dilate(array, np.ones([k_size, k_size]))
-    return final / np.max(final)
-
-
 class ShapeTransform(object):
     """
     Class to ensure image and locations get the same transformations during training
@@ -130,23 +121,22 @@ class ShapeTransform(object):
                 locations = np.zeros([self.output_size, self.output_size], dtype=np.uint8)
                 for point in locs:
                     locations[int(round(point[0])), int(round(point[1]))] = 255
-                locations = add_kernel(locations, self.kernel_size)
 
             # hide-and-seek
             if np.random.rand() > 0.1:
                 image, locations = self.hide_and_seek(image, locations)
                 counts = np.float32(np.sum(np.not_equal(locations, 0)))
-            locations = Image.fromarray(locations)
+            
 
         else:
             center_crop = transforms.CenterCrop(self.output_size)
             image = center_crop(image)
-            locations = center_crop(locations)
+            locations = np.array(center_crop(locations))
             counts = np.float32(np.sum(np.not_equal(np.array(locations), 0)))
-            # add kernel to locations
-            locations = add_kernel(locations, kernel_size=self.kernel_size)
 
-        # change locations to tensor
+        # add Gaussian kernel to locations and transform to tensor
+        locations = cv2.GaussianBlur(locations, (5, 5), 0)
+        locations = Image.fromarray(locations)
         locations = TF.to_tensor(locations)
 
         return image, locations, counts

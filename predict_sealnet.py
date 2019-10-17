@@ -79,20 +79,20 @@ def get_xy_locs(array, count, min_dist=3):
     flat_order = flat_order[:next((idx for idx, ele in enumerate(flat_order) if not flat[ele]), None)]
     # check if detections are too close
     to_remove = []
-    for idx, ele in enumerate(flat_order):
-        if idx in to_remove:
-            continue
-        for idx2 in range(idx + 1, len(flat_order)):
-            if np.linalg.norm(np.array([flat_order[idx] // cols, flat_order[idx] % cols]) -
-                              np.array([flat_order[idx2] // cols, flat_order[idx2] % cols])) < min_dist:
-                to_remove.append(idx2)
+    #for idx, ele in enumerate(flat_order):
+    #    if idx in to_remove:
+    #        continue
+    #    for idx2 in range(idx + 1, len(flat_order)):
+    #        if np.linalg.norm(np.array([flat_order[idx] // cols, flat_order[idx] % cols]) -
+    #                          np.array([flat_order[idx2] // cols, flat_order[idx2] % cols])) < min_dist:
+    #            to_remove.append(idx2)
     flat_order = np.delete(flat_order, to_remove)
     # return x peaks
-    return np.array([(x // cols, x % cols) for x in flat_order[:count]])
+    return [(x // cols, x % cols) for x in flat_order[:count]]
 
 
-def predict_patch(model, output_dir, test_dir, batch_size=2, input_size=299, threshold=0.25, num_workers=1,
-                  duplicate_tolerance=1.5, remove_tiles=False, save_heatmaps=False):
+def predict_patch(model, output_dir, test_dir, batch_size=2, input_size=299, threshold=0, num_workers=1,
+                  duplicate_tolerance=1.5, remove_tiles=False, save_heatmaps=True):
     """
     Patch prediction function. Outputs shapefiles for counts and locations.
 
@@ -111,14 +111,13 @@ def predict_patch(model, output_dir, test_dir, batch_size=2, input_size=299, thr
 
     # create output folder for heatmaps if needed
     if save_heatmaps:
-        if not os.path.exists(f"{output_dir}/heatmaps"):
-            os.makedirs(f'{output_dir}/heatmaps')
+        os.makedirs(f'{output_dir}/heatmaps', exist_ok=True)
 
     # crop and normalize images
     data_transforms = transforms.Compose([
         transforms.CenterCrop(input_size),
         transforms.ToTensor(),
-        transforms.Normalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225])
+        transforms.Normalize([0.5], [0.225])
     ])
 
     # load dataset
@@ -131,10 +130,9 @@ def predict_patch(model, output_dir, test_dir, batch_size=2, input_size=299, thr
     use_gpu = torch.cuda.is_available()
 
     # store predictions and filenames
-    predicted_cnts = []
     predicted_locs = []
-    fnames = []
     intensity = []
+    fnames = []
 
     # set training flag to False
     model.train(False)
@@ -158,62 +156,53 @@ def predict_patch(model, output_dir, test_dir, batch_size=2, input_size=299, thr
             # detection models
 
             out_dict = model(inputs)
-            # if statement prevents iterations over 0-d tensors
-            if out_dict['count'].dim() != 0:
+            counts = out_dict['count']
+            if 'occupancy' in out_dict:
+                counts = counts * torch.Tensor([ele > threshold for ele in sigmoid(out_dict['occupancy'])]).cuda()
+            counts = counts.round().int()
+            pred_cnt_batch = [count.item() for count in counts]
+            
+            # find seals if count > 0
+            if sum(pred_cnt_batch) > 0:
+                
                 locs = out_dict['heatmap'].cpu().detach()
                 locs = locs.numpy()
-                counts = out_dict['count']
-                if 'occupancy' in out_dict:
-                    counts = counts * torch.Tensor([ele > threshold for ele in sigmoid(out_dict['occupancy'])]).cuda()
-                pred_cnt_batch = [round(float(count.item())) for count in counts]
 
                 # save heatmap
                 if save_heatmaps:
                     for idx, loc in enumerate(locs):
-                        loc = loc.numpy()
-                        loc = (loc - np.min(loc)) / (np.max(loc) - np.min(loc))
-                        loc = np.vstack([np.zeros([1, input_size, input_size]), loc.reshape(1, input_size, input_size),
-                                         np.zeros([1, input_size, input_size])]) * 255
-                        cv2.imwrite(f'{output_dir}/heatmaps/{filenames[idx]}.jpg', loc.transpose(1, 2, 0))
+                        if pred_cnt_batch[idx] > 0:
+                            loc = (loc - np.min(loc)) / (np.max(loc) - np.min(loc))
+                            loc = np.vstack([np.zeros([1, input_size, input_size]), loc.reshape(1, input_size, input_size),
+                                            np.zeros([1, input_size, input_size])]) * 255
+                            cv2.imwrite(f'{output_dir}/heatmaps/{filenames[idx]}', loc.transpose(1, 2, 0))
 
                 # find predicted location
-                points = [get_xy_locs(loc, max(0, int(pred_cnt_batch[idx]))) for idx, loc in enumerate(locs)]
+                points = []
+                for idx, loc in enumerate(locs):
+                    if pred_cnt_batch[idx] > 0:
+                        loc = (loc - np.min(loc)) / (np.max(loc) - np.min(loc))
+                        curr_points = get_xy_locs(loc, pred_cnt_batch[idx])
+                        for batch in curr_points:
+                            intensity.append(loc[0, batch[0], batch[1]]) 
+                            predicted_locs.append(batch)
+                            fnames.append(filenames[idx])
+                
 
-                # save batch predictions
-                predicted_cnts.extend(pred_cnt_batch)
-                predicted_locs.extend(points)
+    pred_locations = {'x': [pnt[0] for pnt in predicted_locs],
+                      'y': [pnt[1] for pnt in predicted_locs],
+                      'filenames': [fname for fname in fnames],
+                      'intensity': [val for val in intensity]}
 
-                # add filename
-                fnames.extend(filenames)
-
-                # add intensity values
-                for idx, batch in enumerate(points):
-                    for pnt in batch:
-                        intensity.append(locs[idx, 0, pnt[0], pnt[1]])
-
-    pred_locations = {'x': [],
-                      'y': [],
-                      'filenames': [],
-                      'intensity': []}
-
-    for idx, batch in enumerate(predicted_locs):
-        pnt_idx = 0
-        for pnt in batch:
-            pred_locations['x'].append(pnt[0])
-            pred_locations['y'].append(pnt[1])
-            pred_locations['filenames'].append(fnames[idx])
-            pred_locations['intensity'].append(intensity[pnt_idx])
-            pnt_idx += 1
+    #for idx, batch in enumerate(predicted_locs):
+    #    for pnt in batch:
+    #        pred_locations['x'].append(pnt[0])
+    #        pred_locations['y'].append(pnt[1])
+    #        pred_locations['filenames'].append(fnames[idx])
+    #        pred_locations['intensity'].append(intensity[idx])
+    #        pnt_idx += 1
 
     pred_locations = pd.DataFrame(pred_locations)
-
-    pred_counts = pd.DataFrame({'predictions': [ele for ele in predicted_cnts],
-                                'filenames': [ele for ele in fnames]})
-
-    time_elapsed = time.time() - since
-    print('Testing complete in %dh %dm %ds' % (time_elapsed // 3600,
-                                               time_elapsed // 60,
-                                               time_elapsed % 60))
 
     # save shapefile for counts / classes
     shapefile_path = '%s/predicted_shapefiles/' % output_dir
@@ -225,34 +214,13 @@ def predict_patch(model, output_dir, test_dir, batch_size=2, input_size=299, thr
         '%s/affine_matrix.csv' % (test_dir))['transform']])
 
     # create geopandas DataFrames to store counts per patch and seal locations
-    output_shpfile = gpd.GeoDataFrame()
+    output_shpfile_locs = gpd.GeoDataFrame()
 
     # setup projection for output
-    output_shpfile.crs = from_epsg(3031)
-
-    # generate empty rows
-    for fname in fnames:
-        up, left, down, right = [int(ele) for ele in fname.split('_')[-5: -1]]
-        coords = [point * affine_matrix for point in [[down, left], [down, right], [up, left], [up, right]]]
-        output_shpfile = output_shpfile.append(pd.Series({'geometry': box(minx=min([point[0] for point in coords]),
-                                                                          miny=min([point[1] for point in coords]),
-                                                                          maxx=max([point[0] for point in coords]),
-                                                                          maxy=max([point[1] for point in coords])),
-                                                          'count': 0}, name=fname))
-
-    # add predicted counts
-    for row in pred_counts.iterrows():
-        fname = row[1]['filenames']
-        output_shpfile.loc[fname, 'count'] += row[1]['predictions']
-    output_shpfile.to_file(shapefile_path + 'prediction.shp'.format())
+    output_shpfile_locs.crs = from_epsg(3031)
 
     if len(pred_locations) > 0:
-        # create geopandas DataFrame to store classes and counts per patch
-        output_shpfile_locs = gpd.GeoDataFrame()
-
-        # setup projection for output
-        output_shpfile_locs.crs = from_epsg(3031)
-
+        
         # order locations by heatmap intensity
         pred_locations = pred_locations.iloc[np.argsort(pred_locations['intensity'] * -1)]
 
@@ -285,11 +253,15 @@ def predict_patch(model, output_dir, test_dir, batch_size=2, input_size=299, thr
         output_shpfile_locs.to_file(shapefile_path + 'locations.shp'.format(
             os.path.basename(output_dir)))
 
-        # remove tiles
-        if remove_tiles:
-            shutil.rmtree('{}/tiles'.format(test_dir))
+    # remove tiles
+    if remove_tiles:
+        shutil.rmtree('{}/tiles'.format(test_dir))
 
-    print('Total predicted in %s: ' % os.path.basename(test_dir), sum(pred_counts['predictions']))
+    time_elapsed = time.time() - since
+    print('Testing complete in %dh %dm %ds' % (time_elapsed // 3600,
+                                               time_elapsed // 60,
+                                               time_elapsed % 60))
+    print('Total predicted in %s: ' % os.path.basename(test_dir), len(output_shpfile_locs))
 
 
 def main():

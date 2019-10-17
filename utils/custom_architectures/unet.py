@@ -48,7 +48,7 @@ class down(nn.Module):
 
 
 class up(nn.Module):
-    def __init__(self, in_ch, out_ch, drop_rate, bilinear=False, threshold=0.9999):
+    def __init__(self, in_ch, out_ch, drop_rate, bilinear=False):
         super(up, self).__init__()
 
         #  would be a nice idea if the upsampling could be learned too,
@@ -60,8 +60,7 @@ class up(nn.Module):
 
         self.conv = double_conv(in_ch, out_ch)
         self.drop_rate = drop_rate
-        self.thresh = threshold
-
+        
     def forward(self, x1, x2):
         x1 = self.up(x1)
         diffX = x1.size()[2] - x2.size()[2]
@@ -85,7 +84,7 @@ class outconv(nn.Module):
 
 
 class UNet(nn.Module):
-    def __init__(self, scale=32, n_channels=1, n_classes=1, drop_rate=0.5):
+    def __init__(self, scale=32, n_channels=1, n_classes=1, drop_rate=0.5, threshold=0.9999):
         super(UNet, self).__init__()
                 
         # Unet part for heatmap
@@ -100,6 +99,7 @@ class UNet(nn.Module):
         self.up4 = up(scale*2, scale, drop_rate)
         self.outc = outconv(scale, n_classes)
         self.sigmoid = nn.Sigmoid()
+        self.thresh = threshold
 
     def forward(self, x):
         # initial convolution
@@ -121,7 +121,7 @@ class UNet(nn.Module):
         else:
             count = self.sigmoid(x)
             count = count * count > self.thresh
-            count = torch.sum(count.view(count.size(0), -1), 1)
+            count = torch.sum(count.view(count.size(0), -1), 1).float()
 
             # return output dict
         return {'count': count.detach(),

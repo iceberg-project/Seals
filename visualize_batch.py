@@ -7,7 +7,7 @@ import torchvision
 from torchvision import transforms
 
 from utils.dataloaders import ImageFolderTrainDet
-from utils.dataloaders.transforms_det_resized import ShapeTransform
+from utils.dataloaders.transforms_det import ShapeTransform
 
 
 def imshow(inp, title=None, rgb=True):
@@ -28,7 +28,7 @@ def imshow(inp, title=None, rgb=True):
 
 # create dataloader
 training_set = 'training_set_vanilla'
-data_dir = '/home/bento/Seals/training_sets/{}'.format(training_set)
+data_dir = './training_sets/{}'.format(training_set)
 arch_input_size = 224
 
 data_transforms = {
@@ -77,15 +77,15 @@ weights = torch.DoubleTensor(weights)
 sampler = torch.utils.data.sampler.WeightedRandomSampler(weights, 10000, replacement=False)
 # Get a batch of training data
 dataloaders = {"training": torch.utils.data.DataLoader(image_datasets["training"],
-                                                       batch_size=4,
+                                                       batch_size=10,
                                                        sampler=sampler, num_workers=1),
                "validation": torch.utils.data.DataLoader(image_datasets["validation"],
-                                                         batch_size=4,
+                                                         batch_size=10,
                                                          num_workers=1,
                                                          shuffle=True)}
 
 # inputs contains 4 images because batch_size=4 for the dataloaders
-inputs, classes, counts, locations = next(iter(dataloaders['training']))
+inputs, classes, counts, locations = next(iter(dataloaders['validation']))
 
 # Make a grid from batch
 out_img = torchvision.utils.make_grid(inputs)

@@ -24,7 +24,7 @@ from torch.autograd import Variable
 from torchvision import transforms
 
 from utils.dataloaders.data_loader_train_det import ImageFolderTrainDet
-from utils.dataloaders.transforms_det_resized import ShapeTransform
+from utils.dataloaders.transforms_det import ShapeTransform
 from utils.model_library import *
 
 parser = argparse.ArgumentParser(description='trains a CNN to find seals in satellite imagery')
@@ -180,7 +180,7 @@ def validate_model(model, criterion1, criterion2, criterion3, bce_weight):
 
     # loss dictionary
     loss_dict = {'count': lambda x: criterion1(x, counts),
-                 'heatmap': lambda x: criterion2(x.view(-1), locations.view(-1)),
+                 'heatmap': lambda x: criterion2(x.view(-1), locations.view(-1) * 10),
                  'occupancy': lambda x: criterion3(x, occ)}
 
     for epoch in range(1):
@@ -235,7 +235,7 @@ def validate_model(model, criterion1, criterion2, criterion3, bce_weight):
                     if 'occupancy' in out_dict:
                         fixed_cnt = out_dict['count'] * torch.Tensor([ele > 0.5 for ele in
                                                                       sigmoid(out_dict['occupancy'])]).cuda()
-                        pred_xy_fixed = [get_xy_locs(loc, int(round(fixed_cnt[idx].item()))) for idx, loc in
+                        pred_xy_fixed = [get_xy_locs((loc - np.min(loc)) / (np.max(loc) - np.min(loc)), int(round(fixed_cnt[idx].item()))) for idx, loc in
                                          enumerate(out_dict['heatmap'].cpu().numpy())]
                     else:
                         pred_xy_fixed = pred_xy

@@ -73,11 +73,11 @@ data_transforms = {
                      transforms.ColorJitter(brightness=np.random.choice([0, 1]) * 0.05,
                                             contrast=np.random.choice([0, 1]) * 0.05),
                      transforms.ToTensor(),
-                     transforms.Normalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225])])},
+                     transforms.Normalize([0.5], [0.225])])},
     'validation': {'shape_transform': ShapeTransform(arch_input_size, train=False),
                    'int_transform': transforms.Compose([
                        transforms.ToTensor(),
-                       transforms.Normalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225])])},
+                       transforms.Normalize([0.5], [0.225])])},
 }
 
 # define data dir and image size
@@ -128,15 +128,7 @@ def get_xy_locs(array, count, min_dist=3):
     # find first zero and remove tail
     flat_order = flat_order[:next((idx for idx, ele in enumerate(flat_order) if not flat[ele]), None)]
     # check if detections are too close
-    to_remove = []
-    for idx, ele in enumerate(flat_order):
-        if idx in to_remove:
-            continue
-        for idx2 in range(idx + 1, len(flat_order)):
-            if np.linalg.norm(np.array([flat_order[idx] // cols, flat_order[idx] % cols]) -
-                              np.array([flat_order[idx2] // cols, flat_order[idx2] % cols])) < min_dist:
-                to_remove.append(idx2)
-    flat_order = np.delete(flat_order, to_remove)
+    
     # return x peaks
     return np.array([(x // cols, x % cols) for x in flat_order[:count]])
 
@@ -245,7 +237,7 @@ def train_model(model, criterion1, criterion2, criterion3, optimizer, scheduler,
 
     # loss dictionary
     loss_dict = {'count': lambda x: criterion1(x, counts),
-                 'heatmap': lambda x: criterion2(x.view(-1), locations.view(-1)),
+                 'heatmap': lambda x: criterion2(x.view(-1), locations.view(-1)) * 10,
                  'occupancy': lambda x: criterion3(x, occ)}
 
     for epoch in range(num_epochs):
@@ -256,7 +248,7 @@ def train_model(model, criterion1, criterion2, criterion3, optimizer, scheduler,
         for phase in ['training', 'validation']:
             print('\n{} \n'.format(phase))
             if phase == 'training' or all_train:
-                if epoch % 20 == 0:
+                if epoch != 0 and epoch % 20 == 0:
                     scheduler.step()
                 model.train(True)  # Set model to training mode
 
@@ -363,7 +355,7 @@ def train_model(model, criterion1, criterion2, criterion3, optimizer, scheduler,
                         out_dict = model(inputs)
 
                         # get predicted locations, precision and recall
-                        pred_xy = [get_xy_locs(loc, int(round(
+                        pred_xy = [get_xy_locs((loc - np.min(loc)) / (np.max(loc) - np.min(loc)), int(round(
                             out_dict['count'][idx].item()))) for idx, loc in
                                    enumerate(out_dict['heatmap'].cpu().numpy())]
 
@@ -493,6 +485,7 @@ def main():
         criterion = criterion.cuda()
         criterion2 = criterion2.cuda()
         criterion3 = criterion3.cuda()
+        model = nn.DataParallel(model)
 
     # Observe that all parameters are being optimized
     optimizer_ft = optim.Adam(model.parameters(), lr=hyperparameters[args.hyperparameter_set]['learning_rate'])
@@ -502,7 +495,7 @@ def main():
                                            , gamma=hyperparameters[args.hyperparameter_set]['gamma'])
 
     # start training
-    train_model(model, criterion, criterion2, criterion3, optimizer_ft, exp_lr_scheduler,
+    train_model(model, criterion, criterion2, criterion3, optimizer_ft, exp_lr_scheduler, all_train=args.all_train,
                 num_epochs=hyperparameters[args.hyperparameter_set]['epochs'], bce_weight=bce_weights)
 
 

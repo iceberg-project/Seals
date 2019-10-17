@@ -17,6 +17,7 @@ import warnings
 
 import torch
 
+from torch import nn
 from predict_sealnet import predict_patch
 from tile_raster import tile_raster
 from utils.model_library import *
@@ -57,6 +58,7 @@ def main():
     use_gpu = torch.cuda.is_available()
     if use_gpu:
         model.cuda()
+        model = nn.DataParallel(model)
     model.eval()
 
     # load saved model weights from training
@@ -64,12 +66,17 @@ def main():
     model.load_state_dict(
         torch.load("./saved_models/{}/{}/{}.tar".format(pipeline, model_name, model_name)))
 
+
     predict_patch(model=model, input_size=model_archs[args.model_architecture]['input_size'],
                   batch_size=hyperparameters[args.hyperparameter_set]['batch_size_test'],
                   test_dir=args.test_folder,
                   output_dir='{}/{}'.format(args.test_folder, os.path.basename(input_image)[:-4]),
                   num_workers=hyperparameters[args.hyperparameter_set]['num_workers_train'],
                   save_heatmaps=args.save_heatmaps)
+
+    # remove tiles
+    if os.path.exists('{}/tiles'.format(args.test_folder)):
+        shutil.rmtree('{}/tiles'.format(args.test_folder))
 
 
 if __name__ == "__main__":
