@@ -9,25 +9,26 @@ License: MIT
 Copyright: 2018-2019
 """
 
-import torch
-import pandas as pd
-import geopandas as gpd
+import argparse
 import os
-import rasterio
-from torchvision import transforms
-from fiona.crs import from_epsg
-from shapely.geometry.geo import box, Point
-import numpy as np
-from ..utils.dataloaders.data_loader_test import ImageFolderTest
+import shutil
 import time
 import warnings
-import argparse
-import shutil
-import cv2
-from ..utils.model_library import *
 
+import cv2
+import geopandas as gpd
+import numpy as np
+import pandas as pd
+import rasterio
+import torch
 # image transforms seem to cause truncated images, so we need this
 from PIL import ImageFile
+from fiona.crs import from_epsg
+from shapely.geometry.geo import box, Point
+from torchvision import transforms
+
+from utils.dataloaders.data_loader_test import ImageFolderTest
+from utils.model_library import *
 
 ImageFile.LOAD_TRUNCATED_IMAGES = True
 
@@ -45,8 +46,8 @@ def parse_args():
                                                        'used in subsequent steps of the pipeline')
     parser.add_argument('--models_folder', type=str, default='saved_models', help='folder where the model tar file is'
                                                                                   'saved')
-    parser.add_argument('--input_image', type=str, help='filename of input raster')
     parser.add_argument('--output_dir', type=str, help='folder where output shapefiles will be stored')
+    parser.add_argument('--save_heatmaps', type=int, help='boolean for saving heatmaps', default=0)
     return parser.parse_args()
 
 
@@ -78,24 +79,23 @@ def get_xy_locs(array, count, min_dist=3):
     flat_order = flat_order[:next((idx for idx, ele in enumerate(flat_order) if not flat[ele]), None)]
     # check if detections are too close
     to_remove = []
-    for idx, ele in enumerate(flat_order):
-        if idx in to_remove:
-            continue
-        for idx2 in range(idx + 1, len(flat_order)):
-            if np.linalg.norm(np.array([flat_order[idx] // cols, flat_order[idx] % cols]) -
-                              np.array([flat_order[idx2] // cols, flat_order[idx2] % cols])) < min_dist:
-                to_remove.append(idx2)
+    #for idx, ele in enumerate(flat_order):
+    #    if idx in to_remove:
+    #        continue
+    #    for idx2 in range(idx + 1, len(flat_order)):
+    #        if np.linalg.norm(np.array([flat_order[idx] // cols, flat_order[idx] % cols]) -
+    #                          np.array([flat_order[idx2] // cols, flat_order[idx2] % cols])) < min_dist:
+    #            to_remove.append(idx2)
     flat_order = np.delete(flat_order, to_remove)
     # return x peaks
-    return np.array([(x // cols, x % cols) for x in flat_order[:count]])
+    return [(x // cols, x % cols) for x in flat_order[:count]]
 
 
-def predict_patch(input_image, model, output_dir, test_dir, batch_size=2, input_size=299, threshold=0.5, num_workers=1,
-                  remove_tiles=False):
+def predict_patch(model, output_dir, test_dir, batch_size=2, input_size=299, threshold=0, num_workers=1,
+                  duplicate_tolerance=1.5, remove_tiles=False, save_heatmaps=True):
     """
     Patch prediction function. Outputs shapefiles for counts and locations.
 
-    :param input_image: filename raster image from tile_raster
     :param model: pytorch model
     :param test_dir: directory with input tiles
     :param output_dir: output directory name
@@ -103,15 +103,21 @@ def predict_patch(input_image, model, output_dir, test_dir, batch_size=2, input_
     :param input_size: size of input images
     :param threshold: threshold for occupancy
     :param num_workers: number of workers on dataloader
+    :param duplicate_tolerance: proximity at which two points are considered duplicates, used for NMS
     :param remove_tiles: Remove the tiles folder from the filesystem.
+    :param save_heatmaps: Saves heatmaps from output
     :return:
     """
+
+    # create output folder for heatmaps if needed
+    if save_heatmaps:
+        os.makedirs(f'{output_dir}/heatmaps', exist_ok=True)
 
     # crop and normalize images
     data_transforms = transforms.Compose([
         transforms.CenterCrop(input_size),
         transforms.ToTensor(),
-        transforms.Normalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225])
+        transforms.Normalize([0.5], [0.225])
     ])
 
     # load dataset
@@ -124,8 +130,8 @@ def predict_patch(input_image, model, output_dir, test_dir, batch_size=2, input_
     use_gpu = torch.cuda.is_available()
 
     # store predictions and filenames
-    predicted_cnts = []
     predicted_locs = []
+    intensity = []
     fnames = []
 
     # set training flag to False
@@ -150,100 +156,112 @@ def predict_patch(input_image, model, output_dir, test_dir, batch_size=2, input_
             # detection models
 
             out_dict = model(inputs)
-            # if statement prevents iterations over 0-d tensors
-            if out_dict['count'].dim() != 0:
+            counts = out_dict['count']
+            if 'occupancy' in out_dict:
+                counts = counts * torch.Tensor([ele > threshold for ele in sigmoid(out_dict['occupancy'])]).cuda()
+            counts = counts.round().int()
+            pred_cnt_batch = [count.item() for count in counts]
+            
+            # find seals if count > 0
+            if sum(pred_cnt_batch) > 0:
+                
                 locs = out_dict['heatmap'].cpu().detach()
-                counts = out_dict['count']
-                if 'occupancy' in out_dict:
-                    counts = counts * torch.Tensor([ele > threshold for ele in sigmoid(out_dict['occupancy'])]).cuda()
-                pred_cnt_batch = [round(float(count.item())) for count in counts]
+                locs = locs.numpy()
+
+                # save heatmap
+                if save_heatmaps:
+                    for idx, loc in enumerate(locs):
+                        if pred_cnt_batch[idx] > 0:
+                            loc = (loc - np.min(loc)) / (np.max(loc) - np.min(loc))
+                            loc = np.vstack([np.zeros([1, input_size, input_size]), loc.reshape(1, input_size, input_size),
+                                            np.zeros([1, input_size, input_size])]) * 255
+                            cv2.imwrite(f'{output_dir}/heatmaps/{filenames[idx]}', loc.transpose(1, 2, 0))
+
                 # find predicted location
-                locs = [get_xy_locs(loc, max(0, int(pred_cnt_batch[idx]))) for idx, loc in enumerate(locs.numpy())]
-                # save batch predictions
-                predicted_cnts.extend(pred_cnt_batch)
-                predicted_locs.extend(locs)
-                # add filename
-                fnames.extend(filenames)
+                points = []
+                for idx, loc in enumerate(locs):
+                    if pred_cnt_batch[idx] > 0:
+                        loc = (loc - np.min(loc)) / (np.max(loc) - np.min(loc))
+                        curr_points = get_xy_locs(loc, pred_cnt_batch[idx])
+                        for batch in curr_points:
+                            intensity.append(loc[0, batch[0], batch[1]]) 
+                            predicted_locs.append(batch)
+                            fnames.append(filenames[idx])
+                
 
-    pred_locations = {'x': [],
-                      'y': [],
-                      'filenames': []}
+    pred_locations = {'x': [pnt[0] for pnt in predicted_locs],
+                      'y': [pnt[1] for pnt in predicted_locs],
+                      'filenames': [fname for fname in fnames],
+                      'intensity': [val for val in intensity]}
 
-    for idx, batch in enumerate(predicted_locs):
-        for pnt in batch:
-            pred_locations['x'].append(pnt[0])
-            pred_locations['y'].append(pnt[1])
-            pred_locations['filenames'].append(fnames[idx])
+    #for idx, batch in enumerate(predicted_locs):
+    #    for pnt in batch:
+    #        pred_locations['x'].append(pnt[0])
+    #        pred_locations['y'].append(pnt[1])
+    #        pred_locations['filenames'].append(fnames[idx])
+    #        pred_locations['intensity'].append(intensity[idx])
+    #        pnt_idx += 1
+
     pred_locations = pd.DataFrame(pred_locations)
-
-    pred_counts = pd.DataFrame({'predictions': [ele for ele in predicted_cnts],
-                                'filenames': [ele for ele in fnames]})
-
-    time_elapsed = time.time() - since
-    print('Testing complete in %dh %dm %ds' % (time_elapsed // 3600,
-                                               time_elapsed // 60,
-                                               time_elapsed % 60))
 
     # save shapefile for counts / classes
     shapefile_path = '%s/predicted_shapefiles/' % output_dir
-    os.makedirs(shapefile_path)
+    if not os.path.exists(shapefile_path):
+        os.makedirs(shapefile_path)
 
     # load affine matrix
     affine_matrix = rasterio.Affine(*[ele for ele in pd.read_csv(
         '%s/affine_matrix.csv' % (test_dir))['transform']])
 
     # create geopandas DataFrames to store counts per patch and seal locations
-    output_shpfile = gpd.GeoDataFrame()
+    output_shpfile_locs = gpd.GeoDataFrame()
 
     # setup projection for output
-    output_shpfile.crs = from_epsg(3031)
-
-    # generate empty rows
-    for fname in fnames:
-        up, left, down, right = [int(ele) for ele in fname.split('_')[-5: -1]]
-        coords = [point * affine_matrix for point in [[down, left], [down, right], [up, left], [up, right]]]
-        output_shpfile = output_shpfile.append(pd.Series({'geometry': box(minx=min([point[0] for point in coords]),
-                                                                          miny=min([point[1] for point in coords]),
-                                                                          maxx=max([point[0] for point in coords]),
-                                                                          maxy=max([point[1] for point in coords])),
-                                                          'count': 0}, name=fname))
-
-    # add predicted counts
-    for row in pred_counts.iterrows():
-        fname = row[1]['filenames']
-        output_shpfile.loc[fname, 'count'] += row[1]['predictions']
-    output_shpfile.to_file(shapefile_path + 'prediction.shp'.format())
+    output_shpfile_locs.crs = from_epsg(3031)
 
     if len(pred_locations) > 0:
-        # create geopandas DataFrame to store classes and counts per patch
-        output_shpfile_locs = gpd.GeoDataFrame()
-
-        # setup projection for output
-        output_shpfile_locs.crs = from_epsg(3031)
+        
+        # order locations by heatmap intensity
+        pred_locations = pred_locations.iloc[np.argsort(pred_locations['intensity'] * -1)]
 
         # add locations
-        for row in pred_locations.iterrows():
-            fname = row[1]['filenames']
+        for _, row in pred_locations.iterrows():
+            fname = row['filenames']
+            intensity = row['intensity']
             up, left, down, right = [int(ele) for ele in fname.split('_')[-5: -1]]
-            x, y = [up + row[1]['y'], left + row[1]['x']]
+            x, y = [up + row['y'], left + row['x']]
             x_loc, y_loc = [x, y] * affine_matrix
-            output_shpfile_locs = output_shpfile_locs.append(pd.Series({'geometry': Point(x_loc, y_loc),
-                                                                        'x': x, 'y': y}),
-                                                             ignore_index=True)
+
+            # keep point if there isn't any duplicate with higher intensity
+            keep = True
+            for _, row2 in output_shpfile_locs.iterrows():
+                if row2['geometry'].distance(Point(x_loc, y_loc)) < duplicate_tolerance:
+                    keep = False
+                    break
+            if keep:
+                output_shpfile_locs = output_shpfile_locs.append(pd.Series({'geometry': Point(x_loc, y_loc),
+                                                                            'x': x, 'y': y,
+                                                                            'filename': fname,
+                                                                            'intensity': intensity}),
+                                                                 ignore_index=True)
 
         # add scene name
         output_shpfile_locs = output_shpfile_locs.join(pd.DataFrame({
-            'scene': [input_image] * len(output_shpfile_locs)}))
+            'scene': [os.path.basename(test_dir)] * len(output_shpfile_locs)}))
 
         # save shapefile
         output_shpfile_locs.to_file(shapefile_path + 'locations.shp'.format(
             os.path.basename(output_dir)))
 
-        # remove tiles
-        if remove_tiles:
-            shutil.rmtree('{}/tiles'.format(test_dir))
+    # remove tiles
+    if remove_tiles:
+        shutil.rmtree('{}/tiles'.format(test_dir))
 
-    print('Total predicted in %s: '% os.path.basename(test_dir), sum(pred_counts['predictions']))
+    time_elapsed = time.time() - since
+    print('Testing complete in %dh %dm %ds' % (time_elapsed // 3600,
+                                               time_elapsed // 60,
+                                               time_elapsed % 60))
+    print('Total predicted in %s: ' % os.path.basename(test_dir), len(output_shpfile_locs))
 
 
 def main():
@@ -259,7 +277,7 @@ def main():
 
     # find pipeline
     pipeline = model_archs[args.model_architecture]['pipeline']
-    
+
     # create model instance
     model = model_defs[pipeline][args.model_architecture]
 
@@ -274,8 +292,7 @@ def main():
                                                                 args.model_name)))
 
     # run validation to get confusion matrix
-    predict_patch(input_image=args.input_image, model=model,
-                  input_size=model_archs[args.model_architecture]['input_size'],
+    predict_patch(model=model, input_size=model_archs[args.model_architecture]['input_size'],
                   test_dir=args.test_dir, output_dir=args.output_dir,
                   batch_size=hyperparameters[args.hyperparameter_set]['batch_size_test'],
                   num_workers=hyperparameters[args.hyperparameter_set]['num_workers_train'],
