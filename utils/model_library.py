@@ -50,17 +50,16 @@ training_sets = {'training_set_vanilla': {'num_classes': 11, 'scale_bands': [450
                  }
 
 # hyperparameter sets
-hyperparameters = {'A': {'learning_rate': 1E-3, 'batch_size_train': 64, 'batch_size_val': 8, 'batch_size_test': 64,
-                         'step_size': 1, 'gamma': 0.95, 'epochs': 5, 'num_workers_train': 16, 'num_workers_val': 1},
-                   'B': {'learning_rate': 1E-3, 'batch_size_train': 16, 'batch_size_val': 1, 'batch_size_test': 8,
-                         'step_size': 1, 'gamma': 0.95, 'epochs': 5, 'num_workers_train': 8, 'num_workers_val': 1},
-                   'C': {'learning_rate': 1E-3, 'batch_size_train': 64, 'batch_size_val': 8, 'batch_size_test': 64,
-                         'step_size': 1, 'gamma': 0.95, 'epochs': 30, 'num_workers_train': 16, 'num_workers_val': 8},
-                   'D': {'learning_rate': 1E-3, 'batch_size_train': 1, 'batch_size_val': 1, 'batch_size_test': 1,
-                         'step_size': 1, 'gamma': 0.95, 'epochs': 1, 'num_workers_train': 1, 'num_workers_val': 1},
-                   'E': {'learning_rate': 1E-4, 'batch_size_train': 16, 'batch_size_val': 32, 'batch_size_test': 32,
-                         'step_size': 1, 'gamma': 0.5, 'epochs': 75, 'num_workers_train': 8, 'num_workers_val': 8},
-                   'F': {'learning_rate': 2E-4, 'batch_size_train': 32, 'batch_size_val': 32, 'batch_size_test': 64,
-                         'step_size': 1, 'gamma': 0.5, 'epochs': 75, 'num_workers_train': 8, 'num_workers_val': 8,
-                         'fp_weight': 0.05, 'fn_weight': 0.15}
+hyperparameters = {'A': {'learning_rate': 1E-3, 'batch_size_train': 32, 'batch_size_val': 128, 'batch_size_test': 128,
+                         'step_size': 1, 'gamma': 0.5, 'epochs': 150, 'num_workers_train': 16, 'num_workers_val': 16},
+                   'B': {'learning_rate': 1E-3, 'batch_size_train': 64, 'batch_size_val': 128, 'batch_size_test': 8,
+                         'step_size': 1, 'gamma': 0.95, 'epochs': 5, 'num_workers_train':16, 'num_workers_val': 16},
+                   'C': {'learning_rate': 1E-3, 'batch_size_train': 16, 'batch_size_val': 32, 'batch_size_test': 32,
+                         'step_size': 1, 'gamma': 0.95, 'epochs': 75, 'num_workers_train': 8, 'num_workers_val': 8},
+                   'D': {'learning_rate': 5E-4, 'batch_size_train': 64, 'batch_size_val': 128, 'batch_size_test': 128,
+                         'step_size': 1, 'gamma': 0.5, 'epochs': 75, 'num_workers_train': 16, 'num_workers_val': 32},
+                   'E': {'learning_rate': 1E-3, 'batch_size_train': 128, 'batch_size_val': 256, 'batch_size_test': 256,
+                         'step_size': 1, 'gamma': 0.5, 'epochs': 75, 'num_workers_train': 32, 'num_workers_val': 64},
+                   'F': {'learning_rate': 1E-3, 'batch_size_train': 64, 'batch_size_val': 128, 'batch_size_test': 64,
+                         'step_size': 1, 'gamma': 0.5, 'epochs': 75, 'num_workers_train': 16, 'num_workers_val': 16}
                    }

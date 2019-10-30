@@ -3,6 +3,7 @@ from torchvision import transforms
 import numpy as np
 import cv2
 from PIL import Image
+from utils.getxy_max import getxy_max
 
 
 class HideAndSeek(object):
@@ -47,28 +48,6 @@ class HideAndSeek(object):
         img = Image.fromarray(img)
         return img, locations
 
-
-def get_xy_locs(array, count, min_dist=4):
-    if count == 0:
-        return np.array([])
-    cols = array.shape[1]
-    # flatten array, get rid of zeros and sort it
-    flat = array.flatten()
-    flat_order = (-flat).argsort()
-    # find first zero and remove tail
-    flat_order = flat_order[next((idx for idx, ele in enumerate(flat_order) if flat[ele]), None):]
-    # check if detections are too close
-    to_remove = []
-    for idx, ele in enumerate(flat_order):
-        if idx in to_remove:
-            continue
-        for idx2 in range(idx + 1, len(flat_order)):
-            if np.linalg.norm(np.array([flat_order[idx] // cols, flat_order[idx] % cols]) -
-                              np.array([flat_order[idx2] // cols, flat_order[idx2] % cols])) < min_dist:
-                to_remove.append(idx2)
-    flat_order = np.delete(flat_order, to_remove)
-    # return x peaks
-    return np.array([[x // cols, x % cols] for x in flat_order[:count]])
 
 class ShapeTransform(object):
     """
@@ -115,15 +94,13 @@ class ShapeTransform(object):
 
             # get locations
             if counts > 0:
-                locs = get_xy_locs(locations, int(counts))
-                # lbl, n_lbl = ndimage.label(locations)
-                # locs = ndimage.center_of_mass(locations, lbl, [ele for ele in range(1, n_lbl + 1)])
+                locs = getxy_max(locations, int(counts))
                 locations = np.zeros([self.output_size, self.output_size], dtype=np.uint8)
                 for point in locs:
                     locations[int(round(point[0])), int(round(point[1]))] = 255
 
             # hide-and-seek
-            if np.random.rand() > 0.1:
+            if np.random.rand() > 0.9:
                 image, locations = self.hide_and_seek(image, locations)
                 counts = np.float32(np.sum(np.not_equal(locations, 0)))
             

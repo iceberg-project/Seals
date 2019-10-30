@@ -35,6 +35,9 @@ def parse_args():
 
 
 def tile_raster(input_image, output_folder, scales, stride=1, pad_img=False):
+    # unroll scale  bands
+    scales = [int(ele) for ele in scales.split('_')]
+
     # time it
     tic = time.time()
 
@@ -99,7 +102,7 @@ def main():
 
     # unroll arguments
     input_image = args.input_image
-    scales = [int(ele) for ele in args.scale_bands.split('_')]
+    scales = args.scale_bands
     output_folder = args.output_folder
     tile_raster(input_image, output_folder, scales, args.stride, True)
 

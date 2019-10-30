@@ -46,9 +46,10 @@ def test_cnn(shp_pred, shp_gt, tolerance_seal, tolerance_haul, output):
 
     # store haul out shapefile
     hauls_shp = gpd.GeoDataFrame(crs=from_epsg(3031))
+    hauls_shp_gt = gpd.GeoDataFrame(crs=from_epsg(3031))
 
     # loop over scenes common to predicted and ground-truth shapefiles
-    for scene in set(pd.unique(preds.scene)).intersection(set(pd.unique(ground_truth.scene))):
+    for scene in set(preds.scene).intersection(set(ground_truth.scene)):
         # store stats
         true_positives_seal = 0
         true_positives_haul = 0
@@ -83,9 +84,11 @@ def test_cnn(shp_pred, shp_gt, tolerance_seal, tolerance_haul, output):
         n_hauls_gt, groups_gt = connected_components(overlap_matrix_gt)
         n_hauls_preds, groups_preds = connected_components(overlap_matrix_preds)
 
-        # dissolve points that overlap groundtruth
+        # dissolve points that overlap groundtruth and save groundtruth shapefile
         hauls_gt = gpd.GeoDataFrame({'geometry': buffer_gt, 'group': groups_gt}, crs=from_epsg(3031))
         hauls_gt = hauls_gt.dissolve(by='group')
+        hauls_gt['haulout_size'] = [sum(groups_gt == grp) for grp in hauls_gt.index]
+        hauls_gt['scene'] = [scene] * len(hauls_gt)
 
         # dissolve points that overlap predicted and save haulout shapefile
         hauls_preds = gpd.GeoDataFrame({'geometry': buffer_preds, 'group': groups_preds}, crs=from_epsg(3031))
@@ -95,6 +98,7 @@ def test_cnn(shp_pred, shp_gt, tolerance_seal, tolerance_haul, output):
 
         # add haulout shapes to shapefile
         hauls_shp = hauls_shp.append(hauls_preds, ignore_index=True)
+        hauls_shp_gt = hauls_shp_gt.append(hauls_gt, ignore_index=True)
 
         # find overlaps between prediction and groundtruth
         for _, gt_haul in hauls_gt.iterrows():
@@ -120,7 +124,7 @@ def test_cnn(shp_pred, shp_gt, tolerance_seal, tolerance_haul, output):
                                         'ground-truth_count': n_hauls_gt,
                                         'predicted_count': n_hauls_preds}, ignore_index=True)
 
-    # loop through scenes entirely missed by counter
+    # loop through scenes entirely missed by one observer (i.e. model or ground-truth)
     for scene in set(pd.unique(preds.scene)).difference(set(pd.unique(ground_truth.scene))):
         # restrict to scene
         preds_scene = preds.loc[preds.scene == scene]
@@ -169,7 +173,14 @@ def test_cnn(shp_pred, shp_gt, tolerance_seal, tolerance_haul, output):
 
             # store overlap groups
             n_hauls_gt, groups_gt = connected_components(overlap_matrix_gt)
+             
+            # store haulouts
+            hauls_gt = gpd.GeoDataFrame({'geometry': buffer_gt, 'group': groups_gt}, crs=from_epsg(3031))
+            hauls_gt = hauls_gt.dissolve(by='group')
+            hauls_gt['haulout_size'] = [sum(groups_gt == grp) for grp in hauls_gt.index]
+            hauls_gt['scene'] = [scene] * len(hauls_gt)
 
+            # save stats
             stats_seal = stats_seal.append({'precision': 0,
                                             'recall': 0,
                                             'scene': scene,
@@ -182,10 +193,13 @@ def test_cnn(shp_pred, shp_gt, tolerance_seal, tolerance_haul, output):
                                             'ground-truth_count': n_hauls_gt,
                                             'predicted_count': 0}, ignore_index=True)
 
+            hauls_shp_gt = hauls_shp_gt.append(hauls_gt, ignore_index=True)
+
     # save output
     stats_seal.to_csv(f"{output}prec_recall_seal.csv")
     stats_haul.to_csv(f"{output}prec_recall_haul.csv")
     hauls_shp.to_file(f"{output}pred_haulouts.shp")
+    hauls_shp_gt.to_file(f"{output}gt_haulouts.shp")
 
 
 def main():

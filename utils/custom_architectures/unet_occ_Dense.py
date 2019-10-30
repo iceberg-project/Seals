@@ -185,7 +185,7 @@ class outconv(nn.Module):
 
 
 class UNetOccDense(nn.Module):
-    def __init__(self, scale=64, n_channels=1, n_classes=1, drop_rate=0.5,
+    def __init__(self, scale=64, n_channels=1, n_classes=1, drop_rate=0.5,threshold=50,
                  growth_rate=32, block_config=(6, 12, 24, 16), num_init_features=64, bn_size=4):
         super(UNetOccDense, self).__init__()
 
@@ -239,6 +239,8 @@ class UNetOccDense(nn.Module):
         self.outc = outconv(scale, n_classes)
         self.sigmoid = nn.Sigmoid()
         self.relu = nn.ReLU()
+        self.tresh = nn.Hardtanh(0.0, threshold)
+
 
     def forward(self, x):
         # shared portion
@@ -262,6 +264,7 @@ class UNetOccDense(nn.Module):
         x = self.up4(x, x1)
         x = self.outc(x)
         count = torch.sum(self.sigmoid(x).view(x.size(0), -1), 1)
+        count = self.thresh(count)
 
         # return output dict
         return {'count': torch.squeeze(count.detach()),

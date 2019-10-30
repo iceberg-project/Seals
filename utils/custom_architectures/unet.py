@@ -84,7 +84,7 @@ class outconv(nn.Module):
 
 
 class UNet(nn.Module):
-    def __init__(self, scale=32, n_channels=1, n_classes=1, drop_rate=0.5, threshold=0.9999):
+    def __init__(self, scale=32, n_channels=1, n_classes=1, drop_rate=0.5, threshold_high=0.125, threshold_low=0.11, max_n = 50):
         super(UNet, self).__init__()
                 
         # Unet part for heatmap
@@ -99,7 +99,9 @@ class UNet(nn.Module):
         self.up4 = up(scale*2, scale, drop_rate)
         self.outc = outconv(scale, n_classes)
         self.sigmoid = nn.Sigmoid()
-        self.thresh = threshold
+        self.thresh = [threshold_low, threshold_high]
+        self.to_max = nn.Hardtanh(max_val=50)
+        
 
     def forward(self, x):
         # initial convolution
@@ -120,9 +122,11 @@ class UNet(nn.Module):
             count = torch.sum(self.sigmoid(x).view(x.size(0), -1), 1)
         else:
             count = self.sigmoid(x)
-            count = count * count > self.thresh
+            count = torch.clamp(count, min=self.thresh[0], max=self.thresh[1])
             count = torch.sum(count.view(count.size(0), -1), 1).float()
+            count = self.to_max(count)
+        
 
-            # return output dict
-        return {'count': count.detach(),
+        # return output dict
+        return {'count': torch.squeeze(count.detach()),
                 'heatmap': x}

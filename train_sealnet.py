@@ -30,6 +30,7 @@ from torchvision import transforms
 from utils.dataloaders.data_loader_train_det import ImageFolderTrainDet
 from utils.dataloaders.transforms_det import ShapeTransform
 from utils.model_library import *
+from utils.getxy_max import getxy_max
 
 parser = argparse.ArgumentParser(description='trains a CNN to find seals in satellite imagery')
 parser.add_argument('--training_dir', type=str, help='base directory to recursively search for images in')
@@ -41,6 +42,7 @@ parser.add_argument('--output_name', type=str, help='name of output file from tr
                                                     'subsequent steps of the pipeline')
 parser.add_argument('--models_folder', type=str, default='saved_models', help='folder where the model will be saved')
 parser.add_argument('--all_train', type=int, default=0, help='whether all samples will be used for training')
+parser.add_argument('--gpu_id', type=int, help='GPU id for running training script, defaults to nn.Dataparallel if id is not provided')
 
 args = parser.parse_args()
 
@@ -86,12 +88,13 @@ img_size = training_sets[args.training_dir]['scale_bands'][0]
 
 # save image datasets
 if args.all_train:
-    image_datasets = {x: ImageFolderTrainDet(root=os.path.join(data_dir, x),
+    image_datasets = {'training': ImageFolderTrainDet(root=data_dir,
                                              shape_transform=data_transforms['training']['shape_transform'],
                                              int_transform=data_transforms['training']['int_transform'],
                                              training_set=args.training_dir,
-                                             shuffle=True)
-                      for x in ['training', 'validation']}
+                                             shuffle=True)}
+ 
+
 else:
     image_datasets = {x: ImageFolderTrainDet(root=os.path.join(data_dir, x),
                                              shape_transform=data_transforms[x]['shape_transform'],
@@ -99,38 +102,6 @@ else:
                                              training_set=args.training_dir,
                                              shuffle=x == 'training')
                       for x in ['training', 'validation']}
-
-
-
-def get_xy_locs(array, count, min_dist=3):
-    """
-    Helper function to locate a predefined number of intensity peaks on a heatmap. Uses a combination of dilation
-    filters to find cells in the image that remain unchanged between the original image and dilated filters -- which
-    should be intensity peaks. The function returns a numpy array with the (x,y) locations of the 'n' highest intensity
-    peaks, with a minimum distance of 'm' between peaks.
-
-    :param array:np.array array of points where we desire to get intensity peaks
-    :param count: number of intensity peaks
-    :param min_dist: minimum distance between intensity peaks
-    :return: array with (x,y) of each intensity peak
-    """
-    if count == 0:
-        return np.array([])
-    cols = array.shape[1]
-    # dilate (2 dilations are more robust than one)
-    dil_array = cv2.dilate(array, np.ones([3, 3], dtype=np.uint8))
-    dil_array2 = cv2.dilate(array, np.ones([5, 5], dtype=np.uint8))
-    # check indices that do not change with dilations
-    array = array * (cv2.compare(array, dil_array, 2) == 255) * (cv2.compare(array, dil_array2, 2) == 255)
-    # flatten array, get rid of zeros and sort it
-    flat = array.flatten()
-    flat_order = (-flat).argsort()
-    # find first zero and remove tail
-    flat_order = flat_order[:next((idx for idx, ele in enumerate(flat_order) if not flat[ele]), None)]
-    # check if detections are too close
-    
-    # return x peaks
-    return np.array([(x // cols, x % cols) for x in flat_order[:count]])
 
 
 # Force minibatches to have an equal representation amongst classes during training with a weighted sampler
@@ -160,19 +131,21 @@ weights = make_weights_for_balanced_classes(image_datasets['training'].imgs, len
 weights = torch.DoubleTensor(weights)
 sampler = torch.utils.data.sampler.WeightedRandomSampler(weights, len(weights))
 
+
 # change batch size ot match number of GPU's being used?
 dataloaders = {"training": torch.utils.data.DataLoader(image_datasets["training"],
                                                        batch_size=
                                                        hyperparameters[args.hyperparameter_set]['batch_size_train'],
                                                        sampler=sampler, num_workers=
-                                                       hyperparameters[args.hyperparameter_set]['num_workers_train']),
-               "validation": torch.utils.data.DataLoader(image_datasets["validation"],
+                                                       hyperparameters[args.hyperparameter_set]['num_workers_train'])}
+                                                    
+if not args.all_train:
+    dataloaders["validation"] =  torch.utils.data.DataLoader(image_datasets["validation"],
                                                          batch_size=
                                                          hyperparameters[args.hyperparameter_set]['batch_size_val'],
                                                          num_workers=
                                                          hyperparameters[args.hyperparameter_set]['num_workers_val'])
-               }
-dataset_sizes = {x: len(image_datasets[x]) for x in ['training', 'validation']}
+dataset_sizes = {x: len(image_datasets[x]) for x in image_datasets}
 
 use_gpu = torch.cuda.is_available()
 
@@ -204,7 +177,7 @@ def save_checkpoint(state, is_best_loss, is_best_f1, is_best_recall, is_best_pre
         shutil.copyfile(filename + '.tar', filename + '_best_precision.tar')
 
 
-def train_model(model, criterion1, criterion2, criterion3, optimizer, scheduler, bce_weight, all_train, num_epochs=25):
+def train_model(model, criterion1, criterion2, criterion3, optimizer, scheduler, bce_weight, all_train, num_epochs=25, device=0):
     """
     Helper function to train CNNs. Trains detection models using heatmaps, where the output heatmap has the same
     dimensions of the input image. Heatmap detection may be assisted with a regression branch to provide counts and/or
@@ -247,9 +220,7 @@ def train_model(model, criterion1, criterion2, criterion3, optimizer, scheduler,
         # Each epoch has a training and validation phase
         for phase in ['training', 'validation']:
             print('\n{} \n'.format(phase))
-            if phase == 'training' or all_train:
-                if epoch != 0 and epoch % 20 == 0:
-                    scheduler.step()
+            if phase == 'training':
                 model.train(True)  # Set model to training mode
 
                 running_loss = {'count': 0,
@@ -263,18 +234,18 @@ def train_model(model, criterion1, criterion2, criterion3, optimizer, scheduler,
                     inputs, _, counts, locations = data
 
                     # get occupancy
-                    occ = torch.Tensor([cnt > 0 for cnt in counts]).cuda()
+                    occ = torch.Tensor([cnt > 0 for cnt in counts]).cuda(device=f"cuda:{device}")
 
                     # get batch weights
-                    batch_weights_loc = ((locations.view(-1) * bce_weight[0]) + 1).cuda()
-                    batch_weights_occ = (occ * bce_weight[1] + 1).cuda()
+                    batch_weights_loc = ((locations.view(-1) * bce_weight[0]) + 1).cuda(device=f"cuda:{device}")
+                    batch_weights_occ = (occ * bce_weight[1] + 1).cuda(device=f"cuda:{device}")
 
                     # wrap them in Variable
                     if use_gpu:
-                        inputs = Variable(inputs.cuda())
-                        counts = Variable(counts.cuda())
-                        locations = Variable(locations.cuda())
-                        occ = Variable(occ.cuda())
+                        inputs = Variable(inputs.cuda(device=f"cuda:{device}"))
+                        counts = Variable(counts.cuda(device=f"cuda:{device}"))
+                        locations = Variable(locations.cuda(device=f"cuda:{device}"))
+                        occ = Variable(occ.cuda(device=f"cuda:{device}"))
                     else:
                         inputs, counts, occ, locations = Variable(inputs), Variable(counts), Variable(occ), \
                                                          Variable(locations)
@@ -304,14 +275,21 @@ def train_model(model, criterion1, criterion2, criterion3, optimizer, scheduler,
                     loss.backward()
 
                     # clip gradients
-                    nn.utils.clip_grad_norm_(model.parameters(), 0.5)
+                    #nn.utils.clip_grad_norm_(model.parameters(), 0.5)
 
                     # step with optimizer
                     optimizer.step()
-
+                    scheduler.step()
                     global_step += 1
+                    if global_step % 3 == 0:
+                         writer.add_scalar('learning_rate', scheduler.get_lr(), global_step=global_step)
+                    
+                        
+
 
             else:
+                if all_train:
+                    continue
                 model.train(False)  # Set model to evaluate mode
                 with torch.no_grad():
                     running_loss = {'count': 0,
@@ -330,23 +308,25 @@ def train_model(model, criterion1, criterion2, criterion3, optimizer, scheduler,
                         inputs, _, counts, locations = data
 
                         # get precision and recall
-                        ground_truth_xy = [get_xy_locs(loc, int(counts[idx])) for idx, loc in
+                        ground_truth_xy = [getxy_max(loc, int(counts[idx])) for idx, loc in
                                            enumerate(locations.numpy())]
 
                         # get occupancy
-                        occ = torch.Tensor([cnt > 0 for cnt in counts]).cuda()
+                        occ = torch.Tensor([cnt > 0 for cnt in counts]).cuda(device=f"cuda:{device}")
 
                         # get batch weights
-                        batch_weights_loc = ((locations.view(-1) * bce_weight[0]) + 1).cuda()
-                        batch_weights_occ = (occ * bce_weight[1] + 1).cuda()
+                        batch_weights_loc = ((locations.view(-1) * bce_weight[0]) + 1).cuda(device=f"cuda:{device}")
+                        batch_weights_occ = (occ * bce_weight[1] + 1).cuda(device=f"cuda:{device}")
 
                         # wrap them in Variable
                         if use_gpu:
-                            inputs = Variable(inputs.cuda())
-                            counts = Variable(counts.cuda())
-                            locations = Variable(locations.cuda())
+                            inputs = Variable(inputs.cuda(device=f"cuda:{device}"))
+                            counts = Variable(counts.cuda(device=f"cuda:{device}"))
+                            locations = Variable(locations.cuda(device=f"cuda:{device}"))
                         else:
                             inputs, counts, locations = Variable(inputs), Variable(counts), Variable(locations)
+
+                       
 
                         # zero the parameter gradients
                         optimizer.zero_grad()
@@ -355,14 +335,14 @@ def train_model(model, criterion1, criterion2, criterion3, optimizer, scheduler,
                         out_dict = model(inputs)
 
                         # get predicted locations, precision and recall
-                        pred_xy = [get_xy_locs((loc - np.min(loc)) / (np.max(loc) - np.min(loc)), int(round(
+                        pred_xy = [getxy_max(loc, int(round(
                             out_dict['count'][idx].item()))) for idx, loc in
                                    enumerate(out_dict['heatmap'].cpu().numpy())]
 
                         if 'occupancy' in out_dict:
                             fixed_cnt = out_dict['count'] * torch.Tensor([ele > 0.5 for ele in
-                                                                          sigmoid(out_dict['occupancy'])]).cuda()
-                            pred_xy_fixed = [get_xy_locs(loc, int(round(fixed_cnt[idx].item()))) for idx, loc in
+                                                                          sigmoid(out_dict['occupancy'])]).cuda(device=f"cuda:{device}")
+                            pred_xy_fixed = [getxy_max(loc, int(round(fixed_cnt[idx].item()))) for idx, loc in
                                              enumerate(out_dict['heatmap'].cpu().numpy())]
                         else:
                             pred_xy_fixed = pred_xy
@@ -380,7 +360,9 @@ def train_model(model, criterion1, criterion2, criterion3, optimizer, scheduler,
                                 matched_fixed = set([])
 
                                 for gt_idx, pnt in enumerate(ele):
+                                    pnt = np.array(pnt)
                                     for pred_idx_fixed, pnt2 in enumerate(pred_xy_fixed[idx]):
+                                        pnt2 = np.array(pnt2)
                                         if gt_idx in matched_gt_fixed:
                                             continue
                                         if pred_idx_fixed not in matched_fixed and np.linalg.norm(pnt - pnt2) < 3:
@@ -389,6 +371,7 @@ def train_model(model, criterion1, criterion2, criterion3, optimizer, scheduler,
                                             matched_gt_fixed.add(gt_idx)
 
                                     for pred_idx, pnt2 in enumerate(pred_xy[idx]):
+                                        pnt2 = np.array(pnt2)
                                         if gt_idx in matched_gt:
                                             continue
                                         if pred_idx not in matched_pred and np.linalg.norm(pnt - pnt2) < 3:
@@ -448,9 +431,11 @@ def train_model(model, criterion1, criterion2, criterion3, optimizer, scheduler,
                 save_checkpoint(model.state_dict(), is_best_loss, is_best_f1, is_best_recall, is_best_precision)
 
             else:
+                if all_train:
+                    save_checkpoint(model.state_dict(), *[False] * 4)
                 for loss in epoch_loss:
                     writer.add_scalar('training_loss_{}'.format(loss), epoch_loss[loss], global_step=global_step)
-                writer.add_scalar('learning_rate', optimizer.param_groups[-1]['lr'], global_step=global_step)
+                
 
             for loss in epoch_loss:
                 print('{} loss: {}'.format(loss, epoch_loss[loss]))
@@ -481,21 +466,27 @@ def main():
     bce_weights = [arch_input_size ** 2 * (86514 / 232502), 11 / 2]
 
     if use_gpu:
-        model = model.cuda()
-        criterion = criterion.cuda()
-        criterion2 = criterion2.cuda()
-        criterion3 = criterion3.cuda()
-        model = nn.DataParallel(model)
+        if args.gpu_id is None:
+            model = nn.DataParallel(model.cuda())
+            criterion = criterion.cuda()
+            criterion2 = criterion2.cuda()
+            criterion3 = criterion3.cuda()
+        else:
+            model.to(f"cuda:{args.gpu_id}")
+            criterion.to(f"cuda:{args.gpu_id}")
+            criterion2.to(f"cuda:{args.gpu_id}")
+            criterion3.to(f"cuda:{args.gpu_id}")
 
     # Observe that all parameters are being optimized
-    optimizer_ft = optim.Adam(model.parameters(), lr=hyperparameters[args.hyperparameter_set]['learning_rate'])
+    #optimizer_ft = optim.Adam(model.parameters(), lr=hyperparameters[args.hyperparameter_set]['learning_rate'])
+    optimizer_ft = optim.AdamW(model.parameters(), lr=hyperparameters[args.hyperparameter_set]['learning_rate'])
 
-    # Decay LR by a factor of 0.5 every 20 epochs
-    exp_lr_scheduler = lr_scheduler.StepLR(optimizer_ft, step_size=hyperparameters[args.hyperparameter_set]['step_size']
-                                           , gamma=hyperparameters[args.hyperparameter_set]['gamma'])
+    # Cosine Annealing scheduler
+    #scheduler = lr_scheduler.OneCycleLR(optimizer_ft, max_lr=0.001, steps_per_epoch=len(dataloaders['training']), epochs=hyperparameters[args.hyperparameter_set]['epochs'])
+    scheduler = lr_scheduler.CosineAnnealingLR(optimizer=optimizer_ft, eta_min=1E-5, T_max=len(dataloaders['training']) * (hyperparameters[args.hyperparameter_set]['epochs']))
 
     # start training
-    train_model(model, criterion, criterion2, criterion3, optimizer_ft, exp_lr_scheduler, all_train=args.all_train,
+    train_model(model, criterion, criterion2, criterion3, optimizer_ft, scheduler, all_train=args.all_train,
                 num_epochs=hyperparameters[args.hyperparameter_set]['epochs'], bce_weight=bce_weights)
 
 

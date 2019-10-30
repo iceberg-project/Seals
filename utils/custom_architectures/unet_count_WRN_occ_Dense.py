@@ -150,6 +150,33 @@ class NetworkBlock(nn.Module):
         return self.layer(x)
 
 
+class double_conv_res(nn.Module):
+    '''(conv => BN => ReLU) * 2'''
+    def __init__(self, in_ch, out_ch):
+        super(double_conv, self).__init__()
+        self.conv = nn.Sequential(
+            nn.ReflectionPad2d(1),
+            nn.Conv2d(in_ch, out_ch, 3),
+            nn.BatchNorm2d(out_ch),
+            nn.LeakyReLU(inplace=True),
+        )
+        self.res = nn.Sequential(
+            nn.ReflectionPad2d(1),
+            nn.Conv2d(out_ch, out_ch, 3),
+            nn.BatchNorm2d(out_ch))
+
+        self.relu = nn.LeakyReLU(inplace=True)
+           
+
+    def forward(self, x):
+        x = self.conv(x)
+        identity = x
+        x = self.res(x)
+        x += identity
+        x = self.relu(x)
+        return x
+
+
 class double_conv(nn.Module):
     '''(conv => BN => ReLU) * 2'''
     def __init__(self, in_ch, out_ch):
@@ -166,7 +193,6 @@ class double_conv(nn.Module):
     def forward(self, x):
         x = self.conv(x)
         return x
-
 
 class inconv(nn.Module):
     def __init__(self, in_ch, out_ch):

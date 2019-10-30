@@ -17,6 +17,7 @@ def imshow(inp, title=None, rgb=True):
     std = np.array([0.229, 0.224, 0.225])
     inp = std * inp + mean
     inp = np.clip(inp, 0, 1)
+    plt.figure(title, dpi=500)
     if not rgb:
         plt.imshow(inp, cmap='gray')
     else:
@@ -64,8 +65,8 @@ def make_weights_for_balanced_classes(images, nclasses):
         weight_per_class[i] = (N / float(count[i]))
     weight = [0] * len(images)
     # give more weight to seals
-    weight_per_class[0] = weight_per_class[0] * 2.5
-    weight_per_class[10] = weight_per_class[10] * 2.5
+    weight_per_class[0] = weight_per_class[0] * 10
+    weight_per_class[10] = weight_per_class[10] * 10
     for idx, val in enumerate(images):
         weight[idx] = weight_per_class[val[1]]
     return weight
@@ -77,22 +78,22 @@ weights = torch.DoubleTensor(weights)
 sampler = torch.utils.data.sampler.WeightedRandomSampler(weights, 10000, replacement=False)
 # Get a batch of training data
 dataloaders = {"training": torch.utils.data.DataLoader(image_datasets["training"],
-                                                       batch_size=10,
+                                                       batch_size=4,
                                                        sampler=sampler, num_workers=1),
                "validation": torch.utils.data.DataLoader(image_datasets["validation"],
-                                                         batch_size=10,
+                                                         batch_size=4,
                                                          num_workers=1,
                                                          shuffle=True)}
 
 # inputs contains 4 images because batch_size=4 for the dataloaders
-inputs, classes, counts, locations = next(iter(dataloaders['validation']))
+inputs, classes, counts, locations = next(iter(dataloaders['training']))
 
 # Make a grid from batch
 out_img = torchvision.utils.make_grid(inputs)
 out_location = torchvision.utils.make_grid(locations)
 
-imshow(out_img)
-imshow(out_location, rgb=False)
+imshow(out_img, title='input')
+imshow(out_location, title='mask', rgb=False)
 diff = 0
 for i in range(len(counts)):
     diff += int(counts[i]) - np.sum(np.array(locations[i]))

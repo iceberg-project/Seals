@@ -26,6 +26,7 @@ from torchvision import transforms
 from utils.dataloaders.data_loader_train_det import ImageFolderTrainDet
 from utils.dataloaders.transforms_det import ShapeTransform
 from utils.model_library import *
+from utils.getxy_max import getxy_max
 
 parser = argparse.ArgumentParser(description='trains a CNN to find seals in satellite imagery')
 parser.add_argument('--training_dir', type=str, help='base directory to recursively search for images in')
@@ -66,7 +67,7 @@ data_transforms = {
     'validation': {'shape_transform': ShapeTransform(arch_input_size, train=False),
                    'int_transform': transforms.Compose([
                        transforms.ToTensor(),
-                       transforms.Normalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225])])},
+                       transforms.Normalize([0.5], [0.225])])},
 }
 
 # define data dir and image size
@@ -81,73 +82,6 @@ image_datasets = {x: ImageFolderTrainDet(root=os.path.join(data_dir, x),
                                          shuffle=x == 'training')
                   for x in ['validation']}
 
-
-def get_xy_locs(array, count, min_dist=3):
-    """
-    Helper function to locate a predefined number of intensity peaks on a heatmap. Uses a combination of dilation
-    filters to find cells in the image that remain unchanged between the original image and dilated filters -- which
-    should be intensity peaks. The function returns a numpy array with the (x,y) locations of the 'n' highest intensity
-    peaks, with a minimum distance of 'm' between peaks.
-
-    :param array:np.array array of points where we desire to get intensity peaks
-    :param count: number of intensity peaks
-    :param min_dist: minimum distance between intensity peaks
-    :return: array with (x,y) of each intensity peak
-    """
-    if count == 0:
-        return np.array([])
-    cols = array.shape[1]
-    # dilate (2 dilations are more robust than one)
-    dil_array = cv2.dilate(array, np.ones([3, 3], dtype=np.uint8))
-    dil_array2 = cv2.dilate(array, np.ones([5, 5], dtype=np.uint8))
-    # check indices that do not change with dilations
-    array = array * (cv2.compare(array, dil_array, 2) == 255) * (cv2.compare(array, dil_array2, 2) == 255)
-    # flatten array, get rid of zeros and sort it
-    flat = array.flatten()
-    flat_order = (-flat).argsort()
-    # find first zero and remove tail
-    flat_order = flat_order[:next((idx for idx, ele in enumerate(flat_order) if not flat[ele]), None)]
-    # check if detections are too close
-    to_remove = []
-    for idx, ele in enumerate(flat_order):
-        if idx in to_remove:
-            continue
-        for idx2 in range(idx + 1, len(flat_order)):
-            if np.linalg.norm(np.array([flat_order[idx] // cols, flat_order[idx] % cols]) -
-                              np.array([flat_order[idx2] // cols, flat_order[idx2] % cols])) < min_dist:
-                to_remove.append(idx2)
-    flat_order = np.delete(flat_order, to_remove)
-    # return x peaks
-    return np.array([(x // cols, x % cols) for x in flat_order[:count]])
-
-
-# Force minibatches to have an equal representation amongst classes during training with a weighted sampler
-def make_weights_for_balanced_classes(images, nclasses):
-    """
-    Generates weights to get balanced classes during training. To be used with weighted random samplers.
-
-    :param images: list of training images in training set.
-    :param nclasses: number of classes on training set.
-    :return: list of weights for each training image.
-    """
-    count = [0] * nclasses
-    for item in images:
-        count[item[1]] += 1
-    weight_per_class = [0.] * nclasses
-    N = float(sum(count))
-    for i in range(nclasses):
-        weight_per_class[i] = N / float(count[i])
-    weight = [0] * len(images)
-    for idx, val in enumerate(images):
-        weight[idx] = weight_per_class[val[1]]
-    return weight
-
-
-# For unbalanced dataset we create a weighted sampler
-weights = make_weights_for_balanced_classes(image_datasets['training'].imgs, len(image_datasets['training'].classes))
-weights = torch.DoubleTensor(weights)
-sampler = torch.utils.data.sampler.WeightedRandomSampler(weights, len(weights))
-
 # change batch size ot match number of GPU's being used?
 dataloaders = {"validation": torch.utils.data.DataLoader(image_datasets["validation"],
                                                          batch_size=
@@ -155,7 +89,7 @@ dataloaders = {"validation": torch.utils.data.DataLoader(image_datasets["validat
                                                          num_workers=
                                                          hyperparameters[args.hyperparameter_set]['num_workers_val'])
                }
-dataset_sizes = {x: len(image_datasets[x]) for x in ['validation']}
+dataset_sizes = {'validation': len(image_datasets['validation'])}
 
 use_gpu = torch.cuda.is_available()
 
@@ -183,140 +117,139 @@ def validate_model(model, criterion1, criterion2, criterion3, bce_weight):
                  'heatmap': lambda x: criterion2(x.view(-1), locations.view(-1) * 10),
                  'occupancy': lambda x: criterion3(x, occ)}
 
-    for epoch in range(1):
+    # run validation loop
+    model.train(False)  
+    with torch.no_grad():
+        running_loss = {'count': 0,
+                        'heatmap': 0,
+                        'occupancy': 0}
+        false_negatives = 0
+        false_positives = 0
+        true_positives = 0
+        false_negatives_fixed = 0
+        false_positives_fixed = 0
+        true_positives_fixed = 0
 
-        # Each epoch has a training and validation phase
-        for phase in ['validation']:
-            print('\n{} \n'.format(phase))
+        # Iterate over data.
+        for iter, data in enumerate(dataloaders['validation']):
+            # get the inputs
+            inputs, _, counts, locations = data
 
-            model.train(False)  # Set model to evaluate mode
-            with torch.no_grad():
-                running_loss = {'count': 0,
-                                'heatmap': 0,
-                                'occupancy': 0}
-                false_negatives = 0
-                false_positives = 0
-                true_positives = 0
-                false_negatives_fixed = 0
-                false_positives_fixed = 0
-                true_positives_fixed = 0
+            # get precision and recall
+            ground_truth_xy = [getxy_max(loc, int(counts[idx])) for idx, loc in enumerate(locations.numpy())]
 
-                # Iterate over data.
-                for iter, data in enumerate(dataloaders[phase]):
-                    # get the inputs
-                    inputs, _, counts, locations = data
+            # get occupancy
+            occ = torch.Tensor([cnt > 0 for cnt in counts]).cuda()
 
-                    # get precision and recall
-                    ground_truth_xy = [get_xy_locs(loc, int(counts[idx])) for idx, loc in enumerate(locations.numpy())]
+            # get batch weights
+            batch_weights_loc = ((locations.view(-1) * bce_weight[0]) + 1).cuda()
+            batch_weights_occ = (occ * bce_weight[1] + 1).cuda()
 
-                    # get occupancy
-                    occ = torch.Tensor([cnt > 0 for cnt in counts]).cuda()
+            # wrap them in Variable
+            if use_gpu:
+                inputs = Variable(inputs.cuda())
+                counts = Variable(counts.cuda())
+                locations = Variable(locations.cuda())
+            else:
+                inputs, counts, locations = Variable(inputs), Variable(counts), Variable(locations)
 
-                    # get batch weights
-                    batch_weights_loc = ((locations.view(-1) * bce_weight[0]) + 1).cuda()
-                    batch_weights_occ = (occ * bce_weight[1] + 1).cuda()
+            # forward
+            out_dict = model(inputs)
 
-                    # wrap them in Variable
-                    if use_gpu:
-                        inputs = Variable(inputs.cuda())
-                        counts = Variable(counts.cuda())
-                        locations = Variable(locations.cuda())
-                    else:
-                        inputs, counts, locations = Variable(inputs), Variable(counts), Variable(locations)
+            # get predicted locations, precision and recall
+            pred_xy = [getxy_max(loc, int(round(
+                out_dict['count'][idx].item()))) for idx, loc in
+                        enumerate(out_dict['heatmap'].cpu().numpy())]
 
-                    # forward
-                    out_dict = model(inputs)
+            if 'occupancy' in out_dict:
+                fixed_cnt = out_dict['count'] * torch.Tensor([ele > 0.5 for ele in
+                                                                sigmoid(out_dict['occupancy'])]).cuda()
+                pred_xy_fixed = [getxy_max(loc, int(round(fixed_cnt[idx].item()))) for idx, loc in
+                                    enumerate(out_dict['heatmap'].cpu().numpy())]
+            else:
+                pred_xy_fixed = pred_xy
 
-                    # get predicted locations, precision and recall
-                    pred_xy = [get_xy_locs(loc, int(round(
-                        out_dict['count'][idx].item()))) for idx, loc in
-                               enumerate(out_dict['heatmap'].cpu().numpy())]
+            for idx, ele in enumerate(ground_truth_xy):
+                n_matches = 0
+                n_matches_fixed = 0
+                if len(ele) == 0:
+                    false_positives += len(pred_xy[idx])
+                    false_positives_fixed += len(pred_xy_fixed[idx])
+                else:
+                    matched_gt = set([])
+                    matched_pred = set([])
+                    matched_gt_fixed = set([])
+                    matched_fixed = set([])
 
-                    if 'occupancy' in out_dict:
-                        fixed_cnt = out_dict['count'] * torch.Tensor([ele > 0.5 for ele in
-                                                                      sigmoid(out_dict['occupancy'])]).cuda()
-                        pred_xy_fixed = [get_xy_locs((loc - np.min(loc)) / (np.max(loc) - np.min(loc)), int(round(fixed_cnt[idx].item()))) for idx, loc in
-                                         enumerate(out_dict['heatmap'].cpu().numpy())]
-                    else:
-                        pred_xy_fixed = pred_xy
+                    for gt_idx, pnt in enumerate(ele):
+                        pnt = np.array(pnt)
+                        for pred_idx_fixed, pnt2 in enumerate(pred_xy_fixed[idx]):
+                            pnt2 = np.array(pnt2)
+                            if gt_idx in matched_gt_fixed:
+                                continue
+                            if pred_idx_fixed not in matched_fixed and np.linalg.norm(pnt - pnt2) < 3:
+                                n_matches_fixed += 1
+                                matched_fixed.add(pred_idx_fixed)
+                                matched_gt_fixed.add(gt_idx)
 
-                    for idx, ele in enumerate(ground_truth_xy):
-                        n_matches = 0
-                        n_matches_fixed = 0
-                        if len(ele) == 0:
-                            false_positives += len(pred_xy[idx])
-                            false_positives_fixed += len(pred_xy_fixed[idx])
-                        else:
-                            matched_gt = set([])
-                            matched_pred = set([])
-                            matched_gt_fixed = set([])
-                            matched_fixed = set([])
+                        for pred_idx, pnt2 in enumerate(pred_xy[idx]):
+                            pnt2 = np.array(pnt2)
+                            if gt_idx in matched_gt:
+                                continue
+                            if pred_idx not in matched_pred and np.linalg.norm(pnt - pnt2) < 3:
+                                n_matches += 1
+                                matched_pred.add(pred_idx)
+                                matched_gt.add(gt_idx)
 
-                            for gt_idx, pnt in enumerate(ele):
-                                for pred_idx_fixed, pnt2 in enumerate(pred_xy_fixed[idx]):
-                                    if gt_idx in matched_gt_fixed:
-                                        continue
-                                    if pred_idx_fixed not in matched_fixed and np.linalg.norm(pnt - pnt2) < 3:
-                                        n_matches_fixed += 1
-                                        matched_fixed.add(pred_idx_fixed)
-                                        matched_gt_fixed.add(gt_idx)
+                    true_positives += n_matches
+                    false_positives += len(pred_xy[idx]) - n_matches
+                    false_negatives += len(ele) - n_matches
+                    true_positives_fixed += n_matches_fixed
+                    false_positives_fixed += len(pred_xy_fixed[idx]) - n_matches_fixed
+                    false_negatives_fixed += len(ele) - n_matches_fixed
 
-                                for pred_idx, pnt2 in enumerate(pred_xy[idx]):
-                                    if gt_idx in matched_gt:
-                                        continue
-                                    if pred_idx not in matched_pred and np.linalg.norm(pnt - pnt2) < 3:
-                                        n_matches += 1
-                                        matched_pred.add(pred_idx)
-                                        matched_gt.add(gt_idx)
+            # load bce weights
+            criterion2.weight = batch_weights_loc
+            criterion3.weight = batch_weights_occ
 
-                            true_positives += n_matches
-                            false_positives += len(pred_xy[idx]) - n_matches
-                            false_negatives += len(ele) - n_matches
-                            true_positives_fixed += n_matches_fixed
-                            false_positives_fixed += len(pred_xy_fixed[idx]) - n_matches_fixed
-                            false_negatives_fixed += len(ele) - n_matches_fixed
+            # get losses
+            batch_loss = {}
+            for key in out_dict:
+                batch_loss[key] = loss_dict[key](out_dict[key])
+                running_loss[key] += batch_loss[key].item() * len(occ)
 
-                    # load bce weights
-                    criterion2.weight = batch_weights_loc
-                    criterion3.weight = batch_weights_occ
+    # get epoch losses
+    epoch_loss = {'heatmap': 0,
+                    'count': 0,
+                    'occupancy': 0}
 
-                    # get losses
-                    batch_loss = {}
-                    for key in out_dict:
-                        batch_loss[key] = loss_dict[key](out_dict[key])
-                        running_loss[key] += batch_loss[key].item() * len(occ)
+    for loss in running_loss:
+        epoch_loss[loss] = running_loss[loss] / dataset_sizes['validation']
 
-            # get epoch losses
-            epoch_loss = {'heatmap': 0,
-                          'count': 0,
-                          'occupancy': 0}
+    epoch_precision = true_positives / max(1, true_positives + false_positives)
+    epoch_recall = true_positives / max(1, true_positives + false_negatives)
+    epoch_f1 = epoch_precision * epoch_recall
+    epoch_precision_fxd = true_positives_fixed / max(1, true_positives_fixed + false_positives_fixed)
+    epoch_recall_fxd = true_positives_fixed / max(1, true_positives_fixed + false_negatives_fixed)
+    epoch_f1_fxd = epoch_precision_fxd * epoch_recall_fxd
+    total_loss = sum(epoch_loss.values())
+    fixed = 0
+    if epoch_f1_fxd > epoch_f1:
+        fixed = 1
+        epoch_f1 = epoch_f1_fxd
+        epoch_recall = epoch_recall_fxd
+        epoch_precision = epoch_precision_fxd
 
-            for loss in running_loss:
-                epoch_loss[loss] = running_loss[loss] / dataset_sizes[phase]
-
-            epoch_precision = true_positives / max(1, true_positives + false_positives)
-            epoch_recall = true_positives / max(1, true_positives + false_negatives)
-            epoch_f1 = epoch_precision * epoch_recall
-            epoch_precision_fxd = true_positives_fixed / max(1, true_positives_fixed + false_positives_fixed)
-            epoch_recall_fxd = true_positives_fixed / max(1, true_positives_fixed + false_negatives_fixed)
-            epoch_f1_fxd = epoch_precision_fxd * epoch_recall_fxd
-            total_loss = sum(epoch_loss.values())
-            fixed = False
-            if epoch_f1_fxd > epoch_f1:
-                fixed = True
-                epoch_f1 = epoch_f1_fxd
-                epoch_recall = epoch_recall_fxd
-                epoch_precision = epoch_precision_fxd
-
-            for loss in epoch_loss:
-                print('{} loss: {}'.format(loss, epoch_loss[loss]))
+    for loss in epoch_loss:
+        print('{} loss: {}'.format(loss, epoch_loss[loss]))
 
     # save validation stats
     val_stats = pd.DataFrame({'f1': epoch_f1,
                               'loss': total_loss,
                               'recall': epoch_recall,
                               'precision': epoch_precision,
-                              'fixed': int(fixed)})
+                              'fixed': fixed},
+                              index = [0])
     time_elapsed = time.time() - since
 
     print('Validation complete in {}h {:.0f}m {:.0f}s'.format(
@@ -333,10 +266,6 @@ def main():
 
     model = model_defs[pipeline][args.model_architecture]
 
-    # load checkpoint
-    model.load_state_dict(torch.load("./{}/{}/{}/{}_best_f1.tar".format(args.models_folder, pipeline, args.model_name,
-                                                                        args.model_name)))
-
     # define criterion
     criterion = nn.SmoothL1Loss()
     criterion2 = nn.BCEWithLogitsLoss()
@@ -350,11 +279,16 @@ def main():
         criterion = criterion.cuda()
         criterion2 = criterion2.cuda()
         criterion3 = criterion3.cuda()
+        model = nn.DataParallel(model)
+
+    # load checkpoint
+    model.load_state_dict(torch.load("./{}/{}/{}/{}_best_f1.tar".format(args.models_folder, pipeline, args.output_name,
+                                                                        args.output_name)))
 
     # start validation
     val_stats = validate_model(model, criterion, criterion2, criterion3, bce_weight=bce_weights)
-    val_stats.to_csv("./{}/{}/{}/{}_stats.csv".format(args.models_folder, pipeline, args.model_name,
-                                                      args.model_name))
+    val_stats.to_csv("./{}/{}/{}/{}_stats.csv".format(args.models_folder, pipeline, args.output_name,
+                                                      args.output_name))
 
 
 if __name__ == '__main__':

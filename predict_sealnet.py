@@ -29,6 +29,7 @@ from torchvision import transforms
 
 from utils.dataloaders.data_loader_test import ImageFolderTest
 from utils.model_library import *
+from utils.getxy_max import getxy_max
 
 ImageFile.LOAD_TRUNCATED_IMAGES = True
 
@@ -51,47 +52,7 @@ def parse_args():
     return parser.parse_args()
 
 
-# helper function to get the (x,y) of max values
-def get_xy_locs(array, count, min_dist=3):
-    """
-    Helper function to locate a predefined number of intensity peaks on a heatmap. Uses abination of dilation
-    filters to find cells in the image that remain unchanged between the original image and dilated filters -- which
-    should be intensity peaks. The function returns a numpy array with the (x,y) locations of the 'n' highest intensity
-    peaks, with a minimum distance of 'm' between peaks.
-
-    :param array:np.array array of points where we desire to get intensity peaks
-    :param count: number of intensity peaks
-    :param min_dist: minimum distance between intensity peaks
-    :return: array with (x,y) of each intensity peak
-    """
-    if count == 0:
-        return np.array([])
-    cols = array.shape[1]
-    # dilate (2 dilations are more robust than one)
-    dil_array = cv2.dilate(array, np.ones([3, 3], dtype=np.uint8))
-    dil_array2 = cv2.dilate(array, np.ones([5, 5], dtype=np.uint8))
-    # check indices that do not change with dilations
-    array = array * (cv2.compare(array, dil_array, 2) == 255) * (cv2.compare(array, dil_array2, 2) == 255)
-    # flatten array, get rid of zeros and sort i
-    flat = array.flatten()
-    flat_order = (-flat).argsort()
-    # find first zero and remove tail
-    flat_order = flat_order[:next((idx for idx, ele in enumerate(flat_order) if not flat[ele]), None)]
-    # check if detections are too close
-    to_remove = []
-    #for idx, ele in enumerate(flat_order):
-    #    if idx in to_remove:
-    #        continue
-    #    for idx2 in range(idx + 1, len(flat_order)):
-    #        if np.linalg.norm(np.array([flat_order[idx] // cols, flat_order[idx] % cols]) -
-    #                          np.array([flat_order[idx2] // cols, flat_order[idx2] % cols])) < min_dist:
-    #            to_remove.append(idx2)
-    flat_order = np.delete(flat_order, to_remove)
-    # return x peaks
-    return [(x // cols, x % cols) for x in flat_order[:count]]
-
-
-def predict_patch(model, output_dir, test_dir, batch_size=2, input_size=299, threshold=0, num_workers=1,
+def predict_patch(model, output_dir, test_dir, batch_size=2, input_size=299, threshold=0.1, num_workers=1,
                   duplicate_tolerance=1.5, remove_tiles=False, save_heatmaps=True):
     """
     Patch prediction function. Outputs shapefiles for counts and locations.
@@ -182,7 +143,7 @@ def predict_patch(model, output_dir, test_dir, batch_size=2, input_size=299, thr
                 for idx, loc in enumerate(locs):
                     if pred_cnt_batch[idx] > 0:
                         loc = (loc - np.min(loc)) / (np.max(loc) - np.min(loc))
-                        curr_points = get_xy_locs(loc, pred_cnt_batch[idx])
+                        curr_points = getxy_max(loc, pred_cnt_batch[idx])
                         for batch in curr_points:
                             intensity.append(loc[0, batch[0], batch[1]]) 
                             predicted_locs.append(batch)
@@ -193,14 +154,6 @@ def predict_patch(model, output_dir, test_dir, batch_size=2, input_size=299, thr
                       'y': [pnt[1] for pnt in predicted_locs],
                       'filenames': [fname for fname in fnames],
                       'intensity': [val for val in intensity]}
-
-    #for idx, batch in enumerate(predicted_locs):
-    #    for pnt in batch:
-    #        pred_locations['x'].append(pnt[0])
-    #        pred_locations['y'].append(pnt[1])
-    #        pred_locations['filenames'].append(fnames[idx])
-    #        pred_locations['intensity'].append(intensity[idx])
-    #        pnt_idx += 1
 
     pred_locations = pd.DataFrame(pred_locations)
 

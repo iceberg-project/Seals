@@ -40,7 +40,7 @@ def main():
                 if len(gpd.read_file('{}/{}'.format(path, filename))) > 0:
                     merged = merged.append(gpd.read_file('{}/{}'.format(path, filename)), ignore_index=True)
 
-    merged.to_file('{}/merged_locations.shp'.format(args.output_dir))
+    merged.to_file('{}/merged.shp'.format(args.output_dir))
 
 
 if __name__ == '__main__':
