@@ -27,8 +27,8 @@ from fiona.crs import from_epsg
 from shapely.geometry.geo import box, Point
 from torchvision import transforms
 
-from utils.dataloaders.data_loader_test import ImageFolderTest
-from utils.model_library import *
+from ..utils.dataloaders.data_loader_test import ImageFolderTest
+from ..utils.model_library import *
 
 ImageFile.LOAD_TRUNCATED_IMAGES = True
 
@@ -111,7 +111,7 @@ def predict_patch(model, output_dir, test_dir, batch_size=2, input_size=299, thr
 
     # create output folder for heatmaps if needed
     if save_heatmaps:
-        os.makedirs(f'{output_dir}/heatmaps', exist_ok=True)
+        os.makedirs(output_dir + '/heatmaps', exist_ok=True)
 
     # crop and normalize images
     data_transforms = transforms.Compose([
@@ -175,7 +175,7 @@ def predict_patch(model, output_dir, test_dir, batch_size=2, input_size=299, thr
                             loc = (loc - np.min(loc)) / (np.max(loc) - np.min(loc))
                             loc = np.vstack([np.zeros([1, input_size, input_size]), loc.reshape(1, input_size, input_size),
                                             np.zeros([1, input_size, input_size])]) * 255
-                            cv2.imwrite(f'{output_dir}/heatmaps/{filenames[idx]}', loc.transpose(1, 2, 0))
+                            cv2.imwrite(output_dir + '/heatmaps/' + filenames[idx], loc.transpose(1, 2, 0))
 
                 # find predicted location
                 points = []

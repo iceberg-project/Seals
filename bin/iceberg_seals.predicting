@@ -25,9 +25,6 @@ if __name__ == "__main__":
     
     parser = argparse.ArgumentParser(description='validates a CNN at the haul \
                                                   out level')
-    parser.add_argument('--input_image', type=str, required=True,
-                        help='base directory to recursively search for \
-                              validation images in')
     parser.add_argument('--model_architecture', type=str, required=True,
                         help='model architecture for seal detection')
     parser.add_argument('--hyperparameter_set', type=str, required=True,
@@ -46,7 +43,6 @@ if __name__ == "__main__":
     # unroll arguments
     args = parser.parse_args()
     pipeline = model_archs[args.model_architecture]['pipeline']
-    input_image = args.input_image
     output_folder = args.test_folder
     scales = [model_archs[args.model_architecture]['input_size']]
     
@@ -76,7 +72,7 @@ if __name__ == "__main__":
     model.load_state_dict(
         torch.load("%s/%s.tar" % (args.model_path, model_name)))
 
-    predict_patch(input_image=args.input_image, model=model,
+    predict_patch(model=model,
                   input_size=model_archs[args.model_architecture]
                   ['input_size'],
                   batch_size=hyperparameters[args.hyperparameter_set]
