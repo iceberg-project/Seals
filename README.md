@@ -78,12 +78,11 @@ $ source seals_env/bin/activate # activate your environment, no need to create a
 You can download to your local machine and use scp, ftp, rsync, or Globus to transfer to bridges.
 
 Seals predicting is executed in two steps:  
-First
+First, create tiles from an input GeoTiff image and write to the output_folder. The scale_bands parameter depends on trained model being used.  The default scale_bands is 299 for the pre-trained model above.
 ```bash
 [iceberg_seals] $ iceberg_seals.tiling --scale_bands=299 --input_image=<image_abspath> --output_folder=./test
 ```
-Then
+Then, detect seals on each tile and output counts and confidence for each tile.
 ```bash
 [iceberg_seals] $ iceberg_seals.predicting --input_image=<image_filename> --model_architecture=UnetCntWRN --hyperparameter_set=A --training_set=test_vanilla --test_folder=./test --model_path=./ --output_folder=./test_image
 ```
-Inputs and outputs:
