@@ -2,20 +2,23 @@
 
 [![Build Status](https://travis-ci.com/iceberg-project/Seals.svg?branch=devel)](https://travis-ci.com/iceberg-project/Seals)
 
-## Software Dependencies
+## Prerequisites - all available on bridges via the commands below
+- Linux
+- Python 3
+- CPU or NVIDIA GPU + CUDA CuDNN
 
-
-- torch 0.4.0
-- torchvision 0.2.1
-- tensorboardX 1.8
-- cv2
+## Software Dependencies - these will be installed automatically with the installation below.
+- numpy
+- scipy
+- pandas
+- torch==0.4.0
+- torchvision==0.2.1
+- tensorboardX==1.8
+- opencv-python
 - rasterio
 - affine
-- pandas
 - geopandas
-- numpy
-- PIL
-
+- pandas
 
 ## Installation
 
