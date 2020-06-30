@@ -77,8 +77,13 @@ $ source seals_env/bin/activate # activate your environment, no need to create a
 
 You can download to your local machine and use scp, ftp, rsync, or Globus to transfer to bridges.
 
-To test
+Seals predicting is executed in two steps:  
+First
 ```bash
 [iceberg_seals] $ iceberg_seals.tiling --scale_bands=299 --input_image=<image_abspath> --output_folder=./test
+```
+Then
+```bash
 [iceberg_seals] $ iceberg_seals.predicting --input_image=<image_filename> --model_architecture=UnetCntWRN --hyperparameter_set=A --training_set=test_vanilla --test_folder=./test --model_path=./ --output_folder=./test_image
 ```
+Inputs and outputs:
