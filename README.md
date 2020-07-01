@@ -22,7 +22,7 @@
 
 ## Installation
 Preliminaries:  
-These instructions are specific to XSEDE/bridges but other resources can be used if cuda, python3, and a gpu processor are present, in which case 'module load' instructions can be skipped, which are specific to bridges.  
+These instructions are specific to XSEDE Bridges but other resources can be used if cuda, python3, and a NVIDIA P100 GPU are present, in which case 'module load' instructions can be skipped, which are specific to Bridges.  
   
 For Unix or Mac Users:    
 Login to bridges via ssh using a Unix or Mac command line terminal.  Login is available to bridges directly or through the XSEDE portal. Please see the [Bridges User's Guide](https://portal.xsede.org/psc-bridges).  
