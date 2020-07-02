@@ -33,7 +33,7 @@ Many tools are available for ssh access to bridges.  Please see [Ubuntu](https:/
 ### PSC Bridges
 Once you have logged into bridges, you can follow one of two methods for installing iceberg-seals.
 
-####Method 1 (Recommended):  
+#### Method 1 (Recommended):  
 
 The lines below following a '$' are commands to enter (or cut and paste) into your terminal (note that all commands are case-sensitive, meaning capital and lowercase letters are differentiated.)  Everything following '#' are comments to explain the reason for the command and should not be included in what you enter.  Lines that do not start with '$' or '[seals_env] $' are output you should expect to see.
 
@@ -53,7 +53,7 @@ $ source seals_env/bin/activate    # activate your environment. Notice the comma
 [seals_env] $ pip install iceberg_seals.search # pip is a python tool to extract the requested software (iceberg_seals.search in this case) from a repository. (this may take several minutes).
 ```
 
-####Method 2 (Installing from source; recommended for developers only): 
+#### Method 2 (Installing from source; recommended for developers only): 
 
 ```bash
 $ git clone https://github.com/iceberg-project/Seals.git
@@ -65,7 +65,7 @@ $ source seals_env/bin/activate
 [seals_env] $ pip install . --upgrade
 ```
 
-####To test
+#### To test
 ```bash
 [iceberg_seals] $ deactivate       # exit your virtual environment.
 $ interact -p GPU-small --gres=gpu:p100:1  # request a compute node.  This package has been tested on P100 GPUs on bridges, but that does not exclude any other resource that offers the same GPUs. (this may take a minute or two or more to receive an allocation).
@@ -78,7 +78,7 @@ $ source seals_env/bin/activate    # activate your environment, no need to creat
 ## Prediction
 - Download a pre-trained model at: https://github.com/iceberg-project/Seals/tree/master/models/Heatmap-Cnt/UnetCntWRN/UnetCntWRN_ts-vanilla.tar 
 
-You can download to your local machine and use scp, ftp, rsync, or Globus to transfer to bridges.
+You can download to your local machine and use scp, ftp, rsync, or Globus to [transfer to bridges](https://portal.xsede.org/psc-bridges).
 
 Seals predicting is executed in two steps: 
 First, follow the environment setup commands under 'To test' above. Then create tiles from an input GeoTiff image and write to the output_folder. The scale_bands parameter (in pixels) depends on the trained model being used.  The default scale_bands is 299 for the pre-trained model downloaded above.  If you use your own model the scale_bands may be different.
