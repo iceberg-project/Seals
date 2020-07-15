@@ -49,7 +49,7 @@ $ virtualenv seals_env             # create a virtual environment to isolate you
 $ source seals_env/bin/activate    # activate your environment. Notice the command line prompt changes to show your environment on the next line.
 [seals_env] $ pwd
 /pylon5/group/username/Seals
-[seals_env] $ export PYTHONPATH=<path>/seals_env/lib/python3.5/site-packages # set a system variable to point python to your specific code. (Replace <path> with the results of pwd command above.
+[seals_env] $ export PYTHONPATH=`pwd`/seals_env/lib/python3.5/site-packages # set a system variable to point python to your specific code.
 [seals_env] $ pip install iceberg_seals.search # pip is a python tool to extract the requested software (iceberg_seals.search in this case) from a repository. (this may take several minutes).
 ```
 
