@@ -73,7 +73,7 @@ $ cd $SCRATCH/Seals                # make sure you are in the same directory whe
 $ module load cuda                 # load parallel computing architecture, as before.
 $ module load python3              # load correct python version, as before.
 $ source seals_env/bin/activate    # activate your environment, no need to create a new environment because the Seals tools are installed and isolated here.
-[iceberg_seals] $ iceberg_seals.detect --help  # this will display a help screen of available usage and parameters.
+[iceberg_seals] $ iceberg_seals.predicting --help  # this will display a help screen of available usage and parameters.
 ```
 ## Prediction
 - Download a pre-trained model at: https://github.com/iceberg-project/Seals/tree/master/models/Heatmap-Cnt/UnetCntWRN/UnetCntWRN_ts-vanilla.tar 
@@ -81,9 +81,9 @@ $ source seals_env/bin/activate    # activate your environment, no need to creat
 You can download to your local machine and use scp, ftp, rsync, or Globus to [transfer to bridges](https://portal.xsede.org/psc-bridges).
 
 Seals predicting is executed in two steps: 
-First, follow the environment setup commands under 'To test' above. Then create tiles from an input GeoTiff image and write to the output_folder. The scale_bands parameter (in pixels) depends on the trained model being used.  The default scale_bands is 299 for the pre-trained model downloaded above.  If you use your own model the scale_bands may be different.
+First, follow the environment setup commands under 'To test' above. Then create tiles from an input GeoTiff image and write to the output_folder. The scale_bands parameter (in pixels) depends on the trained model being used.  The default scale_bands is 224 for the pre-trained model downloaded above.  If you use your own model the scale_bands may be different.
 ```bash
-[iceberg_seals] $ iceberg_seals.tiling --scale_bands=299 --input_image=<image_abspath> --output_folder=./test
+[iceberg_seals] $ iceberg_seals.tiling --scale_bands=224 --input_image=<image_abspath> --output_folder=./test
 ```
 Then, detect seals on each tile and output counts and confidence for each tile.
 ```bash
