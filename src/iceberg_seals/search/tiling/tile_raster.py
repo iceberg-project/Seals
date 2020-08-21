@@ -1,10 +1,12 @@
 """
 Tile raster
 ==========================================================
+
 Tiling script for ICEBERG seals use case. Tiles rasters into predefined size patches. Patches are named according to
 the raster indices that define their boundaries. Optional arguments allow padding and multiple scale bands. Also saves
 a .csv for the raster's affine matrix -- used on 'predict_sealnet.py' to go from raster index to projected 'x' and
 'y' of predicted seals.
+
 Author: Bento Goncalves
 License: MIT
 Copyright: 2018-2019
@@ -26,18 +28,18 @@ import time
 def parse_args():
     parser = argparse.ArgumentParser(description='divides a raster image into files')
 
-    parser.add_argument('--input_image', type=str, required=True,
+    parser.add_argument('--input_image', '-i', type=str, required=True,
                         help='full path to raster file we wish to tile out')
-    parser.add_argument('--output_folder', type=str, required=True,
+    parser.add_argument('--output_folder', '-o', type=str, required=True,
                         help='folder where tiles will be stored')
-    parser.add_argument('--bands', nargs='+', required=False, default=[0],
-                        help='list with selected bands. defaults to 0 for the panchromatic band')
-    parser.add_argument('--stride', type=float, default=1.0, required=False,
+    parser.add_argument('--bands', '-b', required=False, type=str, default='0',
+                        help='sting with bands seperated by commas. defaults to 0 for the panchromatic band')
+    parser.add_argument('--stride', '-s', type=float, default=1.0, required=False,
                         help='distance between tiles as a multiple of patch_size. defaults to 1.0, i.e. adjacent '
                              'tiles without overlap')
-    parser.add_argument('--patch_size', type=int, default=224, required=False,
+    parser.add_argument('--patch_size', '-p', type=int, default=224, required=False,
                         help='side dimensions for each patch. patches are required to be squares.')
-    parser.add_argument('--geotiff', type=int, default=0, required=False,
+    parser.add_argument('--geotiff', '-g', type=int, default=0, required=False,
                         help='boolean for whether to keep geographical information.')
 
     return parser.parse_args()
@@ -64,7 +66,7 @@ def write_tile(scn, bands, patch_size, output_folder, offset, geotiff):
                            count=len(bands),
                            compress='lzw',
                            dtype=rasterio.uint8) as dst:
-            dst.write(patch, indexes=indexes)
+            dst.write(patch)
     else:
         patch = np.transpose(patch, [1, 2, 0])
         cv2.imwrite(filename, patch)
@@ -101,10 +103,11 @@ def tile_raster(input_image, output_folder, bands, patch_size, stride=1, geotiff
     # create iterator with offsets for small windows
     offsets = product(range(0, nrows, int(patch_size * stride)),
                       range(0, ncols, int(patch_size * stride)))
-    n = len(list(offsets))
+    n = 0
 
     # create multiprocessing pool and tile in parallel
     for offset in offsets:
+        n += 1
         write_tile(src_scn, bands, patch_size, output_folder, offset, geotiff)
 
     elapsed = time.time() - tic
@@ -117,7 +120,7 @@ def main():
     # unroll arguments
     input_image = args.input_image
     output_folder = args.output_folder
-    bands = [int(ele) for ele in args.bands]
+    bands = [int(ele) for ele in args.bands.split(',')]
     patch_size = args.patch_size
     stride = args.stride
     geotiff = args.geotiff
