@@ -243,7 +243,7 @@ def predict_patch(input_image, model, output_dir, input_dir, batch_size=2, input
 
         # remove tiles
         if remove_tiles:
-            shutil.rmtree('{}/tiles'.format(input_dir))
+            shutil.rmtree('{}/'.format(input_dir))
 
     print('Total predicted in %s: ' % os.path.basename(input_dir), sum(pred_counts['predictions']))
 
