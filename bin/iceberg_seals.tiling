@@ -12,6 +12,12 @@ if __name__ == "__main__":
 
     # unroll arguments
     input_image = args.input_image
-    scales = [int(ele) for ele in args.scale_bands.split('_')]
     output_folder = args.output_folder
-    tile_raster(input_image, output_folder, scales, True)
+    bands = [int(ele) for ele in args.bands.split(',')]
+    patch_size = args.patch_size
+    stride = args.stride
+    geotiff = args.geotiff
+
+    # tile image
+    tile_raster(input_image, output_folder, bands, patch_size, stride, geotiff)
+
