@@ -39,7 +39,7 @@ def parse_args():
                              'tiles without overlap')
     parser.add_argument('--patch_size', '-p', type=int, default=224, required=False,
                         help='side dimensions for each patch. patches are required to be squares.')
-    parser.add_argument('--geotiff', '-g', type=int, default=0, required=False,
+    parser.add_argument('--geotiff', '-g', type=int, default=False, required=False,
                         help='boolean for whether to keep geographical information.')
 
     return parser.parse_args()

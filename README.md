@@ -11,9 +11,9 @@
 - numpy
 - scipy
 - pandas
-- torch==0.4.0
-- torchvision==0.2.1
-- tensorboardX==1.8
+- torch
+- torchvision
+- tensorboardX
 - opencv-python
 - rasterio
 - affine
@@ -44,12 +44,12 @@ $ cd $SCRATCH                      # switch to your working space.
 $ mkdir Seals                      # create a directory to work in.
 $ cd Seals                         # move into your working directory.
 $ module load cuda                 # load parallel computing architecture.
-$ module load python3              # load correct python version.
-$ virtualenv seals_env             # create a virtual environment to isolate your work from the default system.
-$ source seals_env/bin/activate    # activate your environment. Notice the command line prompt changes to show your environment on the next line.
+$ module load anaconda3              # load correct python version.
+$ conda create -p seals_env python=3.9 -y     # create a virtual environment to isolate your work from the default system.
+$ source activate <path>/seals_env    # activate your environment. Notice the command line prompt changes to show your environment on the next line.
 [seals_env] $ pwd
 /pylon5/group/username/Seals
-[seals_env] $ export PYTHONPATH=<path>/seals_env/lib/python3.5/site-packages # set a system variable to point python to your specific code. (Replace <path> with the results of pwd command above.
+[seals_env] $ export PYTHONPATH=<path>/seals_env/lib/python3.9/site-packages # set a system variable to point python to your specific code. (Replace <path> with the results of pwd command above.
 [seals_env] $ pip install iceberg_seals.search # pip is a python tool to extract the requested software (iceberg_seals.search in this case) from a repository. (this may take several minutes).
 ```
 
@@ -58,10 +58,10 @@ $ source seals_env/bin/activate    # activate your environment. Notice the comma
 ```bash
 $ git clone https://github.com/iceberg-project/Seals.git
 $ module load cuda
-$ module load python3
-$ virtualenv seals_env
-$ source seals_env/bin/activate
-[seals_env] $ export PYTHONPATH=<path>/seals_env/lib/python3.5/site-packages
+$ module load anaconda3              # load correct python version.
+$ conda create -p seals_env python=3.9 -y     # create a virtual environment to isolate your work from the default system.
+$ source activate <path>/seals_env    # activate your environment. Notice the command line prompt changes to show your environment on the next line.
+[seals_env] $ export PYTHONPATH=<path>/seals_env/lib/python3.9/site-packages # set a system variable to point python to your specific code. (Replace <path> with the results of pwd command above.
 [seals_env] $ pip install . --upgrade
 ```
 
@@ -71,8 +71,9 @@ $ source seals_env/bin/activate
 $ interact -p GPU-small --gres=gpu:p100:1  # request a compute node.  This package has been tested on P100 GPUs on bridges, but that does not exclude any other resource that offers the same GPUs. (this may take a minute or two or more to receive an allocation).
 $ cd $SCRATCH/Seals                # make sure you are in the same directory where everything was set up before.
 $ module load cuda                 # load parallel computing architecture, as before.
-$ module load python3              # load correct python version, as before.
-$ source seals_env/bin/activate    # activate your environment, no need to create a new environment because the Seals tools are installed and isolated here.
+$ module load anaconda3              # load correct python version, as before.
+$ source activate <path>/seals_env    # activate your environment. Notice the command line prompt changes to show your environment on the next line.
+[seals_env] $ export PYTHONPATH=<path>/seals_env/lib/python3.9/site-packages # set a system variable to point python to your specific code. (Replace <path> with the results of pwd command above.
 [iceberg_seals] $ iceberg_seals.predicting --help  # this will display a help screen of available usage and parameters.
 ```
 ## Prediction

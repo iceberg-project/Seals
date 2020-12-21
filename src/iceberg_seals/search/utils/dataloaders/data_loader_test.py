@@ -30,17 +30,12 @@ def make_dataset(dir, extensions):
     images = []
     file_names = []
     dir = os.path.expanduser(dir)
-    for target in sorted(os.listdir(dir)):
-        d = os.path.join(dir, target)
-        if not os.path.isdir(d):
-            continue
-
-        for root, _, fnames in sorted(os.walk(d)):
-            for fname in sorted(fnames):
-                if has_file_allowed_extension(fname, extensions):
-                    path = os.path.join(root, fname)
-                    images.append(path)
-                    file_names.append(fname)
+    for root, _, fnames in sorted(os.walk(dir)):
+        for fname in sorted(fnames):
+            if has_file_allowed_extension(fname, extensions):
+                path = os.path.join(root, fname)
+                images.append(path)
+                file_names.append(fname)
 
     return [images, file_names]
 
