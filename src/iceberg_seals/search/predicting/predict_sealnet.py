@@ -36,16 +36,18 @@ warnings.filterwarnings('ignore', module='PIL')
 
 def parse_args():
     parser = argparse.ArgumentParser(description='validates a CNN at the haul out level')
-    parser.add_argument('--test_dir', type=str, help='base directory to recursively search for validation images in')
-    parser.add_argument('--model_architecture', type=str, help='model architecture, must be a member of models '
-                                                               'dictionary')
-    parser.add_argument('--hyperparameter_set', type=str, help='combination of hyperparameters used, must be a member '
-                                                               'of hyperparameters dictionary')
-    parser.add_argument('--model_name', type=str, help='name of input model file from training, this name will also be '
-                                                       'used in subsequent steps of the pipeline')
+    parser.add_argument('--input_dir', type=str, help='base directory to recursively search for validation images in')
+    parser.add_argument('--model_architecture', type=str,
+                        default='UnetCntWRN', help='model architecture, must be a member of models '
+                                                   'dictionary')
+    parser.add_argument('--hyperparameter_set', type=str,
+                        default='B', help='combination of hyperparameters used, must be a member '
+                                          'of hyperparameters dictionary')
+    parser.add_argument('--model_name', type=str, default='UnetCntWRN_ts-vanilla.tar',
+                        help='name of input model file from training, this name will also be '
+                             'used in subsequent steps of the pipeline')
     parser.add_argument('--models_folder', type=str, default='saved_models', help='folder where the model tar file is'
                                                                                   'saved')
-    parser.add_argument('--input_image', type=str, help='filename of input raster')
     parser.add_argument('--output_dir', type=str, help='folder where output shapefiles will be stored')
     return parser.parse_args()
 
@@ -90,14 +92,14 @@ def get_xy_locs(array, count, min_dist=3):
     return np.array([(x // cols, x % cols) for x in flat_order[:count]])
 
 
-def predict_patch(input_image, model, output_dir, test_dir, batch_size=2, input_size=299, threshold=0.5, num_workers=1,
+def predict_patch(input_image, model, output_dir, input_dir, batch_size=2, input_size=299, threshold=0.5, num_workers=1,
                   remove_tiles=False):
     """
     Patch prediction function. Outputs shapefiles for counts and locations.
 
     :param input_image: filename raster image from tile_raster
     :param model: pytorch model
-    :param test_dir: directory with input tiles
+    :param input_dir: directory with input tiles
     :param output_dir: output directory name
     :param batch_size: number of images per mini-batch
     :param input_size: size of input images
@@ -111,11 +113,11 @@ def predict_patch(input_image, model, output_dir, test_dir, batch_size=2, input_
     data_transforms = transforms.Compose([
         transforms.CenterCrop(input_size),
         transforms.ToTensor(),
-        transforms.Normalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225])
+        transforms.Normalize([0.485], [0.229])
     ])
 
     # load dataset
-    dataset = ImageFolderTest(test_dir, data_transforms)
+    dataset = ImageFolderTest(input_dir, data_transforms)
 
     # separate into batches with dataloader
     dataloader = torch.utils.data.DataLoader(dataset, batch_size=batch_size, num_workers=num_workers)
@@ -190,7 +192,7 @@ def predict_patch(input_image, model, output_dir, test_dir, batch_size=2, input_
 
     # load affine matrix
     affine_matrix = rasterio.Affine(*[ele for ele in pd.read_csv(
-        '%s/affine_matrix.csv' % (test_dir))['transform']])
+        '%s/affine_matrix.csv' % (input_dir))['transform']])
 
     # create geopandas DataFrames to store counts per patch and seal locations
     output_shpfile = gpd.GeoDataFrame()
@@ -241,9 +243,9 @@ def predict_patch(input_image, model, output_dir, test_dir, batch_size=2, input_
 
         # remove tiles
         if remove_tiles:
-            shutil.rmtree('{}/tiles'.format(test_dir))
+            shutil.rmtree('{}/'.format(input_dir))
 
-    print('Total predicted in %s: '% os.path.basename(test_dir), sum(pred_counts['predictions']))
+    print('Total predicted in %s: ' % os.path.basename(input_dir), sum(pred_counts['predictions']))
 
 
 def main():
@@ -274,9 +276,9 @@ def main():
                                                                 args.model_name)))
 
     # run validation to get confusion matrix
-    predict_patch(input_image=args.input_image, model=model,
+    predict_patch(input_image=args.input_dir.split('/')[-1], model=model,
                   input_size=model_archs[args.model_architecture]['input_size'],
-                  test_dir=args.test_dir, output_dir=args.output_dir,
+                  input_dir=args.input_dir, output_dir=args.output_dir,
                   batch_size=hyperparameters[args.hyperparameter_set]['batch_size_test'],
                   num_workers=hyperparameters[args.hyperparameter_set]['num_workers_train'],
                   remove_tiles=True)
