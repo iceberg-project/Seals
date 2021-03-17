@@ -44,7 +44,7 @@ if __name__ == "__main__":
     model.eval()
 
     # load saved model weights from pt_train.py
-    model.load_state_dict(torch.load("%s/%s.tar" % (args.models_folder, args.model_name)))
+    model.load_state_dict(torch.load("%s/%s" % (args.models_folder, args.model_name)))
 
     # run validation to get confusion matrix
     predict_patch(input_image=args.input_dir.split('/')[-1], model=model,
