@@ -194,28 +194,30 @@ def predict_patch(input_image, model, output_dir, input_dir, batch_size=2, input
     affine_matrix = rasterio.Affine(*[ele for ele in pd.read_csv(
         '%s/affine_matrix.csv' % (input_dir))['transform']])
 
-    # create geopandas DataFrames to store counts per patch and seal locations
-    output_shpfile = gpd.GeoDataFrame()
-
-    # setup projection for output
-    output_shpfile.crs = from_epsg(3031)
-
-    # generate empty rows
-    for fname in fnames:
-        up, left, down, right = [int(ele) for ele in fname.split('_')[-5: -1]]
-        coords = [point * affine_matrix for point in [[down, left], [down, right], [up, left], [up, right]]]
-        output_shpfile = output_shpfile.append(pd.Series({'geometry': box(minx=min([point[0] for point in coords]),
-                                                                          miny=min([point[1] for point in coords]),
-                                                                          maxx=max([point[0] for point in coords]),
-                                                                          maxy=max([point[1] for point in coords])),
-                                                          'count': 0}, name=fname))
-
-    # add predicted counts
-    for row in pred_counts.iterrows():
-        fname = row[1]['filenames']
-        output_shpfile.loc[fname, 'count'] += row[1]['predictions']
-    output_shpfile.to_file(shapefile_path + 'prediction.shp'.format())
-
+#    # create geopandas DataFrames to store counts per patch and seal locations
+#    output_shpfile = gpd.GeoDataFrame()
+#
+#    # setup projection for output
+#    output_shpfile.crs = from_epsg(3031)
+#
+#    # generate empty rows
+#    for idx, fname in enumerate(fnames):
+#        if (idx + 1) % 10 == 0:
+#            print(idx + 1)
+#        up, left, down, right = [int(ele) for ele in fname.split('_')[-5: -1]]
+#        coords = [point * affine_matrix for point in [[down, left], [down, right], [up, left], [up, right]]]
+#        output_shpfile = output_shpfile.append(pd.Series({'geometry': box(minx=min([point[0] for point in coords]),
+#                                                                          miny=min([point[1] for point in coords]),
+#                                                                          maxx=max([point[0] for point in coords]),
+#                                                                          maxy=max([point[1] for point in coords])),
+#                                                          'count': 0}, name=fname))
+#
+#    # add predicted counts
+#    for row in pred_counts.iterrows():
+#        fname = row[1]['filenames']
+#        output_shpfile.loc[fname, 'count'] += row[1]['predictions']
+#    output_shpfile.to_file(shapefile_path + 'prediction.shp'.format())
+    print('Writing Prediction')
     if len(pred_locations) > 0:
         # create geopandas DataFrame to store classes and counts per patch
         output_shpfile_locs = gpd.GeoDataFrame()
@@ -272,7 +274,7 @@ def main():
     model.eval()
 
     # load saved model weights from pt_train.py
-    model.load_state_dict(torch.load("./{}/{}/{}/{}.tar".format(args.models_folder, pipeline, args.model_name,
+    model.load_state_dict(torch.load("./{}/{}/{}/{}".format(args.models_folder, pipeline, args.model_name,
                                                                 args.model_name)))
 
     # run validation to get confusion matrix
