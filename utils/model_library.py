@@ -50,8 +50,8 @@ training_sets = {'training_set_vanilla': {'num_classes': 11, 'scale_bands': [450
                  }
 
 # hyperparameter sets
-hyperparameters = {'A': {'learning_rate': 1E-3, 'batch_size_train': 32, 'batch_size_val': 128, 'batch_size_test': 128,
-                         'step_size': 1, 'gamma': 0.5, 'epochs': 150, 'num_workers_train': 16, 'num_workers_val': 16},
+hyperparameters = {'A': {'learning_rate': 1E-3, 'batch_size_train': 32, 'batch_size_val': 64, 'batch_size_test': 64,
+                         'step_size': 1, 'gamma': 0.5, 'epochs': 150, 'num_workers_train': 1, 'num_workers_val': 1},
                    'B': {'learning_rate': 1E-3, 'batch_size_train': 64, 'batch_size_val': 128, 'batch_size_test': 8,
                          'step_size': 1, 'gamma': 0.95, 'epochs': 5, 'num_workers_train':16, 'num_workers_val': 16},
                    'C': {'learning_rate': 1E-3, 'batch_size_train': 16, 'batch_size_val': 32, 'batch_size_test': 32,

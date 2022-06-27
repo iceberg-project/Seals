@@ -69,8 +69,13 @@ def main():
 
     # load saved model weights from training
     model_name = args.model_architecture + '_ts-' + args.training_set.split('_')[-1]
-    model.load_state_dict(
-        torch.load(f"./{models_folder}/{pipeline}/{model_name}/{model_name}.tar"))
+    if torch.cuda.is_available():
+        model.load_state_dict(
+            torch.load(f"./{models_folder}/{pipeline}/{model_name}/{model_name}.tar"))
+    else:
+        model.load_state_dict(
+            torch.load(f"./{models_folder}/{pipeline}/{model_name}/{model_name}.tar",
+                       map_location=torch.device("cpu")))
 
     predict_patch(model=model, input_size=model_archs[args.model_architecture]['input_size'],
                   batch_size=hyperparameters[args.hyperparameter_set]['batch_size_test'],
